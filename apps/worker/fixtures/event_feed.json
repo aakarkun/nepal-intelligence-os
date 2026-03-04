@@ -1,0 +1,635 @@
+[
+  {
+    "id": "evt-001",
+    "type": "official",
+    "severity": "info",
+    "title": "Polls Officially Closed",
+    "body": "Election Commission of Nepal confirms all polling stations have closed as of 17:00 NPT. Counting begins in district headquarters across all 7 provinces.",
+    "timestamp": "2025-07-31T12:15:00Z",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-002",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Primary Data Feed Connected",
+    "body": "WebSocket connection to ECN live results portal established. Receiving initial handshake data for 165 FPTP constituencies.",
+    "timestamp": "2025-07-31T12:17:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-003",
+    "type": "ingest",
+    "severity": "info",
+    "title": "First Batch Received",
+    "body": "Initial batch of results received covering 8 constituencies in Bagmati and Koshi provinces. Data validation passed.",
+    "timestamp": "2025-07-31T12:20:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-004",
+    "type": "note",
+    "severity": "info",
+    "title": "Early Urban Results Favor NC",
+    "body": "First 10 declared results from Kathmandu Valley and eastern Terai show Nepali Congress leading in 4, UML in 3, MC in 2, RSP in 1. Urban bias expected to shift as rural counts come in.",
+    "timestamp": "2025-07-31T12:23:00Z"
+  },
+  {
+    "id": "evt-005",
+    "type": "official",
+    "severity": "info",
+    "title": "Kathmandu-3 Result Declared",
+    "body": "ECN declares Kathmandu-3: Bhim Bahadur Rawal (UML) wins with 31,200 votes. Margin of 5,400 over NC candidate Arjun Narsingh KC.",
+    "timestamp": "2025-07-31T12:28:00Z",
+    "constituencyId": "kathmandu-3",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-006",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Batch 2 Ingested",
+    "body": "Second batch processed: 5 additional constituencies from Province 1 and Province 3. All records validated against schema. Running total: 15 constituencies with data.",
+    "timestamp": "2025-07-31T12:30:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-007",
+    "type": "note",
+    "severity": "info",
+    "title": "NC Leading 7-5 Over UML",
+    "body": "With 18 constituencies counted, NC holds a narrow lead: 7 seats won vs UML's 5. Congress performing strongly in Kathmandu Valley. MC steady at 3 seats.",
+    "timestamp": "2025-07-31T12:33:00Z"
+  },
+  {
+    "id": "evt-008",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Stale Feed: Siraha-1",
+    "body": "No data update received from Siraha-1 for over 15 minutes. Last update at 12:38 UTC. Possible connectivity issue at district counting center.",
+    "timestamp": "2025-07-31T12:38:00Z",
+    "constituencyId": "siraha-1",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-009",
+    "type": "official",
+    "severity": "info",
+    "title": "Morang-1 Result Declared",
+    "body": "Morang-1: Subas Chandra Nembang (UML) wins decisively with 35,200 votes. Strong UML performance in eastern Nepal continues.",
+    "timestamp": "2025-07-31T12:40:00Z",
+    "constituencyId": "morang-1",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-010",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Province 1 Feed Synced",
+    "body": "Full sync completed for Province 1 (Koshi). 12 constituencies reporting, 4 with final results. Data quality: 98.2%.",
+    "timestamp": "2025-07-31T12:43:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-011",
+    "type": "note",
+    "severity": "info",
+    "title": "RSP Strong in Kaski-1",
+    "body": "Swarnim Wagle (RSP) leading in Kaski-1 with 22,600 votes — ahead of both UML and NC candidates. Could be a breakthrough seat for the party in Gandaki.",
+    "timestamp": "2025-07-31T12:46:00Z",
+    "constituencyId": "kaski-1"
+  },
+  {
+    "id": "evt-012",
+    "type": "official",
+    "severity": "info",
+    "title": "ECN Update: 25 Constituencies Counted",
+    "body": "Election Commission milestone: 25 of 165 FPTP constituencies have declared results. NC leads with 10, UML at 9. Counting pace accelerating across districts.",
+    "timestamp": "2025-07-31T12:50:00Z",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-013",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Vote Drop Detected: Chitwan-2",
+    "body": "Vote total for candidate Til Bahadur Gurung (UML) in Chitwan-2 dropped from 23,100 to 22,400. Possible data correction or counting error. Monitoring closely.",
+    "timestamp": "2025-07-31T12:53:00Z",
+    "constituencyId": "chitwan-2",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-014",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Batch 3 Ingested",
+    "body": "Third batch: 8 constituencies processed from Lumbini and Madhesh provinces. Schema validation passed. 2 records flagged for review due to low turnout figures.",
+    "timestamp": "2025-07-31T12:55:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-015",
+    "type": "note",
+    "severity": "info",
+    "title": "Lalitpur-1 Decisive NC Win",
+    "body": "Nabindra Raj Joshi (NC) wins Lalitpur-1 with 32,100 votes — margin of 16,900 over UML. One of the most decisive wins of the night so far.",
+    "timestamp": "2025-07-31T12:58:00Z",
+    "constituencyId": "lalitpur-1"
+  },
+  {
+    "id": "evt-016",
+    "type": "official",
+    "severity": "info",
+    "title": "Bhaktapur-1 Result Declared",
+    "body": "Bhaktapur-1: Prem Bahadur Singh (UML) wins with 34,500 votes. Margin of 12,700 over NC. UML dominance in Bhaktapur continues.",
+    "timestamp": "2025-07-31T13:02:00Z",
+    "constituencyId": "bhaktapur-1",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-017",
+    "type": "ingest",
+    "severity": "info",
+    "title": "ECN Portal Feed Reconnected",
+    "body": "Brief interruption in ECN WebSocket feed (45 seconds). Reconnected and re-synced. No data loss detected. Monitoring connection stability.",
+    "timestamp": "2025-07-31T13:05:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-018",
+    "type": "note",
+    "severity": "info",
+    "title": "Coalition Math: Early Projections",
+    "body": "At 28 counted: UML(9)+MC(5)=14 seats vs NC(10)+RSP(2)=12. Neither bloc approaching majority. UML-MC combine leading in 22 additional seats.",
+    "timestamp": "2025-07-31T13:08:00Z"
+  },
+  {
+    "id": "evt-019",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Sudden Jump: Kathmandu-2",
+    "body": "Rabi Lamichhane (RSP) vote count in Kathmandu-2 jumped 4,200 votes in single update (from 19,700 to 23,900). Likely batch count from multiple booths reported simultaneously.",
+    "timestamp": "2025-07-31T13:12:00Z",
+    "constituencyId": "kathmandu-2",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-020",
+    "type": "official",
+    "severity": "info",
+    "title": "UML Takes Overall Lead",
+    "body": "With 40 constituencies counted, UML surpasses NC for the first time tonight: UML 15 seats won vs NC 13. UML also leading in 18 additional constituencies.",
+    "timestamp": "2025-07-31T13:15:00Z",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-021",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Province 3 Feed Synced",
+    "body": "Full sync for Province 3 (Bagmati). 22 constituencies reporting, 8 final. Kathmandu Valley results largely in. Remaining: Chitwan, Makwanpur, outer districts.",
+    "timestamp": "2025-07-31T13:18:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-022",
+    "type": "note",
+    "severity": "warning",
+    "title": "Battleground Alert: Chitwan-1",
+    "body": "Chitwan-1 margin tightens to just 300 votes. NC's Ramesh Lekhak (26,400) barely ahead of UML's Shankar Pokharel (26,100). 85% of votes counted — could flip either way.",
+    "timestamp": "2025-07-31T13:21:00Z",
+    "constituencyId": "chitwan-1"
+  },
+  {
+    "id": "evt-023",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Stale Feed: Jhapa-2",
+    "body": "Jhapa-2 data has not updated for 20 minutes. Last data point at 13:22 UTC. UML leading with 29,400. District office reports intermittent power outages.",
+    "timestamp": "2025-07-31T13:25:00Z",
+    "constituencyId": "jhapa-2",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-024",
+    "type": "official",
+    "severity": "info",
+    "title": "Kailali-1 Result Declared",
+    "body": "Kailali-1 (Sudurpashchim): Mahesh Basnet (UML) wins with 32,400 votes. Strong UML showing in far-western Nepal.",
+    "timestamp": "2025-07-31T13:28:00Z",
+    "constituencyId": "kailali-1",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-025",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Batch 5 Ingested",
+    "body": "Fifth batch processed: 12 constituencies from Provinces 4, 5, and 7. All records valid. Feed latency averaging 28 seconds — within acceptable range.",
+    "timestamp": "2025-07-31T13:30:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-026",
+    "type": "note",
+    "severity": "info",
+    "title": "JSPN Strength in Madhesh",
+    "body": "Janata Samajbadi Party leading in 3 Madhesh constituencies. Upendra Yadav (Bara-1) has commanding lead with 24,100 votes. JSPN could take 2-3 FPTP seats in Province 2.",
+    "timestamp": "2025-07-31T13:33:00Z"
+  },
+  {
+    "id": "evt-027",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Count Mismatch: Parsa-1",
+    "body": "Sum of candidate votes (58,900) does not match reported total valid votes (59,400) for Parsa-1. Discrepancy of 500 votes. Possible uncounted ballots or data entry error.",
+    "timestamp": "2025-07-31T13:36:00Z",
+    "constituencyId": "parsa-1",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-028",
+    "type": "official",
+    "severity": "info",
+    "title": "Race Tightens: 55 Counted",
+    "body": "ECN update at 55 constituencies: UML 20 seats, NC 19 seats — closest gap of the night. Race could go either way as rural results continue streaming in.",
+    "timestamp": "2025-07-31T13:35:00Z",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-029",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Siraha-1 Feed Recovery",
+    "body": "Data feed from Siraha-1 partially recovered. Received stale data (timestamp 12:38 UTC). District office confirms counting disrupted by power outage. Generator being arranged.",
+    "timestamp": "2025-07-31T13:40:00Z",
+    "constituencyId": "siraha-1",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-030",
+    "type": "note",
+    "severity": "info",
+    "title": "NC Regaining Ground in Rupandehi",
+    "body": "NC performing well in Rupandehi district: leading in Rupandehi-1 by 8,300 votes. Could offset UML gains in eastern Nepal. Lumbini emerging as key battleground province.",
+    "timestamp": "2025-07-31T13:43:00Z"
+  },
+  {
+    "id": "evt-031",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Vote Drop: Dhanusha-1",
+    "body": "NC candidate Ram Chandra Poudel's vote count in Dhanusha-1 dropped from 20,100 to 19,200. Reduction of 900 votes between updates. Flagged for ECN verification.",
+    "timestamp": "2025-07-31T13:46:00Z",
+    "constituencyId": "dhanusha-1",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-032",
+    "type": "official",
+    "severity": "info",
+    "title": "Bara-1 Declared: JSPN Upset",
+    "body": "Bara-1: Upendra Yadav (JSPN) wins with 24,100 votes — 7,300 margin over NC. First JSPN FPTP seat of the night. Significant result for Madhesh-based party.",
+    "timestamp": "2025-07-31T13:48:00Z",
+    "constituencyId": "bara-1",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-033",
+    "type": "note",
+    "severity": "info",
+    "title": "JSPN Secures Madhesh Seat",
+    "body": "Bara-1 win marks JSPN's return to FPTP relevance. Party also competitive in Parsa-1 (trailing NC by just 1,300) and Siraha-1 (leading with 22,400). Could be a 2-3 seat night.",
+    "timestamp": "2025-07-31T13:51:00Z"
+  },
+  {
+    "id": "evt-034",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Batch 6 Ingested",
+    "body": "Sixth batch: 10 constituencies from Karnali and Sudurpashchim. Remote districts reporting slower — air-gapped data transmitted via satellite phone in Humla and Dolpa.",
+    "timestamp": "2025-07-31T13:54:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-035",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Stale Feed: Dhanusha-1",
+    "body": "Dhanusha-1 data stale for 25 minutes (last update 13:30 UTC). Combined with earlier vote drop anomaly, this constituency needs manual verification from ECN district office.",
+    "timestamp": "2025-07-31T13:56:00Z",
+    "constituencyId": "dhanusha-1",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-036",
+    "type": "official",
+    "severity": "info",
+    "title": "NC Retakes Lead at 68 Counted",
+    "body": "ECN update: NC edges back ahead with 26 seats to UML's 24 at the 68-constituency mark. Third lead change of the night. MC steady at 9.",
+    "timestamp": "2025-07-31T13:55:00Z",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-037",
+    "type": "note",
+    "severity": "info",
+    "title": "NC-UML Gap in Single Digits",
+    "body": "NC 26, UML 24 — margin of just 2 seats. Leading counts: NC 20, UML 19. Combined picture (won+leading): NC 46, UML 43. Still too close to call.",
+    "timestamp": "2025-07-31T14:00:00Z"
+  },
+  {
+    "id": "evt-038",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Province 5 Feed Synced",
+    "body": "Full sync for Province 5 (Lumbini). 18 constituencies reporting, 6 final. Rupandehi and Dang districts fully reporting. Banke still counting.",
+    "timestamp": "2025-07-31T14:03:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-039",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Sudden Jump: Banke-1",
+    "body": "NC candidate Bal Krishna Khand in Banke-1 jumped from 20,200 to 25,600 in single update (+5,400). Large booth-level batch from Nepalgunj sub-metropolitan area.",
+    "timestamp": "2025-07-31T14:06:00Z",
+    "constituencyId": "banke-1",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-040",
+    "type": "official",
+    "severity": "info",
+    "title": "Rupandehi-2 Declared",
+    "body": "Rupandehi-2: Lila Nath Shrestha (UML) wins with 30,200 votes. Margin of 5,400 over NC. UML splits Rupandehi district with NC.",
+    "timestamp": "2025-07-31T14:05:00Z",
+    "constituencyId": "rupandehi-2",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-041",
+    "type": "note",
+    "severity": "info",
+    "title": "RPP Below Expectations",
+    "body": "Rastriya Prajatantra Party has won 2 seats and leads in 3 at the 82-count mark. Below their target of 10+ FPTP seats. Durga Prasai's RPP campaign has underperformed in key districts.",
+    "timestamp": "2025-07-31T14:10:00Z"
+  },
+  {
+    "id": "evt-042",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Batch 8 Ingested",
+    "body": "Eighth batch: 14 constituencies from mixed provinces. Total ingested tonight: 95 constituencies with at least partial data. Schema validation: 100% pass rate.",
+    "timestamp": "2025-07-31T14:13:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-043",
+    "type": "official",
+    "severity": "info",
+    "title": "UML Back Ahead at 82 Counted",
+    "body": "ECN milestone: 82 of 165 counted. UML reclaims lead with 32 seats to NC's 29. Fourth lead change tonight. UML's rural vote proving decisive.",
+    "timestamp": "2025-07-31T14:15:00Z",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-044",
+    "type": "anomaly",
+    "severity": "critical",
+    "title": "Error Status: Siraha-1 Feed",
+    "body": "Siraha-1 feed has been non-responsive for over 90 minutes. Marking as ERROR. Last known data from 12:38 UTC shows JSPN leading. ECN district office unreachable by phone.",
+    "timestamp": "2025-07-31T14:18:00Z",
+    "constituencyId": "siraha-1",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-045",
+    "type": "note",
+    "severity": "info",
+    "title": "UML Dominance in Province 1 & 6",
+    "body": "UML has won or leads in 14 of 20 counted constituencies in Province 1 (Koshi) and all 4 counted in Province 6 (Karnali). Rural and eastern Nepal consolidating behind UML.",
+    "timestamp": "2025-07-31T14:22:00Z"
+  },
+  {
+    "id": "evt-046",
+    "type": "official",
+    "severity": "info",
+    "title": "Dang-1 Result Declared",
+    "body": "Dang-1: Shanta Kumar Sharma (UML) wins with 28,900 votes. Strong MC presence (13,200) makes this a three-way race but UML prevails comfortably.",
+    "timestamp": "2025-07-31T14:28:00Z",
+    "constituencyId": "dang-1",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-047",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Count Mismatch: Kathmandu-4",
+    "body": "Kathmandu-4 total votes (57,200) does not reconcile with reported valid ballot count (58,100). Discrepancy of 900. Combined with stale status, this seat needs ECN review.",
+    "timestamp": "2025-07-31T14:32:00Z",
+    "constituencyId": "kathmandu-4",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-048",
+    "type": "note",
+    "severity": "info",
+    "title": "MC Holding Steady at 13-14%",
+    "body": "CPN (Maoist Centre) tracking at 13% of total vote share. 13 seats won, leading in 7. Performing well in Chitwan-2 and Makwanpur-1 — traditional Maoist strongholds.",
+    "timestamp": "2025-07-31T14:36:00Z"
+  },
+  {
+    "id": "evt-049",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Batch 9 Ingested",
+    "body": "Ninth batch: 11 constituencies from Provinces 2 and 4. Madhesh results coming in faster now. Gandaki reporting 70% complete.",
+    "timestamp": "2025-07-31T14:40:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-050",
+    "type": "official",
+    "severity": "info",
+    "title": "Makwanpur-1: MC Wins",
+    "body": "Makwanpur-1: Ram Bahadur Thapa Badal (MC) wins with 24,800 votes. Important win for Maoist Centre in their historical heartland. Margin of 6,200 over UML.",
+    "timestamp": "2025-07-31T14:48:00Z",
+    "constituencyId": "makwanpur-1",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-051",
+    "type": "note",
+    "severity": "info",
+    "title": "MC Wins in Maoist Heartland",
+    "body": "Makwanpur-1 win significant for MC's post-war identity. Party performing above expectations in mid-hills. Could reach 18-20 FPTP seats if trend holds in remaining constituencies.",
+    "timestamp": "2025-07-31T14:51:00Z"
+  },
+  {
+    "id": "evt-052",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Stale Feed: Kathmandu-4",
+    "body": "Kathmandu-4 has not received fresh data in over 70 minutes (last update 13:45 UTC). NC leading by 7,500 but counting appears paused. Unusual for Kathmandu district.",
+    "timestamp": "2025-07-31T14:54:00Z",
+    "constituencyId": "kathmandu-4",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-053",
+    "type": "official",
+    "severity": "info",
+    "title": "ECN Update: 108 Counted",
+    "body": "108 of 165 constituencies counted. UML 43, NC 38, MC 14, RSP 7. UML extending lead. Remaining 57 constituencies mostly in remote and mid-hill areas.",
+    "timestamp": "2025-07-31T14:55:00Z",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-054",
+    "type": "note",
+    "severity": "info",
+    "title": "UML Pulling Away",
+    "body": "UML now 5 seats ahead of NC (43 vs 38). Leading in 18 more. UML likely to be the largest party but well short of the 83-seat simple majority in FPTP. Coalition government inevitable.",
+    "timestamp": "2025-07-31T14:58:00Z"
+  },
+  {
+    "id": "evt-055",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Batch 10 Ingested",
+    "body": "Tenth batch: 9 constituencies from Province 6 (Karnali) and Province 7 (Sudurpashchim). Remote districts with satellite-relayed data. Latency: 45-120 seconds.",
+    "timestamp": "2025-07-31T15:02:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-056",
+    "type": "official",
+    "severity": "info",
+    "title": "Province 6 Results Update",
+    "body": "All 6 counted seats in Karnali Province declared: UML 4, NC 1, MC 1. UML dominance in remote western districts mirrors 2079 pattern.",
+    "timestamp": "2025-07-31T15:08:00Z",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-057",
+    "type": "official",
+    "severity": "info",
+    "title": "Milestone: 120 Constituencies Counted",
+    "body": "ECN confirms 120 of 165 counted. UML 48 seats, NC 42, MC 16, RSP 8. UML lead now 6 seats. 45 remaining — UML momentum appears sustained.",
+    "timestamp": "2025-07-31T15:15:00Z",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-058",
+    "type": "note",
+    "severity": "info",
+    "title": "No Party On Track for Majority",
+    "body": "Even projecting current trends: UML likely 57-62, NC 48-53, MC 17-20. No party will reach 83 FPTP seats (or 138 overall including PR). Coalition negotiations will begin tomorrow.",
+    "timestamp": "2025-07-31T15:20:00Z"
+  },
+  {
+    "id": "evt-059",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Feed Latency Spike Detected",
+    "body": "Average data feed latency increased from 30s to 95s across all sources. Possible ECN server load as midnight approaches. No data loss confirmed but monitoring closely.",
+    "timestamp": "2025-07-31T15:25:00Z",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-060",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Batch 11 Ingested",
+    "body": "Eleventh batch: 8 constituencies from mixed provinces. Running total: 132 constituencies with data. 33 still pending — mostly remote mid-hill seats.",
+    "timestamp": "2025-07-31T15:28:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-061",
+    "type": "note",
+    "severity": "info",
+    "title": "Coalition Scenarios",
+    "body": "Current projections: UML+MC = 70 seats (won+leading), NC+MC = 63. Neither crosses 83. A UML-MC-RPP combine could reach 78. Grand coalition or support from independents may be needed.",
+    "timestamp": "2025-07-31T15:33:00Z"
+  },
+  {
+    "id": "evt-062",
+    "type": "official",
+    "severity": "info",
+    "title": "ECN Update: 132 Counted",
+    "body": "132 constituencies counted. UML 53, NC 47, MC 17, RSP 9, RPP 4, JSPN 2. UML lead stable at 6 seats. Pace of new results slowing as remote districts remain.",
+    "timestamp": "2025-07-31T15:38:00Z",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-063",
+    "type": "note",
+    "severity": "info",
+    "title": "Remaining 33 Constituencies Profile",
+    "body": "Remaining seats largely rural mid-hills and remote areas: Province 6 (3), Province 7 (5), Province 4 (4), scattered across others. These traditionally favor UML over NC.",
+    "timestamp": "2025-07-31T15:42:00Z"
+  },
+  {
+    "id": "evt-064",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Batch 12 Ingested",
+    "body": "Twelfth batch: 6 constituencies. Feed throughput declining as remaining districts use manual data transmission. ETA for next batch: 20-30 minutes.",
+    "timestamp": "2025-07-31T15:45:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-065",
+    "type": "anomaly",
+    "severity": "warning",
+    "title": "Missing Constituency Data",
+    "body": "3 remote constituencies (Humla-1, Dolpa-1, Mugu-1) have reported zero data all night. ECN confirms counting is underway but no digital transmission available. Results expected via phone relay.",
+    "timestamp": "2025-07-31T15:50:00Z",
+    "source": "anomaly-detector"
+  },
+  {
+    "id": "evt-066",
+    "type": "note",
+    "severity": "info",
+    "title": "UML Likely 55-60 FPTP Seats",
+    "body": "With 53 won and leading in 12 more, UML projected to finish between 55-60 FPTP seats. Strongest FPTP performance since 2074. KP Sharma Oli likely to get first shot at government formation.",
+    "timestamp": "2025-07-31T15:55:00Z"
+  },
+  {
+    "id": "evt-067",
+    "type": "official",
+    "severity": "info",
+    "title": "ECN: Final Batch Expected Within Hour",
+    "body": "Chief Election Commissioner states remaining results expected to be declared by midnight NPT. 25 constituencies still in counting phase. No irregularities requiring re-counting so far.",
+    "timestamp": "2025-07-31T16:00:00Z",
+    "source": "ECN"
+  },
+  {
+    "id": "evt-068",
+    "type": "note",
+    "severity": "info",
+    "title": "Historic RSP Performance",
+    "body": "Rastriya Swatantra Party on track for 9-11 FPTP seats — best performance in party history and best debut by any party since 2008. Kaski-1 win would be symbolic.",
+    "timestamp": "2025-07-31T16:05:00Z"
+  },
+  {
+    "id": "evt-069",
+    "type": "ingest",
+    "severity": "info",
+    "title": "Final Batch Pre-processed",
+    "body": "Pre-processing data for remaining 25 constituencies. 8 have partial counts available. Full results expected in staggered releases over next 60-90 minutes.",
+    "timestamp": "2025-07-31T16:10:00Z",
+    "source": "ecn-portal"
+  },
+  {
+    "id": "evt-070",
+    "type": "official",
+    "severity": "info",
+    "title": "ECN Update: 140 Counted",
+    "body": "140 of 165 constituencies counted. UML 57, NC 50, MC 18, RSP 9, RPP 4, JSPN 2. UML lead at 7 seats. 25 remaining — counting continues through the night.",
+    "timestamp": "2025-07-31T16:15:00Z",
+    "source": "ECN"
+  }
+]

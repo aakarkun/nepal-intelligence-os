@@ -1,0 +1,380 @@
+[
+  {
+    "constituencyId": "kathmandu-1",
+    "constituencyName": "Kathmandu-1",
+    "districtName": "Kathmandu",
+    "provinceId": 3,
+    "status": "counting",
+    "totalVotes": 72850,
+    "lastUpdate": "2025-07-31T14:42:00Z",
+    "candidates": [
+      { "candidateId": "ktm1-uml", "candidateName": "Ram Bahadur Thapa", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 28450 },
+      { "candidateId": "ktm1-nc", "candidateName": "Gagan Thapa", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 29100 },
+      { "candidateId": "ktm1-mc", "candidateName": "Pushpa Lal Shrestha", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 8200 },
+      { "candidateId": "ktm1-rsp", "candidateName": "Sagar Dhakal", "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyColor": "#ff6600", "votes": 7100 }
+    ]
+  },
+  {
+    "constituencyId": "kathmandu-2",
+    "constituencyName": "Kathmandu-2",
+    "districtName": "Kathmandu",
+    "provinceId": 3,
+    "status": "counting",
+    "totalVotes": 77300,
+    "lastUpdate": "2025-07-31T14:38:00Z",
+    "candidates": [
+      { "candidateId": "ktm2-uml", "candidateName": "Bijay Kumar Shrestha", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 22100 },
+      { "candidateId": "ktm2-nc", "candidateName": "Prakash Man Singh", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 24500 },
+      { "candidateId": "ktm2-mc", "candidateName": "Bina Magar", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 6800 },
+      { "candidateId": "ktm2-rsp", "candidateName": "Rabi Lamichhane", "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyColor": "#ff6600", "votes": 23900 }
+    ]
+  },
+  {
+    "constituencyId": "kathmandu-3",
+    "constituencyName": "Kathmandu-3",
+    "districtName": "Kathmandu",
+    "provinceId": 3,
+    "status": "final",
+    "totalVotes": 72600,
+    "lastUpdate": "2025-07-31T12:28:00Z",
+    "candidates": [
+      { "candidateId": "ktm3-uml", "candidateName": "Bhim Bahadur Rawal", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 31200 },
+      { "candidateId": "ktm3-nc", "candidateName": "Arjun Narsingh KC", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 25800 },
+      { "candidateId": "ktm3-mc", "candidateName": "Agni Sapkota", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 12400 },
+      { "candidateId": "ktm3-jspn", "candidateName": "Sarita Giri", "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyColor": "#009933", "votes": 3200 }
+    ]
+  },
+  {
+    "constituencyId": "kathmandu-4",
+    "constituencyName": "Kathmandu-4",
+    "districtName": "Kathmandu",
+    "provinceId": 3,
+    "status": "stale",
+    "totalVotes": 57200,
+    "lastUpdate": "2025-07-31T13:45:00Z",
+    "candidates": [
+      { "candidateId": "ktm4-uml", "candidateName": "Bishnu Poudel", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 18900 },
+      { "candidateId": "ktm4-nc", "candidateName": "Sashank Koirala", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 26400 },
+      { "candidateId": "ktm4-mc", "candidateName": "Pramesh Hamal", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 7100 },
+      { "candidateId": "ktm4-rsp", "candidateName": "Dipak Poudel", "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyColor": "#ff6600", "votes": 4800 }
+    ]
+  },
+  {
+    "constituencyId": "lalitpur-1",
+    "constituencyName": "Lalitpur-1",
+    "districtName": "Lalitpur",
+    "provinceId": 3,
+    "status": "final",
+    "totalVotes": 61300,
+    "lastUpdate": "2025-07-31T13:08:00Z",
+    "candidates": [
+      { "candidateId": "llt1-uml", "candidateName": "Top Bahadur Rayamajhi", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 15200 },
+      { "candidateId": "llt1-nc", "candidateName": "Nabindra Raj Joshi", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 32100 },
+      { "candidateId": "llt1-mc", "candidateName": "Hari Bol Gajurel", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 9800 },
+      { "candidateId": "llt1-rppp", "candidateName": "Krishna Hari Banskota", "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyColor": "#ff9900", "votes": 4200 }
+    ]
+  },
+  {
+    "constituencyId": "lalitpur-2",
+    "constituencyName": "Lalitpur-2",
+    "districtName": "Lalitpur",
+    "provinceId": 3,
+    "status": "counting",
+    "totalVotes": 68450,
+    "lastUpdate": "2025-07-31T14:50:00Z",
+    "candidates": [
+      { "candidateId": "llt2-uml", "candidateName": "Yogesh Bhattarai", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 27800 },
+      { "candidateId": "llt2-nc", "candidateName": "Deepak Prakash Bhatta", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 27350 },
+      { "candidateId": "llt2-mc", "candidateName": "Pampha Bhusal", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 10200 },
+      { "candidateId": "llt2-ind", "candidateName": "Bimal Poudel", "partyId": "ind", "partyName": "Independent", "partyColor": "#888888", "votes": 3100 }
+    ]
+  },
+  {
+    "constituencyId": "bhaktapur-1",
+    "constituencyName": "Bhaktapur-1",
+    "districtName": "Bhaktapur",
+    "provinceId": 3,
+    "status": "final",
+    "totalVotes": 73100,
+    "lastUpdate": "2025-07-31T13:02:00Z",
+    "candidates": [
+      { "candidateId": "bkt1-uml", "candidateName": "Prem Bahadur Singh", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 34500 },
+      { "candidateId": "bkt1-nc", "candidateName": "Surya Bahadur Thapa", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 21800 },
+      { "candidateId": "bkt1-mc", "candidateName": "Dev Gurung", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 11200 },
+      { "candidateId": "bkt1-rsp", "candidateName": "Manish Jha", "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyColor": "#ff6600", "votes": 5600 }
+    ]
+  },
+  {
+    "constituencyId": "chitwan-1",
+    "constituencyName": "Chitwan-1",
+    "districtName": "Chitwan",
+    "provinceId": 3,
+    "status": "counting",
+    "totalVotes": 75200,
+    "lastUpdate": "2025-07-31T14:45:00Z",
+    "candidates": [
+      { "candidateId": "ctw1-uml", "candidateName": "Shankar Pokharel", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 26100 },
+      { "candidateId": "ctw1-nc", "candidateName": "Ramesh Lekhak", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 26400 },
+      { "candidateId": "ctw1-mc", "candidateName": "Narayan Kaji Shrestha", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 14500 },
+      { "candidateId": "ctw1-rppp", "candidateName": "Durga Prasai", "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyColor": "#ff9900", "votes": 8200 }
+    ]
+  },
+  {
+    "constituencyId": "chitwan-2",
+    "constituencyName": "Chitwan-2",
+    "districtName": "Chitwan",
+    "provinceId": 3,
+    "status": "counting",
+    "totalVotes": 74900,
+    "lastUpdate": "2025-07-31T14:30:00Z",
+    "candidates": [
+      { "candidateId": "ctw2-uml", "candidateName": "Til Bahadur Gurung", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 22400 },
+      { "candidateId": "ctw2-nc", "candidateName": "Min Bahadur Shrestha", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 18600 },
+      { "candidateId": "ctw2-mc", "candidateName": "Bhakta Bahadur Basnet", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 24100 },
+      { "candidateId": "ctw2-rsp", "candidateName": "Resham Chaudhary", "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyColor": "#ff6600", "votes": 9800 }
+    ]
+  },
+  {
+    "constituencyId": "morang-1",
+    "constituencyName": "Morang-1",
+    "districtName": "Morang",
+    "provinceId": 1,
+    "status": "final",
+    "totalVotes": 70500,
+    "lastUpdate": "2025-07-31T12:40:00Z",
+    "candidates": [
+      { "candidateId": "mrg1-uml", "candidateName": "Subas Chandra Nembang", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 35200 },
+      { "candidateId": "mrg1-nc", "candidateName": "Lal Babu Pandit", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 22100 },
+      { "candidateId": "mrg1-mc", "candidateName": "Amrita Thapa Magar", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 8400 },
+      { "candidateId": "mrg1-jspn", "candidateName": "Rajesh Ahiraj", "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyColor": "#009933", "votes": 4800 }
+    ]
+  },
+  {
+    "constituencyId": "morang-2",
+    "constituencyName": "Morang-2",
+    "districtName": "Morang",
+    "provinceId": 1,
+    "status": "counting",
+    "totalVotes": 64600,
+    "lastUpdate": "2025-07-31T14:48:00Z",
+    "candidates": [
+      { "candidateId": "mrg2-uml", "candidateName": "Bhim Prasad Acharya", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 24600 },
+      { "candidateId": "mrg2-nc", "candidateName": "Minendra Rijal", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 23900 },
+      { "candidateId": "mrg2-mc", "candidateName": "Prabhu Sah", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 7200 },
+      { "candidateId": "mrg2-rsp", "candidateName": "Rajkumar Rai", "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyColor": "#ff6600", "votes": 6100 },
+      { "candidateId": "mrg2-ind", "candidateName": "Tanka Angdembe", "partyId": "ind", "partyName": "Independent", "partyColor": "#888888", "votes": 2800 }
+    ]
+  },
+  {
+    "constituencyId": "jhapa-1",
+    "constituencyName": "Jhapa-1",
+    "districtName": "Jhapa",
+    "provinceId": 1,
+    "status": "counting",
+    "totalVotes": 66900,
+    "lastUpdate": "2025-07-31T14:35:00Z",
+    "candidates": [
+      { "candidateId": "jhp1-uml", "candidateName": "Pradeep Gyawali", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 23500 },
+      { "candidateId": "jhp1-nc", "candidateName": "Sher Bahadur Kunwar", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 28900 },
+      { "candidateId": "jhp1-mc", "candidateName": "Haribol Gajurel", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 9100 },
+      { "candidateId": "jhp1-rsp", "candidateName": "Dhiraj Rai", "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyColor": "#ff6600", "votes": 5400 }
+    ]
+  },
+  {
+    "constituencyId": "jhapa-2",
+    "constituencyName": "Jhapa-2",
+    "districtName": "Jhapa",
+    "provinceId": 1,
+    "status": "stale",
+    "totalVotes": 64900,
+    "lastUpdate": "2025-07-31T13:22:00Z",
+    "candidates": [
+      { "candidateId": "jhp2-uml", "candidateName": "Rajendra Lingden", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 29400 },
+      { "candidateId": "jhp2-nc", "candidateName": "Hari Prasad Uprety", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 20200 },
+      { "candidateId": "jhp2-mc", "candidateName": "Krishna Rai", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 6800 },
+      { "candidateId": "jhp2-rppp", "candidateName": "Bikram Pandey", "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyColor": "#ff9900", "votes": 8500 }
+    ]
+  },
+  {
+    "constituencyId": "kaski-1",
+    "constituencyName": "Kaski-1",
+    "districtName": "Kaski",
+    "provinceId": 4,
+    "status": "counting",
+    "totalVotes": 63000,
+    "lastUpdate": "2025-07-31T14:40:00Z",
+    "candidates": [
+      { "candidateId": "ksk1-uml", "candidateName": "Rabindra Adhikari", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 18400 },
+      { "candidateId": "ksk1-nc", "candidateName": "Chandra Bahadur Gurung", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 16800 },
+      { "candidateId": "ksk1-mc", "candidateName": "Min Bahadur Bista", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 5200 },
+      { "candidateId": "ksk1-rsp", "candidateName": "Swarnim Wagle", "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyColor": "#ff6600", "votes": 22600 }
+    ]
+  },
+  {
+    "constituencyId": "rupandehi-1",
+    "constituencyName": "Rupandehi-1",
+    "districtName": "Rupandehi",
+    "provinceId": 5,
+    "status": "counting",
+    "totalVotes": 67500,
+    "lastUpdate": "2025-07-31T14:25:00Z",
+    "candidates": [
+      { "candidateId": "rpd1-uml", "candidateName": "Tilak Ram Bhusal", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 20100 },
+      { "candidateId": "rpd1-nc", "candidateName": "Purna Bahadur Khadka", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 28400 },
+      { "candidateId": "rpd1-mc", "candidateName": "Yagya Raj Sunuwar", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 11200 },
+      { "candidateId": "rpd1-jspn", "candidateName": "Mohammad Aftab Alam", "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyColor": "#009933", "votes": 7800 }
+    ]
+  },
+  {
+    "constituencyId": "rupandehi-2",
+    "constituencyName": "Rupandehi-2",
+    "districtName": "Rupandehi",
+    "provinceId": 5,
+    "status": "final",
+    "totalVotes": 68500,
+    "lastUpdate": "2025-07-31T14:05:00Z",
+    "candidates": [
+      { "candidateId": "rpd2-uml", "candidateName": "Lila Nath Shrestha", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 30200 },
+      { "candidateId": "rpd2-nc", "candidateName": "Dhananjay Dawadi", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 24800 },
+      { "candidateId": "rpd2-mc", "candidateName": "Ghanashyam Bhusal", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 8100 },
+      { "candidateId": "rpd2-jspn", "candidateName": "Akbal Hussain", "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyColor": "#009933", "votes": 5400 }
+    ]
+  },
+  {
+    "constituencyId": "sunsari-1",
+    "constituencyName": "Sunsari-1",
+    "districtName": "Sunsari",
+    "provinceId": 1,
+    "status": "counting",
+    "totalVotes": 61000,
+    "lastUpdate": "2025-07-31T14:52:00Z",
+    "candidates": [
+      { "candidateId": "sns1-uml", "candidateName": "Bharat Mohan Adhikari", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 25100 },
+      { "candidateId": "sns1-nc", "candidateName": "Sanjay Kumar Govind", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 24800 },
+      { "candidateId": "sns1-mc", "candidateName": "Laxmi Mahato", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 6900 },
+      { "candidateId": "sns1-jspn", "candidateName": "Rajesh Shah", "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyColor": "#009933", "votes": 4200 }
+    ]
+  },
+  {
+    "constituencyId": "kailali-1",
+    "constituencyName": "Kailali-1",
+    "districtName": "Kailali",
+    "provinceId": 7,
+    "status": "final",
+    "totalVotes": 72500,
+    "lastUpdate": "2025-07-31T14:18:00Z",
+    "candidates": [
+      { "candidateId": "kll1-uml", "candidateName": "Mahesh Basnet", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 32400 },
+      { "candidateId": "kll1-nc", "candidateName": "Sher Bahadur Tamang", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 22100 },
+      { "candidateId": "kll1-mc", "candidateName": "Bharatmohan Adhikari", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 10800 },
+      { "candidateId": "kll1-rppp", "candidateName": "Gokul Baskota", "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyColor": "#ff9900", "votes": 7200 }
+    ]
+  },
+  {
+    "constituencyId": "banke-1",
+    "constituencyName": "Banke-1",
+    "districtName": "Banke",
+    "provinceId": 5,
+    "status": "counting",
+    "totalVotes": 60000,
+    "lastUpdate": "2025-07-31T14:55:00Z",
+    "candidates": [
+      { "candidateId": "bnk1-uml", "candidateName": "Nanda Kishor Pun", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 19800 },
+      { "candidateId": "bnk1-nc", "candidateName": "Bal Krishna Khand", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 25600 },
+      { "candidateId": "bnk1-mc", "candidateName": "Satya Narayan Mandal", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 8400 },
+      { "candidateId": "bnk1-rsp", "candidateName": "Ranjita Shrestha", "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyColor": "#ff6600", "votes": 6200 }
+    ]
+  },
+  {
+    "constituencyId": "bara-1",
+    "constituencyName": "Bara-1",
+    "districtName": "Bara",
+    "provinceId": 2,
+    "status": "final",
+    "totalVotes": 64500,
+    "lastUpdate": "2025-07-31T13:48:00Z",
+    "candidates": [
+      { "candidateId": "bar1-uml", "candidateName": "Chandra Dev Joshi", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 14200 },
+      { "candidateId": "bar1-nc", "candidateName": "Ram Sahay Yadav", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 16800 },
+      { "candidateId": "bar1-mc", "candidateName": "Bishwa Prakash Sharma", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 5600 },
+      { "candidateId": "bar1-jspn", "candidateName": "Upendra Yadav", "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyColor": "#009933", "votes": 24100 },
+      { "candidateId": "bar1-ind", "candidateName": "Mahesh Chaudhary", "partyId": "ind", "partyName": "Independent", "partyColor": "#888888", "votes": 3800 }
+    ]
+  },
+  {
+    "constituencyId": "parsa-1",
+    "constituencyName": "Parsa-1",
+    "districtName": "Parsa",
+    "provinceId": 2,
+    "status": "counting",
+    "totalVotes": 58900,
+    "lastUpdate": "2025-07-31T14:32:00Z",
+    "candidates": [
+      { "candidateId": "prs1-uml", "candidateName": "Rajan Bhatt", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 12400 },
+      { "candidateId": "prs1-nc", "candidateName": "Sita Devi Yadav", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 21800 },
+      { "candidateId": "prs1-mc", "candidateName": "Ganga Narayan Shrestha", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 4200 },
+      { "candidateId": "prs1-jspn", "candidateName": "Rajendra Mahato", "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyColor": "#009933", "votes": 20500 }
+    ]
+  },
+  {
+    "constituencyId": "siraha-1",
+    "constituencyName": "Siraha-1",
+    "districtName": "Siraha",
+    "provinceId": 2,
+    "status": "error",
+    "totalVotes": 52000,
+    "lastUpdate": "2025-07-31T12:38:00Z",
+    "candidates": [
+      { "candidateId": "sir1-uml", "candidateName": "Hari Narayan Rauniyar", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 10200 },
+      { "candidateId": "sir1-nc", "candidateName": "Bimalendra Nidhi", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 15600 },
+      { "candidateId": "sir1-mc", "candidateName": "Ganesh Shah", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 3800 },
+      { "candidateId": "sir1-jspn", "candidateName": "Laxman Lal Karna", "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyColor": "#009933", "votes": 22400 }
+    ]
+  },
+  {
+    "constituencyId": "dang-1",
+    "constituencyName": "Dang-1",
+    "districtName": "Dang",
+    "provinceId": 5,
+    "status": "final",
+    "totalVotes": 68300,
+    "lastUpdate": "2025-07-31T14:28:00Z",
+    "candidates": [
+      { "candidateId": "dng1-uml", "candidateName": "Shanta Kumar Sharma", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 28900 },
+      { "candidateId": "dng1-nc", "candidateName": "Narahari Acharya", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 21400 },
+      { "candidateId": "dng1-mc", "candidateName": "Barshaman Pun", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 13200 },
+      { "candidateId": "dng1-rsp", "candidateName": "Dinesh Koirala", "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyColor": "#ff6600", "votes": 4800 }
+    ]
+  },
+  {
+    "constituencyId": "dhanusha-1",
+    "constituencyName": "Dhanusha-1",
+    "districtName": "Dhanusha",
+    "provinceId": 2,
+    "status": "stale",
+    "totalVotes": 55900,
+    "lastUpdate": "2025-07-31T13:30:00Z",
+    "candidates": [
+      { "candidateId": "dhn1-uml", "candidateName": "Pashupati Shamsher Rana", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 16400 },
+      { "candidateId": "dhn1-nc", "candidateName": "Ram Chandra Poudel", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 19200 },
+      { "candidateId": "dhn1-mc", "candidateName": "Matrika Yadav", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 5800 },
+      { "candidateId": "dhn1-jspn", "candidateName": "Jay Prakash Gupta", "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyColor": "#009933", "votes": 12100 },
+      { "candidateId": "dhn1-ind", "candidateName": "Lakshmi Devi Shah", "partyId": "ind", "partyName": "Independent", "partyColor": "#888888", "votes": 2400 }
+    ]
+  },
+  {
+    "constituencyId": "makwanpur-1",
+    "constituencyName": "Makwanpur-1",
+    "districtName": "Makwanpur",
+    "provinceId": 3,
+    "status": "final",
+    "totalVotes": 64700,
+    "lastUpdate": "2025-07-31T14:48:00Z",
+    "candidates": [
+      { "candidateId": "mkw1-uml", "candidateName": "Tek Bahadur Basnet", "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyColor": "#dc143c", "votes": 18600 },
+      { "candidateId": "mkw1-nc", "candidateName": "Hemraj Thapaliya", "partyId": "nc", "partyName": "Nepali Congress", "partyColor": "#0066cc", "votes": 15200 },
+      { "candidateId": "mkw1-mc", "candidateName": "Ram Bahadur Thapa Badal", "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyColor": "#cc0000", "votes": 24800 },
+      { "candidateId": "mkw1-rppp", "candidateName": "Keshav Sthapit", "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyColor": "#ff9900", "votes": 6100 }
+    ]
+  }
+]

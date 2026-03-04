@@ -1,0 +1,206 @@
+[
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 10,
+    "totalVotesCast": 1148200,
+    "timestamp": "2025-07-31T12:15:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 3, "seatsLeading": 10, "totalVotes": 344500 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 4, "seatsLeading": 12, "totalVotes": 390400 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 2, "seatsLeading": 5, "totalVotes": 149300 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 1, "seatsLeading": 4, "totalVotes": 110200 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 0, "seatsLeading": 2, "totalVotes": 57400 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 0, "seatsLeading": 2, "totalVotes": 40100 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 35800 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 20500 }
+    ]
+  },
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 18,
+    "totalVotesCast": 2071400,
+    "timestamp": "2025-07-31T12:35:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 5, "seatsLeading": 12, "totalVotes": 641200 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 7, "seatsLeading": 14, "totalVotes": 703200 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 3, "seatsLeading": 6, "totalVotes": 269300 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 2, "seatsLeading": 5, "totalVotes": 200000 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 1, "seatsLeading": 2, "totalVotes": 103600 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 0, "seatsLeading": 3, "totalVotes": 72500 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 47900 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 33700 }
+    ]
+  },
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 28,
+    "totalVotesCast": 3218400,
+    "timestamp": "2025-07-31T12:55:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 9, "seatsLeading": 15, "totalVotes": 1029900 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 10, "seatsLeading": 16, "totalVotes": 1061100 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 5, "seatsLeading": 7, "totalVotes": 418400 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 2, "seatsLeading": 5, "totalVotes": 289700 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 1, "seatsLeading": 3, "totalVotes": 164100 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 1, "seatsLeading": 2, "totalVotes": 128600 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 77200 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 49400 }
+    ]
+  },
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 40,
+    "totalVotesCast": 4592000,
+    "timestamp": "2025-07-31T13:15:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 15, "seatsLeading": 18, "totalVotes": 1561300 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 13, "seatsLeading": 16, "totalVotes": 1423200 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 6, "seatsLeading": 8, "totalVotes": 597000 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 3, "seatsLeading": 5, "totalVotes": 413300 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 2, "seatsLeading": 3, "totalVotes": 229600 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 1, "seatsLeading": 3, "totalVotes": 183800 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 110200 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 73600 }
+    ]
+  },
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 55,
+    "totalVotesCast": 6327000,
+    "timestamp": "2025-07-31T13:35:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 20, "seatsLeading": 22, "totalVotes": 2214500 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 19, "seatsLeading": 18, "totalVotes": 1961400 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 8, "seatsLeading": 9, "totalVotes": 822500 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 4, "seatsLeading": 5, "totalVotes": 569400 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 2, "seatsLeading": 3, "totalVotes": 316400 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 2, "seatsLeading": 3, "totalVotes": 221500 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 139400 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 81900 }
+    ]
+  },
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 68,
+    "totalVotesCast": 7821000,
+    "timestamp": "2025-07-31T13:55:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 24, "seatsLeading": 19, "totalVotes": 2660000 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 26, "seatsLeading": 20, "totalVotes": 2503700 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 9, "seatsLeading": 9, "totalVotes": 1017000 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 5, "seatsLeading": 5, "totalVotes": 703900 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 2, "seatsLeading": 3, "totalVotes": 391100 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 2, "seatsLeading": 3, "totalVotes": 281000 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 156200 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 108100 }
+    ]
+  },
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 82,
+    "totalVotesCast": 9430000,
+    "timestamp": "2025-07-31T14:15:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 32, "seatsLeading": 22, "totalVotes": 3296500 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 29, "seatsLeading": 19, "totalVotes": 2924300 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 11, "seatsLeading": 8, "totalVotes": 1225900 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 5, "seatsLeading": 5, "totalVotes": 848700 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 3, "seatsLeading": 3, "totalVotes": 471500 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 2, "seatsLeading": 3, "totalVotes": 330500 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 198800 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 133800 }
+    ]
+  },
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 95,
+    "totalVotesCast": 10925000,
+    "timestamp": "2025-07-31T14:35:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 38, "seatsLeading": 21, "totalVotes": 3823800 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 33, "seatsLeading": 18, "totalVotes": 3386800 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 13, "seatsLeading": 7, "totalVotes": 1420300 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 6, "seatsLeading": 4, "totalVotes": 983300 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 3, "seatsLeading": 3, "totalVotes": 546300 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 2, "seatsLeading": 2, "totalVotes": 371400 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 229300 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 163800 }
+    ]
+  },
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 108,
+    "totalVotesCast": 12423000,
+    "timestamp": "2025-07-31T14:55:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 43, "seatsLeading": 18, "totalVotes": 4348100 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 38, "seatsLeading": 15, "totalVotes": 3852700 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 14, "seatsLeading": 6, "totalVotes": 1615000 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 7, "seatsLeading": 4, "totalVotes": 1118100 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 4, "seatsLeading": 2, "totalVotes": 621200 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 2, "seatsLeading": 2, "totalVotes": 410600 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 268700 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 188600 }
+    ]
+  },
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 120,
+    "totalVotesCast": 13800000,
+    "timestamp": "2025-07-31T15:15:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 48, "seatsLeading": 15, "totalVotes": 4830000 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 42, "seatsLeading": 12, "totalVotes": 4278000 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 16, "seatsLeading": 5, "totalVotes": 1794000 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 8, "seatsLeading": 3, "totalVotes": 1242000 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 4, "seatsLeading": 2, "totalVotes": 690000 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 2, "seatsLeading": 2, "totalVotes": 442800 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 317400 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 205800 }
+    ]
+  },
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 132,
+    "totalVotesCast": 15186000,
+    "timestamp": "2025-07-31T15:45:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 53, "seatsLeading": 12, "totalVotes": 5313200 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 47, "seatsLeading": 9, "totalVotes": 4707700 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 17, "seatsLeading": 4, "totalVotes": 1974200 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 9, "seatsLeading": 2, "totalVotes": 1366700 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 4, "seatsLeading": 1, "totalVotes": 759300 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 2, "seatsLeading": 2, "totalVotes": 470800 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 364200 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 229900 }
+    ]
+  },
+  {
+    "totalSeats": 165,
+    "totalConstituencies": 165,
+    "countedConstituencies": 140,
+    "totalVotesCast": 16100000,
+    "timestamp": "2025-07-31T16:15:00Z",
+    "partyResults": [
+      { "partyId": "ncp-uml", "partyName": "CPN (UML)", "partyShortName": "UML", "partyColor": "#dc143c", "seatsWon": 57, "seatsLeading": 10, "totalVotes": 5474000 },
+      { "partyId": "nc", "partyName": "Nepali Congress", "partyShortName": "NC", "partyColor": "#0066cc", "seatsWon": 50, "seatsLeading": 7, "totalVotes": 4830000 },
+      { "partyId": "ncp-mc", "partyName": "CPN (Maoist Centre)", "partyShortName": "MC", "partyColor": "#cc0000", "seatsWon": 18, "seatsLeading": 3, "totalVotes": 2093000 },
+      { "partyId": "rsp", "partyName": "Rastriya Swatantra Party", "partyShortName": "RSP", "partyColor": "#ff6600", "seatsWon": 9, "seatsLeading": 2, "totalVotes": 1449000 },
+      { "partyId": "rppp", "partyName": "Rastriya Prajatantra Party", "partyShortName": "RPP", "partyColor": "#ff9900", "seatsWon": 4, "seatsLeading": 1, "totalVotes": 805000 },
+      { "partyId": "jspn", "partyName": "Janata Samajbadi Party", "partyShortName": "JSPN", "partyColor": "#009933", "seatsWon": 2, "seatsLeading": 1, "totalVotes": 483000 },
+      { "partyId": "ind", "partyName": "Independent", "partyShortName": "IND", "partyColor": "#888888", "seatsWon": 0, "seatsLeading": 1, "totalVotes": 483000 },
+      { "partyId": "others", "partyName": "Others", "partyShortName": "OTH", "partyColor": "#666666", "seatsWon": 0, "seatsLeading": 0, "totalVotes": 483000 }
+    ]
+  }
+]
