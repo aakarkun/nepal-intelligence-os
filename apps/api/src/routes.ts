@@ -10,6 +10,7 @@ import {
   getConstituencyResults,
   getConstituencyResult,
   getSignalEvents,
+  getSocialSignalEvents,
   getAnomalies,
   getSourceHealth,
   updateNationalSummary,
@@ -113,6 +114,12 @@ api.get("/feed", (c) => {
   const limit = Number(c.req.query("limit") ?? 20);
   const offset = Number(c.req.query("offset") ?? 0);
   return c.json(getSignalEvents(limit, offset));
+});
+
+api.get("/feed/social", (c) => {
+  const limit = Number(c.req.query("limit") ?? 20);
+  const offset = Number(c.req.query("offset") ?? 0);
+  return c.json(getSocialSignalEvents(limit, offset));
 });
 
 api.get("/anomalies", (c) => {

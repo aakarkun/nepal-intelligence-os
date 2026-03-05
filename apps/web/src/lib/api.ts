@@ -51,6 +51,13 @@ export function fetchFeed(
   return fetchJSON(`/v1/feed?limit=${limit}&offset=${offset}`);
 }
 
+export function fetchSocialFeed(
+  limit = 20,
+  offset = 0
+): Promise<{ events: SignalEvent[]; total: number }> {
+  return fetchJSON(`/v1/feed/social?limit=${limit}&offset=${offset}`);
+}
+
 export function fetchAnomalies(): Promise<Anomaly[]> {
   return fetchJSON("/v1/anomalies");
 }

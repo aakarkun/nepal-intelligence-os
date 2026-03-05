@@ -1,6 +1,7 @@
 "use client";
 
 import { SignalsFeed } from "@/components/feed/signals-feed";
+import type { SignalEventType } from "@repo/shared";
 
 export default function NewsRoomPage() {
   return (
@@ -10,10 +11,10 @@ export default function NewsRoomPage() {
           News Room
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Election updates and news with source attribution — filter by Official, News, and Notes.
+          Election updates and news with source attribution from curated news sources.
         </p>
       </div>
-      <SignalsFeed />
+      <SignalsFeed allowedTypes={["news"] as SignalEventType[]} />
     </div>
   );
 }

@@ -1,6 +1,13 @@
+import path from "node:path";
 import { runReplay } from "./replay";
 import { fetchEcnRaw, parseEcnRaw } from "./sources/ecn";
 import { fetchNewsRaw } from "./sources/news";
+import {
+  fetchGdeltNewsEvents,
+  fetchGdeltSignalEvents,
+} from "./sources/gdelt";
+import { fetchTwitterEvents, type TwitterFeedConfig } from "./sources/twitter";
+import { fetchRedditEvents, type RedditFeedConfig } from "./sources/reddit";
 import {
   normalizeEcnToSummary,
   normalizeEcnToConstituencies,
@@ -16,6 +23,20 @@ import type { SourceHealth } from "@repo/shared";
 const API_URL = process.env.API_URL ?? "http://localhost:3001";
 const REPLAY_SPEED = Number(process.env.REPLAY_SPEED) || 10;
 const MODE = (process.env.MODE ?? "replay") as "replay" | "live";
+
+const NEWS_FEEDS_PATH =
+  process.env.NEWS_FEEDS_PATH ??
+  path.resolve(import.meta.dir, "../config/news-feeds.json");
+
+const SOCIAL_FEEDS_PATH =
+  process.env.SOCIAL_FEEDS_PATH ??
+  path.resolve(import.meta.dir, "../config/social-feeds.json");
+
+// GDELT is rate-limited fairly aggressively, so we only poll it at most
+// once every 15 minutes, regardless of the main cron frequency.
+const GDELT_MIN_INTERVAL_MS = 15 * 60 * 1000;
+let lastGdeltNewsRun: number | null = null;
+let lastGdeltSignalRun: number | null = null;
 
 async function runLiveEcn(): Promise<void> {
   const sourceId = "ecn";
@@ -49,39 +70,296 @@ async function runLiveEcn(): Promise<void> {
 
 async function runLiveNews(): Promise<void> {
   const sourceId = "news";
-  const sourceName = process.env.NEWS_SOURCE_NAME ?? "Online Khabar";
   const now = new Date().toISOString();
 
+  const feeds: Array<{ feedUrl: string; sourceName: string }> = [];
+
+  // Preferred: load from committed JSON config file so feeds are
+  // versioned and easy to review in git.
   try {
-    const { items } = await fetchNewsRaw({
-      feedUrl: process.env.NEWS_FEED_URL,
-    });
-    const events = normalizeNewsToEvents(items, sourceId, sourceName);
-    let posted = 0;
-    for (const event of events.slice(0, 20)) {
-      const ok = await postEvent(API_URL, event);
-      if (ok) posted++;
+    const file = Bun.file(NEWS_FEEDS_PATH);
+    if (await file.exists()) {
+      const parsed = (await file.json()) as Array<{
+        name?: string;
+        url?: string;
+      }>;
+      for (const entry of parsed) {
+        if (!entry?.url) continue;
+        feeds.push({
+          feedUrl: entry.url,
+          sourceName: entry.name ?? "News Feed",
+        });
+      }
     }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      "[live] Failed to load news-feeds config from",
+      NEWS_FEEDS_PATH,
+      ":",
+      message
+    );
+  }
+
+  // Optional override/extension: semicolon-separated "Name|URL" pairs
+  // from NEWS_FEEDS env, e.g.
+  // NEWS_FEEDS=Google News — Nepal Election|https://...;Online Khabar|https://...
+  const feedsVar = process.env.NEWS_FEEDS;
+  if (feedsVar) {
+    const entries = feedsVar.split(";").map((p) => p.trim());
+    for (const entry of entries) {
+      if (!entry) continue;
+      const [nameRaw, urlRaw] = entry.split("|");
+      const url = urlRaw?.trim();
+      if (!url) continue;
+      const name = nameRaw?.trim() || "News Feed";
+      feeds.push({ feedUrl: url, sourceName: name });
+    }
+  }
+
+  // Backwards compatibility: single NEWS_FEED_URL/NEWS_SOURCE_NAME envs
+  if (feeds.length === 0) {
+    const legacyUrl = process.env.NEWS_FEED_URL;
+    if (legacyUrl) {
+      feeds.push({
+        feedUrl: legacyUrl,
+        sourceName: process.env.NEWS_SOURCE_NAME ?? "Primary News Feed",
+      });
+    }
+  }
+
+  if (feeds.length === 0) {
+    console.warn("[live] No RSS news feeds configured, continuing with GDELT");
+  }
+
+  let totalPosted = 0;
+  let hadError = false;
+
+  for (const feed of feeds) {
+    const feedIdSuffix = feed.sourceName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    const feedSourceId =
+      feedIdSuffix.length > 0 ? `news:${feedIdSuffix}` : "news:feed";
+
+    let feedHadError = false;
+    let feedPosted = 0;
+
+    try {
+      const { items } = await fetchNewsRaw({ feedUrl: feed.feedUrl });
+      const events = normalizeNewsToEvents(items, sourceId, feed.sourceName);
+      for (const event of events.slice(0, 20)) {
+        const ok = await postEvent(API_URL, event);
+        if (ok) feedPosted++;
+      }
+      totalPosted += feedPosted;
+      console.log(
+        `[live] News ingest done from ${feed.sourceName}: ${feedPosted} events`
+      );
+    } catch (err) {
+      hadError = true;
+      feedHadError = true;
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(
+        `[live] News fetch failed for ${feed.sourceName}:`,
+        message
+      );
+    }
+
+    // Per-feed source health
     await postSourceHealth(API_URL, {
-      sourceId,
-      sourceName,
+      sourceId: feedSourceId,
+      sourceName: feed.sourceName,
+      lastUpdate: now,
+      errorRate: feedHadError ? 1 : 0,
+      status: feedHadError ? "error" : "live",
+      updateCount: feedPosted,
+    });
+  }
+
+  // ─── GDELT Articles (15 min interval) ───────────────────────────────────────
+
+  const nowMs = Date.now();
+  const shouldRunGdeltNews =
+    lastGdeltNewsRun === null ||
+    nowMs - lastGdeltNewsRun >= GDELT_MIN_INTERVAL_MS;
+
+  if (shouldRunGdeltNews) {
+    let gdeltPosted = 0;
+    let gdeltHadError = false;
+    try {
+      const gdeltEvents = await fetchGdeltNewsEvents();
+      for (const event of gdeltEvents.slice(0, 100)) {
+        const ok = await postEvent(API_URL, event);
+        if (ok) {
+          gdeltPosted++;
+          totalPosted++;
+        }
+      }
+      if (gdeltEvents.length > 0) {
+        console.log(
+          `[live] GDELT news ingest done: ${gdeltEvents.length} events (posted ${gdeltPosted})`
+        );
+      }
+      lastGdeltNewsRun = nowMs;
+    } catch (err) {
+      gdeltHadError = true;
+      hadError = true;
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[live] GDELT news ingest failed:", message);
+    }
+
+    if (gdeltPosted > 0 || gdeltHadError) {
+      await postSourceHealth(API_URL, {
+        sourceId: "news:gdelt",
+        sourceName: "GDELT — Nepal latest articles",
+        lastUpdate: now,
+        errorRate: gdeltHadError ? 1 : 0,
+        status: gdeltHadError ? "error" : "live",
+        updateCount: gdeltPosted,
+      });
+    }
+  } else {
+    console.log("[live] Skipping GDELT news (within 15 min window)");
+  }
+
+  // Aggregated health for the entire news ingest pipeline
+  await postSourceHealth(API_URL, {
+    sourceId,
+    sourceName: "News Aggregator",
+    lastUpdate: now,
+    errorRate: hadError ? 1 : 0,
+    status: hadError ? "error" : "live",
+    updateCount: totalPosted,
+  });
+}
+
+async function runLiveSocial(): Promise<void> {
+  const now = new Date().toISOString();
+  let totalPosted = 0;
+
+  type SocialConfig = {
+    twitter?: TwitterFeedConfig[];
+    reddit?: RedditFeedConfig[];
+  };
+
+  let cfg: SocialConfig = {};
+  try {
+    const file = Bun.file(SOCIAL_FEEDS_PATH);
+    if (await file.exists()) {
+      cfg = (await file.json()) as SocialConfig;
+    } else {
+      console.warn(
+        "[live] No social-feeds.json config found at",
+        SOCIAL_FEEDS_PATH
+      );
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      "[live] Failed to load social-feeds config from",
+      SOCIAL_FEEDS_PATH,
+      ":",
+      message
+    );
+  }
+
+  const twitterFeeds = cfg.twitter ?? [];
+  for (const feed of twitterFeeds) {
+    try {
+      const events = await fetchTwitterEvents(feed);
+      for (const event of events) {
+        const ok = await postEvent(API_URL, event);
+        if (ok) totalPosted++;
+      }
+      if (events.length > 0) {
+        console.log(
+          `[live] Twitter ingest done from "${feed.name}": ${events.length} events`
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(
+        `[live] Twitter ingest failed for "${feed.name}":`,
+        message
+      );
+    }
+  }
+
+  const redditFeeds = cfg.reddit ?? [];
+  for (const feed of redditFeeds) {
+    try {
+      const events = await fetchRedditEvents(feed);
+      for (const event of events) {
+        const ok = await postEvent(API_URL, event);
+        if (ok) totalPosted++;
+      }
+      if (events.length > 0) {
+        console.log(
+          `[live] Reddit ingest done from "${feed.name}": ${events.length} events`
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(
+        `[live] Reddit ingest failed for "${feed.name}":`,
+        message
+      );
+    }
+  }
+
+  // ─── GDELT Signals (15 min interval) ────────────────────────────────────────
+
+  const nowMs = Date.now();
+  const shouldRunGdeltSignals =
+    lastGdeltSignalRun === null ||
+    nowMs - lastGdeltSignalRun >= GDELT_MIN_INTERVAL_MS;
+
+  if (shouldRunGdeltSignals) {
+    let gdeltPosted = 0;
+    let gdeltHadError = false;
+    try {
+      const gdeltEvents = await fetchGdeltSignalEvents();
+      for (const event of gdeltEvents) {
+        const ok = await postEvent(API_URL, event);
+        if (ok) {
+          gdeltPosted++;
+          totalPosted++;
+        }
+      }
+      if (gdeltEvents.length > 0) {
+        console.log(
+          `[live] GDELT social ingest done: ${gdeltEvents.length} events (posted ${gdeltPosted})`
+        );
+      }
+      lastGdeltSignalRun = nowMs;
+    } catch (err) {
+      gdeltHadError = true;
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[live] GDELT social ingest failed:", message);
+    }
+
+    if (totalPosted > 0 || gdeltHadError) {
+      await postSourceHealth(API_URL, {
+        sourceId: "social",
+        sourceName: "Social Aggregator",
+        lastUpdate: now,
+        errorRate: gdeltHadError ? 1 : 0,
+        status: gdeltHadError ? "error" : "live",
+        updateCount: totalPosted,
+      });
+    }
+  } else {
+    await postSourceHealth(API_URL, {
+      sourceId: "social",
+      sourceName: "Social Aggregator",
       lastUpdate: now,
       errorRate: 0,
       status: "live",
-      updateCount: posted,
+      updateCount: totalPosted,
     });
-    console.log(`[live] News ingest done: ${posted} events`);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[live] News fetch failed:", message);
-    await postSourceHealth(API_URL, {
-      sourceId,
-      sourceName,
-      lastUpdate: now,
-      errorRate: 1,
-      status: "error",
-      updateCount: 0,
-    });
+    console.log("[live] Skipping GDELT social (within 15 min window)");
   }
 }
 
@@ -106,10 +384,13 @@ if (MODE === "live") {
     const runCycle = () => {
       runLiveEcn().catch((err) => console.error("[worker] ECN run error:", err));
       runLiveNews().catch((err) => console.error("[worker] News run error:", err));
+      runLiveSocial().catch((err) =>
+        console.error("[worker] Social run error:", err)
+      );
     };
     runCycle();
     setInterval(runCycle, intervalMs);
-    console.log(`  ECN + News job every ${cronMinutes} min`);
+    console.log(`  ECN + News + Social job every ${cronMinutes} min`);
   } else {
     Promise.all([
       runLiveEcn().catch((err) => {
@@ -117,6 +398,9 @@ if (MODE === "live") {
       }),
       runLiveNews().catch((err) => {
         console.error("[worker] News error:", err);
+      }),
+      runLiveSocial().catch((err) => {
+        console.error("[worker] Social error:", err);
       }),
     ]).finally(() => process.exit(0));
   }

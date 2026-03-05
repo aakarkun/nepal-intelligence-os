@@ -1,4 +1,5 @@
 import { SignalsFeed } from "@/components/feed/signals-feed";
+import type { SignalEventType } from "@repo/shared";
 
 export default function FeedPage() {
   return (
@@ -11,7 +12,10 @@ export default function FeedPage() {
           Live intelligence stream — all signals
         </p>
       </div>
-      <SignalsFeed />
+      <SignalsFeed
+        socialOnly
+        allowedTypes={["note"] as SignalEventType[]}
+      />
     </div>
   );
 }

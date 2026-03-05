@@ -49,6 +49,18 @@ export function getSignalEvents(
   };
 }
 
+export function getSocialSignalEvents(
+  limit = 20,
+  offset = 0
+): { events: SignalEvent[]; total: number } {
+  const social = signalEvents.filter((e) => e.type === "note");
+  const sorted = social.slice().reverse();
+  return {
+    events: sorted.slice(offset, offset + limit),
+    total: social.length,
+  };
+}
+
 export function getAnomalies(): Anomaly[] {
   return anomalies.filter((a) => !a.resolved);
 }

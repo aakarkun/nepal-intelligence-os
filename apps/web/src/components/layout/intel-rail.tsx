@@ -184,22 +184,40 @@ function SourceHealthSection() {
         <p className="text-[10px] text-muted-foreground">No source data</p>
       ) : (
         <ul className="space-y-1.5">
-          {sources.map((s) => (
-            <li key={s.sourceId} className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={cn(
-                    "inline-block h-1.5 w-1.5 rounded-full",
-                    s.status === "live" && "bg-status-live",
-                    s.status === "stale" && "bg-status-stale",
-                    s.status === "error" && "bg-status-error"
-                  )}
-                />
-                <span className="text-xs text-foreground/80">{s.sourceName}</span>
+          {sources
+            .slice()
+            .sort((a, b) => b.updateCount - a.updateCount)
+            .map((s) => (
+            <li key={s.sourceId} className="space-y-0.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "inline-block h-1.5 w-1.5 rounded-full",
+                      s.status === "live" && "bg-status-live",
+                      s.status === "stale" && "bg-status-stale",
+                      s.status === "error" && "bg-status-error"
+                    )}
+                  />
+                  <span className="text-xs text-foreground/80">
+                    {s.sourceName}
+                  </span>
+                </div>
+                <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
+                  {s.lastUpdate ? timeAgo(s.lastUpdate) : "—"}
+                </span>
               </div>
-              <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
-                {s.lastUpdate ? timeAgo(s.lastUpdate) : "—"}
-              </span>
+              <div className="flex items-center justify-between pl-3">
+                <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
+                  {s.updateCount} updates
+                  {s.sourceId === "social" && " • X + Reddit"}
+                </span>
+                {s.errorRate > 0 && (
+                  <span className="font-mono text-[9px] tabular-nums text-status-error">
+                    {Math.round(s.errorRate * 100)}% error
+                  </span>
+                )}
+              </div>
             </li>
           ))}
         </ul>

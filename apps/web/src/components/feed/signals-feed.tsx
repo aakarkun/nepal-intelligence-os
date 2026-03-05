@@ -9,9 +9,10 @@ import {
   StickyNote,
   Newspaper,
   Pin,
+  MessageCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { fetchFeed } from "@/lib/api";
+import { fetchFeed, fetchSocialFeed } from "@/lib/api";
 import { useRealtimeStore } from "@/stores/realtime-store";
 import { cn, timeAgo } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +27,7 @@ const typeConfig: Record<
   official: { color: "#3b82f6", icon: Info, label: "Official" },
   ingest: { color: "#6b7280", icon: Database, label: "Ingest" },
   anomaly: { color: "#ef4444", icon: AlertTriangle, label: "Anomaly" },
-  note: { color: "#f59e0b", icon: StickyNote, label: "Note" },
+  note: { color: "#f59e0b", icon: StickyNote, label: "Social" },
   news: { color: "#10b981", icon: Newspaper, label: "News" },
 };
 
@@ -36,15 +37,19 @@ const severityVariant: Record<SignalSeverity, "default" | "stale" | "error"> = {
   critical: "error",
 };
 
-export function SignalsFeed() {
+export function SignalsFeed(
+  props: { allowedTypes?: SignalEventType[]; socialOnly?: boolean } = {}
+) {
+  const { allowedTypes, socialOnly } = props;
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [typeFilters, setTypeFilters] = useState<Set<SignalEventType>>(
     new Set(["official", "ingest", "anomaly", "note", "news"])
   );
 
   const { data: feedData } = useQuery({
-    queryKey: ["feed"],
-    queryFn: () => fetchFeed(100, 0),
+    queryKey: [socialOnly ? "social-feed" : "feed"],
+    queryFn: () =>
+      socialOnly ? fetchSocialFeed(100, 0) : fetchFeed(100, 0),
     refetchInterval: 15_000,
   });
 
@@ -65,11 +70,12 @@ export function SignalsFeed() {
 
   const filtered = useMemo(() => {
     return allEvents.filter((e) => {
+      if (allowedTypes && !allowedTypes.includes(e.type)) return false;
       if (!typeFilters.has(e.type)) return false;
       if (severityFilter !== "all" && e.severity !== severityFilter) return false;
       return true;
     });
-  }, [allEvents, typeFilters, severityFilter]);
+  }, [allEvents, typeFilters, severityFilter, allowedTypes]);
 
   function toggleType(type: SignalEventType) {
     setTypeFilters((prev) => {
@@ -122,7 +128,32 @@ export function SignalsFeed() {
       <div className="space-y-0">
         {filtered.map((event) => {
           const config = typeConfig[event.type];
-          const Icon = config.icon;
+          let Icon = config.icon;
+
+          const isRedditSource = event.source?.startsWith("Reddit:");
+          if (event.type === "note" && isRedditSource) {
+            // Lucide doesn't ship a dedicated Reddit icon in this version,
+            // so use a chat/message bubble to visually distinguish Reddit.
+            Icon = MessageCircle;
+          }
+
+          const isReddit = isRedditSource;
+          let redditMeta: string | null = null;
+          let displayBody = event.body;
+
+          if (isReddit && event.body) {
+            const lines = event.body
+              .split("\n")
+              .map((l) => l.trim())
+              .filter(Boolean);
+            if (lines.length > 1) {
+              const last = lines[lines.length - 1];
+              if (last.startsWith("↑")) {
+                redditMeta = last;
+                displayBody = lines.slice(0, -1).join("\n");
+              }
+            }
+          }
 
           return (
             <div key={event.id} className="flex gap-4 py-3 border-b border-border">
@@ -151,12 +182,24 @@ export function SignalsFeed() {
                   </Badge>
                 </div>
 
-                <p className="text-xs text-muted-foreground pl-5.5">
-                  {event.body}
+                <p
+                  className="text-xs text-muted-foreground pl-5.5 overflow-hidden"
+                  style={{
+                    display: "-webkit-box",
+                    WebkitLineClamp: 10,
+                    WebkitBoxOrient: "vertical",
+                  }}
+                >
+                  {displayBody}
                 </p>
 
                 <div className="flex items-center gap-3 pl-5.5 text-[10px] text-muted-foreground">
                   <span>{timeAgo(event.timestamp)}</span>
+                  {redditMeta && (
+                    <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
+                      {redditMeta}
+                    </span>
+                  )}
                   {event.constituencyId && (
                     <Link
                       href={`/constituencies/${event.constituencyId}`}

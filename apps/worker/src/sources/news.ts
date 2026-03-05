@@ -10,6 +10,9 @@ const DEFAULT_FEED_URL =
 export type NewsRawItem = {
   title: string;
   link?: string;
+  /**
+   * Original timestamp from the feed (RSS pubDate, Atom updated/published, or isoDate).
+   */
   pubDate?: string;
   description?: string;
 };
@@ -25,12 +28,47 @@ export async function fetchNewsRaw(options?: {
   const parser = new Parser();
 
   const feed = await parser.parseURL(feedUrl);
-  const items: NewsRawItem[] = (feed.items ?? []).map((item: { title?: string; link?: string; pubDate?: string; content?: string; contentSnippet?: string }) => ({
-    title: item.title ?? "",
-    link: item.link,
-    pubDate: item.pubDate,
-    description: item.contentSnippet ?? item.content ?? undefined,
-  }));
+  const rawItems = feed.items ?? [];
+  const items: NewsRawItem[] = rawItems.map((item: {
+    title?: string;
+    link?: string;
+    pubDate?: string;
+    isoDate?: string;
+    updated?: string;
+    published?: string;
+    content?: string;
+    contentSnippet?: string;
+  }) => {
+    const rawDate =
+      item.isoDate ?? item.pubDate ?? item.published ?? item.updated;
+
+    return {
+      title: item.title ?? "",
+      link: item.link,
+      pubDate: rawDate,
+      description: item.contentSnippet ?? item.content ?? undefined,
+    };
+  });
+
+  // Optional debug logging to inspect timestamps from feeds.
+  if (process.env.DEBUG_NEWS_TIMES === "true") {
+    console.log("[news] Feed:", feedUrl);
+    for (const [idx, item] of rawItems.slice(0, 5).entries()) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const anyItem = item as any;
+      console.log(
+        `[news]  #${idx + 1} "${anyItem.title}"`,
+        "isoDate=",
+        anyItem.isoDate,
+        "pubDate=",
+        anyItem.pubDate,
+        "published=",
+        anyItem.published,
+        "updated=",
+        anyItem.updated
+      );
+    }
+  }
 
   return { items };
 }

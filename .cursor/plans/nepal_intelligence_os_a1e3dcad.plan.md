@@ -4,52 +4,52 @@ overview: "Build \"Nepal Intelligence OS\" (YETI-OS) from scratch — a Bun mono
 todos:
   - id: scaffold
     content: "Scaffold Bun monorepo: root package.json with workspaces, tsconfig, .env.example, .gitignore, README skeleton"
-    status: in_progress
+    status: completed
   - id: shared-pkg
     content: "Build packages/shared: all Zod schemas (Party, Candidate, Constituency, District, VoteSnapshot, NationalSummary, SignalEvent, Anomaly, SourceHealth) + exported TS types"
-    status: pending
+    status: completed
   - id: api-server
     content: "Build apps/api: Hono on Bun.serve() with REST endpoints (/v1/national-summary, /v1/constituencies, /v1/districts, /v1/feed, /v1/anomalies, /v1/sources/health) + SSE /api/stream + in-memory data store + anomaly detector"
-    status: pending
+    status: completed
   - id: worker-fixtures
     content: "Build apps/worker: create fixture JSON files (national_summary, district_results, constituency_results with 20+ entries, event_feed with 50+ events) + replay worker with bun:sqlite cursor + configurable speed"
-    status: pending
+    status: completed
   - id: web-foundation
     content: "Bootstrap apps/web: Next.js 14 App Router + shadcn/ui dark theme (custom colors: #08090c bg, #dc143c accent, Syne + JetBrains Mono fonts) + TanStack Query provider + Zustand filter store"
-    status: pending
+    status: completed
   - id: layout-shell
     content: "Build global layout: TopBar (cmd-K trigger, LIVE indicator, Nepal time clock), left NavRail, right Intel Rail sidebar (SSE status, anomalies, watchlist, source health, notes), bottom Ticker"
-    status: pending
+    status: completed
   - id: sse-hook
     content: "Implement useSSE() hook: EventSource connection to /api/stream, TanStack Query cache invalidation on snapshot events, anomaly store updates, heartbeat tracking, auto-reconnect with backoff"
-    status: pending
+    status: completed
   - id: map-component
     content: "Build Nepal choropleth map: load districts/provinces GeoJSON into Mapbox GL JS, party-colored fills, hover tooltips, click-to-open dossier drawer, anomaly pins, layer toggles"
-    status: pending
+    status: completed
   - id: situation-room
     content: "Build / (Situation Room): national summary cards, mini map, live signals ticker, 'What Changed' diff card (top 5 margin deltas), top battle seats widget"
-    status: pending
+    status: completed
   - id: map-page
     content: "Build /map page: full-screen tactical map with layer controls, time scrubber, district drawer slide-in panel with constituency detail"
-    status: pending
+    status: completed
   - id: constituencies
     content: "Build /constituencies table (TanStack Table with saved views: All, Closest, Volatile, Stale) + /constituencies/[id] dossier page (candidate leaderboard, vote trend chart, audit panel, diff viewer)"
-    status: pending
+    status: completed
   - id: parliament-feed
     content: Build /parliament (seat tiles, majority line, flip log, coalition builder) + /feed (vertical timeline with type filters, severity badges, pin-to-rail action)
-    status: pending
+    status: completed
   - id: cmd-k
     content: "Implement ⌘K command palette (cmdk): search districts/constituencies, toggle map layers, switch modules, trigger diff mode"
-    status: pending
+    status: completed
   - id: war-room
     content: "Build /war-room: LiveKit React room (voice + push-to-talk), AI briefing panel stub, gated behind ENABLE_WAR_ROOM env flag"
-    status: pending
+    status: completed
   - id: stubs
     content: Build /economy and /disasters stub pages with Phase 2 placeholder UI
-    status: pending
+    status: completed
   - id: docker-deploy
     content: Create Dockerfiles for all 3 apps (oven/bun:1 for api+worker, multi-stage for web) + docker-compose.yml with caddy reverse proxy + Redis + README with full setup/deploy guide
-    status: pending
+    status: completed
 isProject: false
 ---
 
@@ -267,7 +267,7 @@ These are static files loaded by the map component and used for lookups.
 
 ## 7. Deployment
 
-`**docker-compose.yml**` with services:
+`**docker-compose.yml`** with services:
 
 - `web` — Next.js (node:20-alpine runtime, Bun for install)
 - `api` — Hono on Bun (`oven/bun:1` image)
@@ -277,7 +277,7 @@ These are static files loaded by the map component and used for lookups.
 
 Each app gets its own Dockerfile. Environment variables via `.env` file.
 
-`**README.md**` with: project overview, architecture diagram (mermaid), setup instructions (`bun install`, `bun run dev`), env var reference, deployment guide.
+`**README.md`** with: project overview, architecture diagram (mermaid), setup instructions (`bun install`, `bun run dev`), env var reference, deployment guide.
 
 ## 8. Design Principles for Implementation
 

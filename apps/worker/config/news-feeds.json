@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Google News — Nepal Election",
+    "url": "https://news.google.com/rss/search?q=nepal+election"
+  },
+  {
+    "name": "Online Khabar (English)",
+    "url": "https://english.onlinekhabar.com/feed"
+  },
+  {
+    "name": "Online Khabar",
+    "url": "https://www.onlinekhabar.com/feed"
+  },
+  {
+    "name": "Kathmandu Post",
+    "url": "https://kathmandupost.com/rss"
+  },
+  {
+    "name": "Setopati",
+    "url": "https://www.setopati.com/feed"
+  },
+  {
+    "name": "Annapurna Post",
+    "url": "https://annapurnapost.com/rss"
+  }
+]
+
