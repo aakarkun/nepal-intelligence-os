@@ -76,6 +76,9 @@ export const ConstituencyResultSchema = z.object({
       votes: z.number().int().min(0),
     })
   ),
+  sourceId: z.string().optional(),
+  sourceName: z.string().optional(),
+  sourceFetchedAt: z.string().datetime().optional(),
 });
 
 export const PartyResultSchema = z.object({
@@ -95,6 +98,9 @@ export const NationalSummarySchema = z.object({
   totalVotesCast: z.number().int().min(0),
   timestamp: z.string().datetime(),
   partyResults: z.array(PartyResultSchema),
+  sourceId: z.string().optional(),
+  sourceName: z.string().optional(),
+  sourceFetchedAt: z.string().datetime().optional(),
 });
 
 // ─── Signals & Anomalies ────────────────────────────────────────────────────
@@ -104,6 +110,7 @@ export const SignalEventTypeSchema = z.enum([
   "ingest",
   "anomaly",
   "note",
+  "news",
 ]);
 
 export const SignalSeveritySchema = z.enum([
@@ -122,6 +129,7 @@ export const SignalEventSchema = z.object({
   constituencyId: z.string().optional(),
   districtId: z.number().int().optional(),
   source: z.string().optional(),
+  url: z.string().url().optional(),
 });
 
 export const AnomalyTypeSchema = z.enum([
