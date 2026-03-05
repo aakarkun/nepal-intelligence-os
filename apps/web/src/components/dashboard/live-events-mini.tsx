@@ -11,6 +11,7 @@ const EVENT_DOT_COLORS: Record<SignalEventType, string> = {
   ingest: "bg-gray-500",
   anomaly: "bg-red-500",
   note: "bg-yellow-500",
+  news: "bg-purple-500",
 };
 
 export function LiveEventsMini() {

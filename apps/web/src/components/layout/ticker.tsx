@@ -17,7 +17,7 @@ export function Ticker() {
 
   if (events.length === 0) {
     return (
-      <footer className="fixed inset-x-0 bottom-0 z-50 flex h-8 items-center border-t border-border bg-card/80 px-4 backdrop-blur">
+      <footer className="fixed inset-x-0 bottom-14 z-40 flex h-8 items-center border-t border-border bg-card/80 px-4 backdrop-blur md:bottom-0 md:z-50">
         <span className="text-xs text-muted-foreground/60">
           Waiting for signals…
         </span>
@@ -26,7 +26,7 @@ export function Ticker() {
   }
 
   return (
-    <footer className="fixed inset-x-0 bottom-0 z-50 h-8 overflow-hidden border-t border-border bg-card/80 backdrop-blur">
+    <footer className="fixed inset-x-0 bottom-14 z-40 h-8 overflow-hidden border-t border-border bg-card/80 backdrop-blur md:bottom-0 md:z-50">
       <div className="animate-ticker flex h-full items-center whitespace-nowrap">
         {/* Duplicate for seamless loop */}
         {[...events, ...events].map((event, i) => (

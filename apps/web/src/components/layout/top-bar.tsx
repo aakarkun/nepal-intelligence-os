@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Command } from "lucide-react";
+import { Command, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNepalTime } from "@/lib/utils";
 import { useRealtimeStore } from "@/stores/realtime-store";
@@ -31,6 +31,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
   const connectionStatus = useRealtimeStore((s) => s.connectionStatus);
   const activeModule = useFilterStore((s) => s.activeModule);
   const setActiveModule = useFilterStore((s) => s.setActiveModule);
+  const toggleIntelRail = useFilterStore((s) => s.toggleIntelRail);
 
   useEffect(() => {
     function tick() {
@@ -44,17 +45,17 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
   const status = STATUS_CONFIG[connectionStatus];
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur">
+    <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b border-border bg-background/80 px-3 backdrop-blur sm:px-4">
       {/* Left — Logo */}
       <Link
         href="/"
-        className="flex items-center gap-2 font-display text-sm font-semibold tracking-tight text-foreground transition-colors hover:text-nepal-red"
+        className="flex items-center gap-2 font-display text-xs font-semibold tracking-tight text-foreground transition-colors hover:text-nepal-red sm:text-sm"
       >
         Nepal Intelligence OS
       </Link>
 
-      {/* Center — Module pills */}
-      <nav className="flex items-center gap-1">
+      {/* Center — Module pills (hidden on very small screens) */}
+      <nav className="hidden items-center gap-1 md:flex">
         {MODULES.map((mod) => (
           <button
             key={mod.id}
@@ -80,15 +81,25 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
         ))}
       </nav>
 
-      {/* Right — Command, Status, Clock */}
-      <div className="flex items-center gap-3">
-        {/* ⌘K trigger */}
+      {/* Right — Intel toggle, Command, Status, Clock */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Intel rail toggle */}
+        <button
+          onClick={toggleIntelRail}
+          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+        >
+          <PanelRight className="h-3 w-3" />
+          <span className="hidden xs:inline sm:inline">Intel</span>
+        </button>
+        {/* ⌘K trigger (icon-only on xs) */}
         <button
           onClick={onCommandOpen}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
         >
           <Command className="h-3 w-3" />
-          <kbd className="font-mono text-[10px]">K</kbd>
+          <span className="hidden sm:inline">
+            <kbd className="font-mono text-[10px]">K</kbd>
+          </span>
         </button>
 
         {/* LIVE indicator */}
@@ -113,7 +124,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
 
         {/* Nepal time */}
         <time
-          className="min-w-[5rem] text-right font-mono text-xs tabular-nums text-muted-foreground"
+          className="hidden min-w-[5rem] text-right font-mono text-xs tabular-nums text-muted-foreground sm:inline"
           suppressHydrationWarning
         >
           {time ?? "—:—:—"}

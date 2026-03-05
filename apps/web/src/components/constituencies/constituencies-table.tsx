@@ -191,8 +191,8 @@ export function ConstituenciesTable() {
 
   if (isLoading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <p className="text-sm text-muted-foreground animate-pulse">
+      <div className="flex h-64 items-center justify-center md:h-96">
+        <p className="text-sm text-muted-foreground animate-pulse px-4 text-center">
           Loading constituencies…
         </p>
       </div>
@@ -201,9 +201,9 @@ export function ConstituenciesTable() {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
+          <TabsList className="w-full sm:w-auto justify-start sm:justify-center">
             <TabsTrigger value="all">
               All{" "}
               <span className="ml-1 text-xs text-muted-foreground">
@@ -231,20 +231,20 @@ export function ConstituenciesTable() {
           </TabsList>
         </Tabs>
 
-        <div className="relative ml-auto">
+        <div className="relative w-full sm:ml-auto sm:w-auto">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search name or district…"
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="h-8 w-56 rounded-md border border-input bg-background pl-8 pr-3 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring sm:w-56"
           />
         </div>
       </div>
 
       <div className="overflow-auto rounded-md border border-border">
-        <table className="w-full border-separate border-spacing-0 text-xs">
+        <table className="min-w-full border-separate border-spacing-0 text-[11px] sm:text-xs">
           <thead className="sticky top-0 z-10 bg-background">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>

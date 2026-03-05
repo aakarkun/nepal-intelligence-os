@@ -34,7 +34,7 @@ export function NationalSummaryCards() {
 
   if (isLoading || !data) {
     return (
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="h-24 p-4" />
@@ -54,7 +54,7 @@ export function NationalSummaryCards() {
 
   return (
     <>
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard label="Seats Counted">
         <div className="font-mono text-2xl font-bold tabular-nums">
           {data.countedConstituencies}

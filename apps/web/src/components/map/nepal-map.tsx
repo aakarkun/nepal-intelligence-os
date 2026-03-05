@@ -296,8 +296,7 @@ export function NepalMap({
       }
     }
 
-    // @ts-expect-error geojson nested coordinates
-    addCoords(coords.coordinates);
+    addCoords((coords as any).coordinates);
 
     if (!bounds.isEmpty()) {
       map.fitBounds(bounds, { padding: 60, duration: 700 });

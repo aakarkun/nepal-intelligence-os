@@ -237,12 +237,24 @@ export function IntelRail() {
   if (!isOpen) return null;
 
   return (
-    <aside className="fixed bottom-8 right-0 top-12 z-40 w-72 overflow-y-auto border-l border-border bg-card scrollbar-thin">
-      <ConnectionSection />
-      <AnomaliesSection />
-      <WatchlistSection />
-      <SourceHealthSection />
-      <NotesSection />
-    </aside>
+    <>
+      {/* Mobile: full-width sheet above bottom nav */}
+      <aside className="fixed inset-x-0 bottom-14 top-12 z-40 overflow-y-auto border-t border-border bg-card px-3 pb-3 pt-2 scrollbar-thin md:hidden">
+        <ConnectionSection />
+        <AnomaliesSection />
+        <WatchlistSection />
+        <SourceHealthSection />
+        <NotesSection />
+      </aside>
+
+      {/* Desktop / tablet: right rail */}
+      <aside className="fixed bottom-8 right-0 top-12 z-40 hidden w-72 overflow-y-auto border-l border-border bg-card px-0 scrollbar-thin md:block">
+        <ConnectionSection />
+        <AnomaliesSection />
+        <WatchlistSection />
+        <SourceHealthSection />
+        <NotesSection />
+      </aside>
+    </>
   );
 }

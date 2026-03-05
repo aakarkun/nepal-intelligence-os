@@ -6,19 +6,19 @@ import { LiveEventsMini } from "@/components/dashboard/live-events-mini";
 
 export default function SituationRoomPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 md:space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-bold tracking-tight">
+        <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
           Situation Room
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground md:text-sm">
           National pulse — live election intelligence
         </p>
       </div>
       <NationalSummaryCards />
       <PartyStandings />
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2">
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="md:col-span-2">
           <WhatChangedCard />
         </div>
         <div className="space-y-4">
