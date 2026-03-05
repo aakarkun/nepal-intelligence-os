@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { ConstituencyResult } from "@repo/shared";
-import { cn, formatNumber } from "@/lib/utils";
+import { cn, formatNumber, timeAgo } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,6 +79,13 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
           {data.districtName} · Province {data.provinceId} ·{" "}
           {formatNumber(data.totalVotes)} total votes
         </p>
+        {(data.sourceName ?? data.sourceId) && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Source: {data.sourceName ?? data.sourceId}
+            {" · "}
+            Updated {timeAgo(data.sourceFetchedAt ?? data.lastUpdate)} ago
+          </p>
+        )}
       </div>
 
       {/* Candidate Leaderboard */}

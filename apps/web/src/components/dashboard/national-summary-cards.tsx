@@ -53,6 +53,7 @@ export function NationalSummaryCards() {
   );
 
   return (
+    <>
     <div className="grid grid-cols-4 gap-4">
       <StatCard label="Seats Counted">
         <div className="font-mono text-2xl font-bold tabular-nums">
@@ -113,5 +114,13 @@ export function NationalSummaryCards() {
         </p>
       </StatCard>
     </div>
+    {(data.sourceName ?? data.sourceId) && (
+      <p className="mt-2 text-xs text-muted-foreground">
+        Source: {data.sourceName ?? data.sourceId}
+        {" · "}
+        Updated {timeAgo(data.sourceFetchedAt ?? data.timestamp)} ago
+      </p>
+    )}
+    </>
   );
 }
