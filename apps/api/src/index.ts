@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { api } from "./routes";
 import { createSSEResponse, startHeartbeat } from "./sse";
+import { seedFromFixturesIfEmpty } from "./seed";
 
 const app = new Hono();
 
@@ -18,6 +19,8 @@ app.get("/health", (c) => {
 });
 
 const port = Number(process.env.API_PORT) || 3001;
+
+await seedFromFixturesIfEmpty();
 
 Bun.serve({
   port,
