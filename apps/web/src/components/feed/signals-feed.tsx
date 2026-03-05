@@ -7,6 +7,7 @@ import {
   Database,
   AlertTriangle,
   StickyNote,
+  Newspaper,
   Pin,
 } from "lucide-react";
 import Link from "next/link";
@@ -26,6 +27,7 @@ const typeConfig: Record<
   ingest: { color: "#6b7280", icon: Database, label: "Ingest" },
   anomaly: { color: "#ef4444", icon: AlertTriangle, label: "Anomaly" },
   note: { color: "#f59e0b", icon: StickyNote, label: "Note" },
+  news: { color: "#10b981", icon: Newspaper, label: "News" },
 };
 
 const severityVariant: Record<SignalSeverity, "default" | "stale" | "error"> = {
@@ -37,7 +39,7 @@ const severityVariant: Record<SignalSeverity, "default" | "stale" | "error"> = {
 export function SignalsFeed() {
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [typeFilters, setTypeFilters] = useState<Set<SignalEventType>>(
-    new Set(["official", "ingest", "anomaly", "note"])
+    new Set(["official", "ingest", "anomaly", "note", "news"])
   );
 
   const { data: feedData } = useQuery({
@@ -164,6 +166,16 @@ export function SignalsFeed() {
                     </Link>
                   )}
                   {event.source && <span>via {event.source}</span>}
+                  {event.url && (
+                    <a
+                      href={event.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-nepal-red hover:underline"
+                    >
+                      Read more
+                    </a>
+                  )}
                   {event.constituencyId && (
                     <button
                       onClick={() => addToWatchlist(event.constituencyId!)}
