@@ -117,6 +117,14 @@ REPLAY_SPEED=10 bun run dev:worker
 
 The replay cursor is persisted in SQLite, so restarting picks up where it left off. Delete `apps/worker/.replay-cursor.sqlite` to restart from the beginning.
 
+## Docs & plans
+
+- **[current-status.md](current-status.md)** — Project status, what’s done, what’s next, run commands.
+- **Plans** (design and implementation):
+  - [Live ingest & News Room — summary](docs/plans/LIVE-INGEST-AND-NEWS-ROOM-SUMMARY.md)
+  - [Live ingest & News Room — design](docs/plans/2025-03-05-live-ingest-and-news-room-design.md)
+  - [Live ingest — implementation plan](docs/plans/2025-03-05-live-ingest-implementation-plan.md)
+
 ## License
 
 Private — All rights reserved.
