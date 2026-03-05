@@ -3,6 +3,7 @@ import {
   ConstituencyResultSchema,
   NationalSummarySchema,
   SignalEventSchema,
+  SourceHealthSchema,
 } from "@repo/shared";
 import {
   getNationalSummary,
@@ -15,6 +16,7 @@ import {
   updateConstituencyResult,
   addSignalEvent,
   addAnomaly,
+  updateSourceHealth,
 } from "./store";
 import { broadcast } from "./sse";
 import { detectAnomalies } from "./anomaly";
@@ -171,5 +173,17 @@ api.post("/ingest/event", async (c) => {
   addSignalEvent(parsed.data);
   broadcast({ type: "event", data: parsed.data });
 
+  return c.json({ ok: true });
+});
+
+api.post("/ingest/source-health", async (c) => {
+  const body = await c.req.json();
+  const parsed = SourceHealthSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+
+  updateSourceHealth(parsed.data);
   return c.json({ ok: true });
 });
