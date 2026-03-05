@@ -3,13 +3,17 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "bun run --filter '*' dev",
-    "dev:web": "bun run --filter 'web' dev",
-    "dev:api": "bun run --filter 'api' dev",
-    "dev:worker": "bun run --filter 'worker' dev",
+    "dev": "bun run dev:all",
+    "dev:web": "HOST=0.0.0.0 bun run --cwd apps/web dev",
+    "dev:api": "HOST=0.0.0.0 bun run --filter api dev",
+    "dev:worker": "HOST=0.0.0.0 bun run --filter worker dev",
+    "dev:all": "concurrently -n worker,api,web -c blue,green,yellow \"bun run dev:worker\" \"bun run dev:api\" \"bun run dev:web\"",
     "build": "bun run --filter '*' build",
     "test": "bun test",
     "lint": "bun run --filter '*' lint",
     "clean": "rm -rf apps/*/node_modules packages/*/node_modules node_modules"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
