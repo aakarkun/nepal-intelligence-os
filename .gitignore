@@ -30,6 +30,8 @@ Thumbs.db
 # Database
 *.db
 *.db-journal
+*.sqlite
+.replay-cursor.sqlite
 
 # Debug
 npm-debug.log*
