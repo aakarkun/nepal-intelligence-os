@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Info,
@@ -42,9 +42,22 @@ export function SignalsFeed(
 ) {
   const { allowedTypes, socialOnly } = props;
   const [severityFilter, setSeverityFilter] = useState<string>("all");
-  const [typeFilters, setTypeFilters] = useState<Set<SignalEventType>>(
-    new Set(["official", "ingest", "anomaly", "note", "news"])
+  const visibleTypes = useMemo(
+    () =>
+      allowedTypes && allowedTypes.length > 0
+        ? allowedTypes
+        : (["official", "ingest", "anomaly", "note", "news"] as SignalEventType[]),
+    [allowedTypes]
   );
+  const [typeFilters, setTypeFilters] = useState<Set<SignalEventType>>(
+    new Set(visibleTypes)
+  );
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
+
+  useEffect(() => {
+    setTypeFilters(new Set(visibleTypes));
+    setSourceFilter("all");
+  }, [visibleTypes]);
 
   const { data: feedData } = useQuery({
     queryKey: [socialOnly ? "social-feed" : "feed"],
@@ -73,9 +86,19 @@ export function SignalsFeed(
       if (allowedTypes && !allowedTypes.includes(e.type)) return false;
       if (!typeFilters.has(e.type)) return false;
       if (severityFilter !== "all" && e.severity !== severityFilter) return false;
+      if (sourceFilter !== "all" && (e.source ?? "unknown") !== sourceFilter) return false;
       return true;
     });
-  }, [allEvents, typeFilters, severityFilter, allowedTypes]);
+  }, [allEvents, typeFilters, severityFilter, allowedTypes, sourceFilter]);
+
+  const sourceOptions = useMemo(() => {
+    const seen = new Set<string>();
+    for (const event of allEvents) {
+      if (allowedTypes && !allowedTypes.includes(event.type)) continue;
+      seen.add(event.source ?? "unknown");
+    }
+    return Array.from(seen).sort((a, b) => a.localeCompare(b));
+  }, [allEvents, allowedTypes]);
 
   function toggleType(type: SignalEventType) {
     setTypeFilters((prev) => {
@@ -98,30 +121,50 @@ export function SignalsFeed(
           </TabsList>
         </Tabs>
 
-        <div className="flex gap-1.5 ml-auto">
-          {(
-            Object.entries(typeConfig) as [
-              SignalEventType,
-              (typeof typeConfig)[SignalEventType],
-            ][]
-          ).map(([type, config]) => (
-            <button
-              key={type}
-              onClick={() => toggleType(type)}
-              className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-xs transition-colors",
-                typeFilters.has(type)
-                  ? "border-white/20 bg-white/5"
-                  : "border-border text-muted-foreground opacity-50"
-              )}
-            >
-              <span
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: config.color }}
-              />
-              {config.label}
-            </button>
-          ))}
+        <div className="ml-auto flex items-center gap-2">
+          {sourceOptions.length > 1 && (
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Source</span>
+              <select
+                value={sourceFilter}
+                onChange={(e) => setSourceFilter(e.target.value)}
+                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground"
+              >
+                <option value="all">All sources</option>
+                {sourceOptions.map((source) => (
+                  <option key={source} value={source}>
+                    {source}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {visibleTypes.length > 1 && (
+            <div className="flex gap-1.5">
+              {visibleTypes.map((type) => {
+                const config = typeConfig[type];
+                return (
+                  <button
+                    key={type}
+                    onClick={() => toggleType(type)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-xs transition-colors",
+                      typeFilters.has(type)
+                        ? "border-white/20 bg-white/5"
+                        : "border-border text-muted-foreground opacity-50"
+                    )}
+                  >
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ backgroundColor: config.color }}
+                    />
+                    {config.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

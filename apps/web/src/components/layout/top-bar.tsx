@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Command, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNepalTime } from "@/lib/utils";
@@ -9,11 +10,11 @@ import { useRealtimeStore } from "@/stores/realtime-store";
 import { useFilterStore } from "@/stores/filter-store";
 
 const MODULES = [
-  { id: "election", label: "Election", ready: true },
-  { id: "parliament", label: "Parliament", ready: false },
-  { id: "economy", label: "Economy", ready: false },
-  { id: "crisis", label: "Crisis", ready: false },
-  { id: "media", label: "Media", ready: false },
+  { id: "election", label: "Election", href: "/", ready: true },
+  { id: "parliament", label: "Parliament", href: "/parliament", ready: true },
+  { id: "economy", label: "Economy", href: "/economy", ready: true },
+  { id: "crisis", label: "Crisis", href: "/disasters", ready: true },
+  { id: "media", label: "Media", href: "/news-room", ready: false },
 ] as const;
 
 const STATUS_CONFIG = {
@@ -28,8 +29,8 @@ interface TopBarProps {
 
 export function TopBar({ onCommandOpen }: TopBarProps) {
   const [time, setTime] = useState<string | null>(null);
+  const pathname = usePathname();
   const connectionStatus = useRealtimeStore((s) => s.connectionStatus);
-  const activeModule = useFilterStore((s) => s.activeModule);
   const setActiveModule = useFilterStore((s) => s.setActiveModule);
   const toggleIntelRail = useFilterStore((s) => s.toggleIntelRail);
 
@@ -41,6 +42,29 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (pathname === "/" || pathname.startsWith("/map") || pathname.startsWith("/constituencies")) {
+      setActiveModule("election");
+      return;
+    }
+    if (pathname.startsWith("/parliament")) {
+      setActiveModule("parliament");
+      return;
+    }
+    if (pathname.startsWith("/economy")) {
+      setActiveModule("economy");
+      return;
+    }
+    if (pathname.startsWith("/disasters")) {
+      setActiveModule("crisis");
+      return;
+    }
+    if (pathname.startsWith("/news-room")) {
+      setActiveModule("media");
+      return;
+    }
+  }, [pathname, setActiveModule]);
 
   const status = STATUS_CONFIG[connectionStatus];
 
@@ -56,29 +80,36 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
 
       {/* Center — Module pills (hidden on very small screens) */}
       <nav className="hidden items-center gap-1 md:flex">
-        {MODULES.map((mod) => (
-          <button
-            key={mod.id}
-            disabled={!mod.ready}
-            onClick={() => mod.ready && setActiveModule(mod.id)}
-            className={cn(
-              "relative rounded-md px-3 py-1 text-xs font-medium transition-colors",
-              activeModule === mod.id
-                ? "bg-nepal-red/15 text-nepal-red"
-                : mod.ready
-                  ? "text-muted-foreground hover:text-foreground"
-                  : "cursor-not-allowed text-muted-foreground/50"
-            )}
-            title={!mod.ready ? "Soon" : undefined}
-          >
-            {mod.label}
-            {!mod.ready && (
+        {MODULES.map((mod) => {
+          const isActive =
+            mod.href === "/" ? pathname === "/" : pathname.startsWith(mod.href);
+
+          return mod.ready ? (
+            <Link
+              key={mod.id}
+              href={mod.href}
+              className={cn(
+                "relative rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                isActive
+                  ? "bg-nepal-red/15 text-nepal-red"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {mod.label}
+            </Link>
+          ) : (
+            <span
+              key={mod.id}
+              className="relative rounded-md px-3 py-1 text-xs font-medium cursor-not-allowed text-muted-foreground/50"
+              title="Soon"
+            >
+              {mod.label}
               <span className="absolute -right-1 -top-1 rounded-full bg-muted px-1 text-[9px] leading-tight text-muted-foreground">
                 Soon
               </span>
-            )}
-          </button>
-        ))}
+            </span>
+          );
+        })}
       </nav>
 
       {/* Right — Intel toggle, Command, Status, Clock */}

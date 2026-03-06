@@ -19,6 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { fetchConstituencies } from "@/lib/api";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { useFilterStore } from "@/stores/filter-store";
 import { useRealtimeStore } from "@/stores/realtime-store";
 
@@ -41,13 +42,14 @@ const NAV_ITEMS = [
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
+  const { selectedDatasetId } = useElectionDatasetStore();
   const toggleDiffMode = useFilterStore((s) => s.toggleDiffMode);
   const toggleIntelRail = useFilterStore((s) => s.toggleIntelRail);
   const clearAnomalies = useRealtimeStore((s) => s.clearAnomalies);
 
   const { data: constituencies } = useQuery({
-    queryKey: ["constituencies"],
-    queryFn: () => fetchConstituencies(),
+    queryKey: ["constituencies", selectedDatasetId],
+    queryFn: () => fetchConstituencies({ dataset: selectedDatasetId }),
     enabled: open,
   });
 

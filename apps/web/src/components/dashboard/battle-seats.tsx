@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { fetchConstituencies } from "@/lib/api";
 import { cn, formatNumber } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import type { ConstituencyResult } from "@repo/shared";
 
 function getMargin(c: ConstituencyResult): number {
@@ -15,11 +16,14 @@ function getMargin(c: ConstituencyResult): number {
 
 export function BattleSeats() {
   const router = useRouter();
+  const { selectedDatasetId, datasets } = useElectionDatasetStore();
+  const selectedDataset = datasets.find((dataset) => dataset.id === selectedDatasetId);
+  const isCurrentDataset = selectedDataset?.isCurrent ?? true;
 
   const { data: constituencies, isLoading } = useQuery({
-    queryKey: ["constituencies"],
-    queryFn: () => fetchConstituencies(),
-    refetchInterval: 15_000,
+    queryKey: ["constituencies", selectedDatasetId],
+    queryFn: () => fetchConstituencies({ dataset: selectedDatasetId }),
+    refetchInterval: isCurrentDataset ? 15_000 : false,
   });
 
   if (isLoading || !constituencies) {

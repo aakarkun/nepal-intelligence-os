@@ -1,24 +1,32 @@
 import { runReplay } from "./replay";
 import { env } from "./env";
-import { fetchEcnRaw, parseEcnRaw } from "./sources/ecn";
 import { fetchNewsRaw } from "./sources/news";
 import {
   fetchGdeltNewsEvents,
   fetchGdeltSignalEvents,
-  fetchGdeltRedditEvents,
 } from "./sources/gdelt";
 import { fetchTwitterEvents, type TwitterFeedConfig } from "./sources/twitter";
 import { fetchRedditEvents, type RedditFeedConfig } from "./sources/reddit";
 import { fetchNitterEvents, type NitterFeedConfig } from "./sources/nitter";
 import {
-  normalizeEcnToSummary,
-  normalizeEcnToConstituencies,
-} from "./normalizers/ecn";
+  fetchEarthquakeIncidents,
+  normalizeEarthquakesToSignals,
+  summarizeEarthquakeIncidents,
+} from "./sources/earthquake";
+import {
+  fetchForexRates,
+  fetchMarketAssetQuotes,
+  summarizeForexRates,
+} from "./sources/economy";
 import { normalizeNewsToEvents } from "./normalizers/news";
 import {
-  runEcnIngest,
   postSourceHealth,
   postEvent,
+  postEarthquakeIncidents,
+  postCrisisSummary,
+  postForexRates,
+  postEconomySummary,
+  postMarketAssetQuotes,
 } from "./ingest-client";
 import type { SourceHealth } from "@repo/shared";
 
@@ -33,21 +41,108 @@ const REDDIT_DELAY_BETWEEN_FEEDS_MS = env.REDDIT_DELAY_MS;
 let lastGdeltNewsRun: number | null = null;
 let lastGdeltSignalRun: number | null = null;
 
+type LiveWorkerState = {
+  lastCycleCompletedAt?: string;
+  lastMarketAssetsFetchedAt?: string;
+  lastMarketAssetQuotes?: Array<{
+    assetCode: string;
+    assetName: string;
+    class: "metal" | "crypto";
+    currency: string;
+    price: number;
+    previousPrice: number | null;
+    change: number | null;
+    changePercent: number | null;
+    trend: "up" | "down" | "flat" | "new";
+    timestamp: string;
+  }>;
+};
+
+type ElectionDatasetMeta = {
+  id: string;
+  isCurrent: boolean;
+  sourceId?: string;
+};
+
+async function readLiveWorkerState(): Promise<LiveWorkerState> {
+  try {
+    const file = Bun.file(env.LIVE_STATE_PATH);
+    if (!(await file.exists())) return {};
+    const parsed = (await file.json()) as LiveWorkerState;
+    return parsed ?? {};
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[worker] Failed to read live worker state:", message);
+    return {};
+  }
+}
+
+async function writeLiveWorkerState(state: LiveWorkerState): Promise<void> {
+  try {
+    await Bun.write(env.LIVE_STATE_PATH, JSON.stringify(state, null, 2));
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[worker] Failed to persist live worker state:", message);
+  }
+}
+
+async function hasCurrentLiveElectionDataset(): Promise<boolean> {
+  if (!env.ENABLE_SCRAPLING_ECN) return false;
+
+  try {
+    const res = await fetch(`${API_URL}/v1/election-datasets`);
+    if (!res.ok) {
+      throw new Error(`API responded ${res.status}`);
+    }
+    const datasets = (await res.json()) as ElectionDatasetMeta[];
+    return datasets.some(
+      (dataset) =>
+        dataset.id.startsWith("ekantipur-") ||
+        dataset.sourceId === "ekantipur"
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(
+      "[worker] Failed to inspect election datasets; assuming bootstrap is needed:",
+      message
+    );
+    return false;
+  }
+}
+
 async function runLiveEcn(): Promise<void> {
-  const sourceId = "ecn";
-  const sourceName = "Election Commission of Nepal";
+  const sourceId = env.ENABLE_SCRAPLING_ECN ? "ekantipur" : "ecn";
+  const sourceName = env.ENABLE_SCRAPLING_ECN
+    ? "Ekantipur Election"
+    : "Election Commission of Nepal";
   const now = new Date().toISOString();
 
   try {
-    const { html } = await fetchEcnRaw({ baseUrl: env.ECN_BASE_URL });
-    const raw = parseEcnRaw(html);
-    const summary = normalizeEcnToSummary(raw, sourceId, sourceName);
-    const constituencies = normalizeEcnToConstituencies(raw, sourceId, sourceName);
-
-    await runEcnIngest(API_URL, { summary, constituencies });
-    console.log(
-      `[live] ECN ingest done: summary=${summary ? "yes" : "no"}, constituencies=${constituencies.length}`
-    );
+    if (env.ENABLE_SCRAPLING_ECN) {
+      const proc = Bun.spawn(
+        ["python3", env.SCRAPLING_ECN_SCRIPT_PATH],
+        {
+          env: {
+            ...process.env,
+            API_URL,
+            ECN_BASE_URL: env.ECN_BASE_URL,
+            SCRAPLING_REQUEST_DELAY_MS: String(env.SCRAPLING_REQUEST_DELAY_MS),
+          },
+          stdout: "pipe",
+          stderr: "pipe",
+        }
+      );
+      const [stdout, stderr, exitCode] = await Promise.all([
+        new Response(proc.stdout).text(),
+        new Response(proc.stderr).text(),
+        proc.exited,
+      ]);
+      if (exitCode !== 0) {
+        throw new Error(stderr.trim() || stdout.trim() || `exit code ${exitCode}`);
+      }
+      console.log(`[live] Scrapling ECN ingest done: ${stdout.trim()}`);
+      return;
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[live] ECN fetch/parse failed:", message);
@@ -172,48 +267,52 @@ async function runLiveNews(): Promise<void> {
 
   // ─── GDELT Articles (15 min interval) ───────────────────────────────────────
 
-  const nowMs = Date.now();
-  const shouldRunGdeltNews =
-    lastGdeltNewsRun === null ||
-    nowMs - lastGdeltNewsRun >= GDELT_MIN_INTERVAL_MS;
+  if (env.ENABLE_GDELT) {
+    const nowMs = Date.now();
+    const shouldRunGdeltNews =
+      lastGdeltNewsRun === null ||
+      nowMs - lastGdeltNewsRun >= GDELT_MIN_INTERVAL_MS;
 
-  if (shouldRunGdeltNews) {
-    let gdeltPosted = 0;
-    let gdeltHadError = false;
-    try {
-      const gdeltEvents = await fetchGdeltNewsEvents();
-      for (const event of gdeltEvents.slice(0, 100)) {
-        const ok = await postEvent(API_URL, event);
-        if (ok) {
-          gdeltPosted++;
-          totalPosted++;
+    if (shouldRunGdeltNews) {
+      let gdeltPosted = 0;
+      let gdeltHadError = false;
+      try {
+        const gdeltEvents = await fetchGdeltNewsEvents();
+        for (const event of gdeltEvents.slice(0, 100)) {
+          const ok = await postEvent(API_URL, event);
+          if (ok) {
+            gdeltPosted++;
+            totalPosted++;
+          }
         }
+        if (gdeltEvents.length > 0) {
+          console.log(
+            `[live] GDELT news ingest done: ${gdeltEvents.length} events (posted ${gdeltPosted})`
+          );
+        }
+        lastGdeltNewsRun = nowMs;
+      } catch (err) {
+        gdeltHadError = true;
+        hadError = true;
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("[live] GDELT news ingest failed:", message);
       }
-      if (gdeltEvents.length > 0) {
-        console.log(
-          `[live] GDELT news ingest done: ${gdeltEvents.length} events (posted ${gdeltPosted})`
-        );
-      }
-      lastGdeltNewsRun = nowMs;
-    } catch (err) {
-      gdeltHadError = true;
-      hadError = true;
-      const message = err instanceof Error ? err.message : String(err);
-      console.error("[live] GDELT news ingest failed:", message);
-    }
 
-    if (gdeltPosted > 0 || gdeltHadError) {
-      await postSourceHealth(API_URL, {
-        sourceId: "news:gdelt",
-        sourceName: "GDELT — Nepal latest articles",
-        lastUpdate: now,
-        errorRate: gdeltHadError ? 1 : 0,
-        status: gdeltHadError ? "error" : "live",
-        updateCount: gdeltPosted,
-      });
+      if (gdeltPosted > 0 || gdeltHadError) {
+        await postSourceHealth(API_URL, {
+          sourceId: "news:gdelt",
+          sourceName: "GDELT — Nepal latest articles",
+          lastUpdate: now,
+          errorRate: gdeltHadError ? 1 : 0,
+          status: gdeltHadError ? "error" : "live",
+          updateCount: gdeltPosted,
+        });
+      }
+    } else {
+      console.log("[live] Skipping GDELT news (within 15 min window)");
     }
   } else {
-    console.log("[live] Skipping GDELT news (within 15 min window)");
+    console.log("[live] GDELT news disabled (set ENABLE_GDELT=true to enable)");
   }
 
   // Aggregated health for the entire news ingest pipeline
@@ -303,91 +402,88 @@ async function runLiveSocial(): Promise<void> {
     }
   }
 
-  const redditFeeds = cfg.reddit ?? [];
-  for (let i = 0; i < redditFeeds.length; i++) {
-    if (i > 0) {
-      await new Promise((r) =>
-        setTimeout(r, REDDIT_DELAY_BETWEEN_FEEDS_MS)
-      );
-    }
-    const feed = redditFeeds[i];
-    try {
-      const events = await fetchRedditEvents(feed);
-      for (const event of events) {
-        const ok = await postEvent(API_URL, event);
-        if (ok) totalPosted++;
-      }
-      if (events.length > 0) {
-        console.log(
-          `[live] Reddit ingest done from "${feed.name}": ${events.length} events`
+  if (env.ENABLE_REDDIT) {
+    const redditFeeds = cfg.reddit ?? [];
+    for (let i = 0; i < redditFeeds.length; i++) {
+      if (i > 0) {
+        await new Promise((r) =>
+          setTimeout(r, REDDIT_DELAY_BETWEEN_FEEDS_MS)
         );
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(
-        `[live] Reddit ingest failed for "${feed.name}":`,
-        message
-      );
-    }
-  }
-
-  // ─── GDELT Reddit (no direct Reddit requests — avoids IP block) ───────────────
-  try {
-    const gdeltRedditEvents = await fetchGdeltRedditEvents();
-    for (const event of gdeltRedditEvents) {
-      const ok = await postEvent(API_URL, event);
-      if (ok) totalPosted++;
-    }
-    if (gdeltRedditEvents.length > 0) {
-      console.log(
-        `[live] GDELT Reddit ingest done: ${gdeltRedditEvents.length} events`
-      );
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[live] GDELT Reddit ingest failed:", message);
-  }
-
-  // ─── GDELT Signals (15 min interval) ────────────────────────────────────────
-
-  const nowMs = Date.now();
-  const shouldRunGdeltSignals =
-    lastGdeltSignalRun === null ||
-    nowMs - lastGdeltSignalRun >= GDELT_MIN_INTERVAL_MS;
-
-  if (shouldRunGdeltSignals) {
-    let gdeltPosted = 0;
-    let gdeltHadError = false;
-    try {
-      const gdeltEvents = await fetchGdeltSignalEvents();
-      for (const event of gdeltEvents) {
-        const ok = await postEvent(API_URL, event);
-        if (ok) {
-          gdeltPosted++;
-          totalPosted++;
+      const feed = redditFeeds[i];
+      try {
+        const events = await fetchRedditEvents(feed);
+        for (const event of events) {
+          const ok = await postEvent(API_URL, event);
+          if (ok) totalPosted++;
         }
-      }
-      if (gdeltEvents.length > 0) {
-        console.log(
-          `[live] GDELT social ingest done: ${gdeltEvents.length} events (posted ${gdeltPosted})`
+        if (events.length > 0) {
+          console.log(
+            `[live] Reddit ingest done from "${feed.name}": ${events.length} events`
+          );
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(
+          `[live] Reddit ingest failed for "${feed.name}":`,
+          message
         );
       }
-      lastGdeltSignalRun = nowMs;
-    } catch (err) {
-      gdeltHadError = true;
-      const message = err instanceof Error ? err.message : String(err);
-      console.error("[live] GDELT social ingest failed:", message);
     }
+  } else {
+    console.log("[live] Reddit ingest disabled (set ENABLE_REDDIT=true to enable)");
+  }
 
-    if (totalPosted > 0 || gdeltHadError) {
+  if (env.ENABLE_GDELT) {
+    const nowMs = Date.now();
+    const shouldRunGdeltSignals =
+      lastGdeltSignalRun === null ||
+      nowMs - lastGdeltSignalRun >= GDELT_MIN_INTERVAL_MS;
+
+    if (shouldRunGdeltSignals) {
+      let gdeltPosted = 0;
+      let gdeltHadError = false;
+      try {
+        const gdeltEvents = await fetchGdeltSignalEvents();
+        for (const event of gdeltEvents) {
+          const ok = await postEvent(API_URL, event);
+          if (ok) {
+            gdeltPosted++;
+            totalPosted++;
+          }
+        }
+        if (gdeltEvents.length > 0) {
+          console.log(
+            `[live] GDELT social ingest done: ${gdeltEvents.length} events (posted ${gdeltPosted})`
+          );
+        }
+        lastGdeltSignalRun = nowMs;
+      } catch (err) {
+        gdeltHadError = true;
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("[live] GDELT social ingest failed:", message);
+      }
+
+      if (totalPosted > 0 || gdeltHadError) {
+        await postSourceHealth(API_URL, {
+          sourceId: "social",
+          sourceName: "Social Aggregator",
+          lastUpdate: now,
+          errorRate: gdeltHadError ? 1 : 0,
+          status: gdeltHadError ? "error" : "live",
+          updateCount: totalPosted,
+        });
+      }
+    } else {
       await postSourceHealth(API_URL, {
         sourceId: "social",
         sourceName: "Social Aggregator",
         lastUpdate: now,
-        errorRate: gdeltHadError ? 1 : 0,
-        status: gdeltHadError ? "error" : "live",
+        errorRate: 0,
+        status: "live",
         updateCount: totalPosted,
       });
+      console.log("[live] Skipping GDELT social (within 15 min window)");
     }
   } else {
     await postSourceHealth(API_URL, {
@@ -398,8 +494,178 @@ async function runLiveSocial(): Promise<void> {
       status: "live",
       updateCount: totalPosted,
     });
-    console.log("[live] Skipping GDELT social (within 15 min window)");
+    console.log("[live] GDELT social disabled (set ENABLE_GDELT=true to enable)");
   }
+}
+
+async function runLiveCrisis(): Promise<void> {
+  const now = new Date().toISOString();
+  let hadError = false;
+  let updateCount = 0;
+
+  try {
+    const incidents = await fetchEarthquakeIncidents();
+    const summary = summarizeEarthquakeIncidents(incidents, now);
+
+    await postEarthquakeIncidents(API_URL, incidents);
+    await postCrisisSummary(API_URL, summary);
+
+    const signalEvents = normalizeEarthquakesToSignals(incidents);
+    for (const event of signalEvents) {
+      const ok = await postEvent(API_URL, event);
+      if (ok) updateCount++;
+    }
+
+    await postSourceHealth(API_URL, {
+      sourceId: "crisis:earthquakes",
+      sourceName: "USGS Earthquake Hazards Program",
+      lastUpdate: now,
+      errorRate: 0,
+      status: "live",
+      updateCount: incidents.length,
+    });
+  } catch (err) {
+    hadError = true;
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[live] Crisis ingest failed:", message);
+    await postSourceHealth(API_URL, {
+      sourceId: "crisis:earthquakes",
+      sourceName: "USGS Earthquake Hazards Program",
+      lastUpdate: now,
+      errorRate: 1,
+      status: "error",
+      updateCount: 0,
+    });
+  }
+
+  await postSourceHealth(API_URL, {
+    sourceId: "crisis",
+    sourceName: "Crisis Monitor",
+    lastUpdate: now,
+    errorRate: hadError ? 1 : 0,
+    status: hadError ? "error" : "live",
+    updateCount,
+  });
+}
+
+async function runLiveEconomy(state: LiveWorkerState): Promise<void> {
+  const now = new Date().toISOString();
+  const assetIntervalMs = env.MARKET_ASSET_MINUTES * 60 * 1000;
+
+  try {
+    const rates = await fetchForexRates();
+    const summary = summarizeForexRates(rates, now);
+    const lastMarketAssetsFetchedAt = state.lastMarketAssetsFetchedAt
+      ? new Date(state.lastMarketAssetsFetchedAt).getTime()
+      : null;
+    const shouldRefreshMarketAssets =
+      !lastMarketAssetsFetchedAt ||
+      Number.isNaN(lastMarketAssetsFetchedAt) ||
+      Date.now() - lastMarketAssetsFetchedAt >= assetIntervalMs;
+    const marketAssetQuotes = shouldRefreshMarketAssets
+      ? await fetchMarketAssetQuotes(state.lastMarketAssetQuotes ?? [])
+      : (state.lastMarketAssetQuotes ?? []);
+
+    await postForexRates(API_URL, rates);
+    await postEconomySummary(API_URL, summary);
+    if (shouldRefreshMarketAssets) {
+      await postMarketAssetQuotes(API_URL, marketAssetQuotes);
+    }
+
+    await postSourceHealth(API_URL, {
+      sourceId: "economy:forex",
+      sourceName: "Nepal Rastra Bank Forex",
+      lastUpdate: now,
+      errorRate: 0,
+      status: "live",
+      updateCount: rates.length,
+    });
+
+    await postSourceHealth(API_URL, {
+      sourceId: "economy",
+      sourceName: "Economy Monitor",
+      lastUpdate: now,
+      errorRate: 0,
+      status: "live",
+      updateCount: rates.length + marketAssetQuotes.length,
+    });
+
+    if (shouldRefreshMarketAssets) {
+      state.lastMarketAssetQuotes = marketAssetQuotes;
+      state.lastMarketAssetsFetchedAt = now;
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[live] Economy ingest failed:", message);
+
+    await postSourceHealth(API_URL, {
+      sourceId: "economy:forex",
+      sourceName: "Nepal Rastra Bank Forex",
+      lastUpdate: now,
+      errorRate: 1,
+      status: "error",
+      updateCount: 0,
+    });
+
+    await postSourceHealth(API_URL, {
+      sourceId: "economy",
+      sourceName: "Economy Monitor",
+      lastUpdate: now,
+      errorRate: 1,
+      status: "error",
+      updateCount: 0,
+    });
+  }
+}
+
+async function runLiveCycle(): Promise<void> {
+  const state = await readLiveWorkerState();
+  await Promise.allSettled([
+    runLiveEcn(),
+    runLiveNews(),
+    runLiveSocial(),
+    runLiveCrisis(),
+    runLiveEconomy(state),
+  ]);
+  await writeLiveWorkerState({
+    lastCycleCompletedAt: new Date().toISOString(),
+    lastMarketAssetQuotes: state.lastMarketAssetQuotes,
+  });
+}
+
+async function startLiveScheduler(intervalMs: number): Promise<void> {
+  const state = await readLiveWorkerState();
+  const hasLiveDataset = await hasCurrentLiveElectionDataset();
+  const lastCompletedAt = state.lastCycleCompletedAt
+    ? new Date(state.lastCycleCompletedAt).getTime()
+    : null;
+  const now = Date.now();
+  const initialDelayMs =
+    hasLiveDataset && lastCompletedAt && !Number.isNaN(lastCompletedAt)
+      ? Math.max(0, intervalMs - (now - lastCompletedAt))
+      : 0;
+
+  if (!hasLiveDataset) {
+    console.log(
+      "[worker] No live Ekantipur dataset found in the API; bootstrapping immediately"
+    );
+  } else if (initialDelayMs > 0) {
+    const nextAt = new Date(now + initialDelayMs).toISOString();
+    console.log(
+      `[worker] Last live cycle completed at ${state.lastCycleCompletedAt}; next cycle at ${nextAt}`
+    );
+  } else {
+    console.log("[worker] No recent live cycle found; starting immediately");
+  }
+
+  const scheduleNext = (delayMs: number) => {
+    setTimeout(async () => {
+      await runLiveCycle();
+      scheduleNext(intervalMs);
+    }, delayMs);
+  };
+
+  scheduleNext(initialDelayMs);
 }
 
 console.log("──────────────────────────────────────────");
@@ -413,6 +679,15 @@ console.log(`  API URL : ${API_URL}`);
 console.log(`  Mode    : ${MODE}`);
 if (MODE === "replay") {
   console.log(`  Speed   : ${REPLAY_SPEED}x`);
+} else {
+  console.log(
+    `  ECN     : ${
+      env.ENABLE_SCRAPLING_ECN ? "Scrapling/Ekantipur" : "Legacy HTTP parser"
+    }`
+  );
+  if (env.ENABLE_SCRAPLING_ECN) {
+    console.log(`  Delay   : ${env.SCRAPLING_REQUEST_DELAY_MS}ms/request`);
+  }
 }
 console.log("──────────────────────────────────────────");
 
@@ -420,28 +695,13 @@ if (MODE === "live") {
   const cronMinutes = env.CRON_ECN_MINUTES;
   if (cronMinutes > 0) {
     const intervalMs = cronMinutes * 60 * 1000;
-    const runCycle = () => {
-      runLiveEcn().catch((err) => console.error("[worker] ECN run error:", err));
-      runLiveNews().catch((err) => console.error("[worker] News run error:", err));
-      runLiveSocial().catch((err) =>
-        console.error("[worker] Social run error:", err)
-      );
-    };
-    runCycle();
-    setInterval(runCycle, intervalMs);
     console.log(`  ECN + News + Social job every ${cronMinutes} min`);
+    startLiveScheduler(intervalMs).catch((err) => {
+      console.error("[worker] Scheduler error:", err);
+      process.exit(1);
+    });
   } else {
-    Promise.all([
-      runLiveEcn().catch((err) => {
-        console.error("[worker] ECN error:", err);
-      }),
-      runLiveNews().catch((err) => {
-        console.error("[worker] News error:", err);
-      }),
-      runLiveSocial().catch((err) => {
-        console.error("[worker] Social error:", err);
-      }),
-    ]).finally(() => process.exit(0));
+    runLiveCycle().finally(() => process.exit(0));
   }
 } else {
   runReplay({ apiUrl: API_URL, speed: REPLAY_SPEED }).catch((err) => {

@@ -1,11 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { ElectionDatasetSelector } from "@/components/election-dataset-selector";
+import { GeographyDrawer } from "@/components/map/geography-drawer";
 import { NepalMap } from "@/components/map/nepal-map";
-import { DistrictDrawer } from "@/components/map/district-drawer";
 
 export default function MapPage() {
-  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+  const [selection, setSelection] = useState<
+    | { type: "district"; districtName: string }
+    | { type: "province"; provinceId: number }
+    | null
+  >(null);
 
   return (
     // Stretch to edges of main content, but respect Intel Rail on the right
@@ -17,17 +22,28 @@ export default function MapPage() {
         <p className="text-xs text-muted-foreground">
           Nepal district choropleth — click to explore
         </p>
+        <div className="mt-3">
+          <ElectionDatasetSelector />
+        </div>
       </div>
 
       <NepalMap
         className="w-full h-[calc(100vh-5rem)]"
-        onDistrictClick={setSelectedDistrict}
+        onDistrictClick={(districtName) =>
+          setSelection({ type: "district", districtName })
+        }
+        onProvinceClick={(provinceId) =>
+          setSelection({ type: "province", provinceId })
+        }
         geoJsonUrl="/nepal-districts.geojson"
       />
 
-      <DistrictDrawer
-        districtName={selectedDistrict}
-        onClose={() => setSelectedDistrict(null)}
+      <GeographyDrawer
+        selection={selection}
+        onClose={() => setSelection(null)}
+        onSelectDistrict={(districtName) =>
+          setSelection({ type: "district", districtName })
+        }
       />
     </div>
   );

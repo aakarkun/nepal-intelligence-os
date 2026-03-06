@@ -34,6 +34,7 @@ Thumbs.db
 *.db-journal
 *.sqlite
 .replay-cursor.sqlite
+.live-worker-state.json
 
 # Debug
 npm-debug.log*
@@ -42,3 +43,7 @@ yarn-error.log*
 
 # Testing
 coverage/
+
+# Python
+__pycache__/
+*.pyc

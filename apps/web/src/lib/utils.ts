@@ -47,6 +47,15 @@ export function formatSourceDateTime(timestamp: string): string {
   });
 }
 
+export function formatNepalDateTime(timestamp: string): string {
+  const d = new Date(timestamp);
+  return d.toLocaleString("en-NP", {
+    timeZone: "Asia/Kathmandu",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 export function getConnectionStatusColor(
   lastHeartbeat: number | null
 ): "live" | "stale" | "error" {

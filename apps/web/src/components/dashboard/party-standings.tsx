@@ -4,14 +4,18 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchNationalSummary } from "@/lib/api";
 import { cn, formatNumber } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { HOR_MAJORITY_THRESHOLD } from "@repo/shared";
 import type { NationalSummary, PartyResult } from "@repo/shared";
 
 export function PartyStandings() {
+  const { selectedDatasetId, datasets } = useElectionDatasetStore();
+  const selectedDataset = datasets.find((dataset) => dataset.id === selectedDatasetId);
+  const isCurrentDataset = selectedDataset?.isCurrent ?? true;
   const { data, isLoading } = useQuery<NationalSummary>({
-    queryKey: ["national-summary"],
-    queryFn: fetchNationalSummary,
-    refetchInterval: 15_000,
+    queryKey: ["national-summary", selectedDatasetId],
+    queryFn: () => fetchNationalSummary(selectedDatasetId),
+    refetchInterval: isCurrentDataset ? 15_000 : false,
   });
 
   if (isLoading || !data) {

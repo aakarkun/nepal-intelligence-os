@@ -164,6 +164,98 @@ export const SourceHealthSchema = z.object({
   updateCount: z.number().int().min(0),
 });
 
+// ─── Crisis Intelligence ─────────────────────────────────────────────────────
+
+export const EarthquakeIncidentSchema = z.object({
+  id: z.string(),
+  sourceId: z.string(),
+  sourceName: z.string(),
+  timestamp: z.string().datetime(),
+  title: z.string(),
+  place: z.string(),
+  magnitude: z.number(),
+  depthKm: z.number().min(0),
+  latitude: z.number(),
+  longitude: z.number(),
+  feltReports: z.number().int().min(0).optional(),
+  tsunami: z.boolean().default(false),
+  alert: z.enum(["green", "yellow", "orange", "red"]).nullable().optional(),
+  significance: z.number().int().min(0),
+  url: z.string().url(),
+});
+
+export const CrisisSummarySchema = z.object({
+  sourceId: z.string(),
+  sourceName: z.string(),
+  timestamp: z.string().datetime(),
+  totalIncidents: z.number().int().min(0),
+  last24h: z.number().int().min(0),
+  maxMagnitude: z.number().min(0),
+  averageDepthKm: z.number().min(0),
+  incidentsBySeverity: z.object({
+    minor: z.number().int().min(0),
+    light: z.number().int().min(0),
+    moderate: z.number().int().min(0),
+    strongPlus: z.number().int().min(0),
+  }),
+});
+
+// ─── Economy Intelligence ───────────────────────────────────────────────────
+
+export const ForexRateSchema = z.object({
+  currencyCode: z.string(),
+  currencyName: z.string(),
+  unit: z.number().positive(),
+  buy: z.number(),
+  sell: z.number(),
+  previousBuy: z.number().nullable(),
+  previousSell: z.number().nullable(),
+  changeBuy: z.number().nullable(),
+  changeSell: z.number().nullable(),
+  trend: z.enum(["up", "down", "flat", "new"]),
+  date: z.string(),
+  publishedOn: z.string().datetime().optional(),
+});
+
+export const EconomySummarySchema = z.object({
+  sourceId: z.string(),
+  sourceName: z.string(),
+  timestamp: z.string().datetime(),
+  baseCurrency: z.string(),
+  trackedRates: z.number().int().min(0),
+  advancingRates: z.number().int().min(0),
+  decliningRates: z.number().int().min(0),
+  unchangedRates: z.number().int().min(0),
+  usdBuy: z.number().nullable(),
+  eurBuy: z.number().nullable(),
+  gbpBuy: z.number().nullable(),
+  inrBuy: z.number().nullable(),
+  topMovers: z.array(
+    z.object({
+      currencyCode: z.string(),
+      currencyName: z.string(),
+      unit: z.number().positive(),
+      buy: z.number(),
+      sell: z.number(),
+      changeBuy: z.number(),
+      trend: z.enum(["up", "down", "flat"]),
+    })
+  ),
+});
+
+export const MarketAssetQuoteSchema = z.object({
+  assetCode: z.string(),
+  assetName: z.string(),
+  class: z.enum(["metal", "crypto"]),
+  currency: z.string(),
+  price: z.number(),
+  previousPrice: z.number().nullable(),
+  change: z.number().nullable(),
+  changePercent: z.number().nullable(),
+  trend: z.enum(["up", "down", "flat", "new"]),
+  timestamp: z.string().datetime(),
+});
+
 // ─── SSE Messages ────────────────────────────────────────────────────────────
 
 export const SSEMessageSchema = z.discriminatedUnion("type", [
@@ -210,4 +302,9 @@ export type AnomalyType = z.infer<typeof AnomalyTypeSchema>;
 export type Anomaly = z.infer<typeof AnomalySchema>;
 export type SourceStatus = z.infer<typeof SourceStatusSchema>;
 export type SourceHealth = z.infer<typeof SourceHealthSchema>;
+export type EarthquakeIncident = z.infer<typeof EarthquakeIncidentSchema>;
+export type CrisisSummary = z.infer<typeof CrisisSummarySchema>;
+export type ForexRate = z.infer<typeof ForexRateSchema>;
+export type EconomySummary = z.infer<typeof EconomySummarySchema>;
+export type MarketAssetQuote = z.infer<typeof MarketAssetQuoteSchema>;
 export type SSEMessage = z.infer<typeof SSEMessageSchema>;

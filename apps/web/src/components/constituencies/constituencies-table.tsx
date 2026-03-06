@@ -14,7 +14,8 @@ import {
 } from "@tanstack/react-table";
 import type { ConstituencyResult } from "@repo/shared";
 import { fetchConstituencies } from "@/lib/api";
-import { cn, formatNumber, timeAgo } from "@/lib/utils";
+import { cn, formatNepalDateTime, formatNumber, timeAgo } from "@/lib/utils";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowUpDown, ChevronDown, ChevronUp, Search } from "lucide-react";
@@ -62,7 +63,9 @@ function StatusBadge({ status }: { status: string }) {
 
 const columnHelper = createColumnHelper<ConstituencyResult>();
 
-const columns = [
+const columns = (
+  isCurrentDataset: boolean
+) => [
   columnHelper.accessor("constituencyName", {
     header: "Constituency",
     cell: (info) => (
@@ -130,7 +133,7 @@ const columns = [
     header: "Last Update",
     cell: (info) => (
       <span className="text-muted-foreground tabular-nums">
-        {timeAgo(info.getValue())}
+        {isCurrentDataset ? timeAgo(info.getValue()) : formatNepalDateTime(info.getValue())}
       </span>
     ),
   }),
@@ -138,13 +141,16 @@ const columns = [
 
 export function ConstituenciesTable() {
   const router = useRouter();
+  const { selectedDatasetId, datasets } = useElectionDatasetStore();
+  const selectedDataset = datasets.find((dataset) => dataset.id === selectedDatasetId);
+  const isCurrentDataset = selectedDataset?.isCurrent ?? true;
   const [activeTab, setActiveTab] = useState("all");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
   const { data: constituencies = [], isLoading } = useQuery({
-    queryKey: ["constituencies"],
-    queryFn: () => fetchConstituencies(),
+    queryKey: ["constituencies", selectedDatasetId],
+    queryFn: () => fetchConstituencies({ dataset: selectedDatasetId }),
   });
 
   const filteredData = useMemo(() => {
@@ -173,7 +179,7 @@ export function ConstituenciesTable() {
 
   const table = useReactTable({
     data: filteredData,
-    columns,
+    columns: columns(isCurrentDataset),
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,

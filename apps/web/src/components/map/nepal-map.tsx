@@ -8,8 +8,9 @@ import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
 import { fetchConstituencies } from "@/lib/api";
 import type { ConstituencyResult } from "@repo/shared";
-import { PARTY_MAP, PROVINCES } from "@repo/shared";
+import { PROVINCES } from "@repo/shared";
 import { useFilterStore } from "@/stores/filter-store";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { MapTooltip } from "./map-tooltip";
 import { MapControls, type LayerVisibility } from "./map-controls";
 
@@ -47,6 +48,7 @@ interface TooltipState {
 interface NepalMapProps {
   className?: string;
   onDistrictClick?: (districtName: string) => void;
+  onProvinceClick?: (provinceId: number) => void;
   onConstituencyClick?: (id: string) => void;
   interactive?: boolean;
   mini?: boolean;
@@ -187,6 +189,7 @@ function buildAnomalyGeoJSON(
 export function NepalMap({
   className,
   onDistrictClick,
+  onProvinceClick,
   onConstituencyClick,
   interactive = true,
   mini = false,
@@ -200,6 +203,7 @@ export function NepalMap({
 
   const selectedProvince = useFilterStore((s) => s.selectedProvince);
   const setSelectedProvince = useFilterStore((s) => s.setSelectedProvince);
+  const { selectedDatasetId } = useElectionDatasetStore();
 
   const [tooltip, setTooltip] = useState<TooltipState>({
     visible: false,
@@ -215,8 +219,8 @@ export function NepalMap({
   });
 
   const { data: constituencies } = useQuery({
-    queryKey: ["constituencies"],
-    queryFn: () => fetchConstituencies(),
+    queryKey: ["constituencies", selectedDatasetId],
+    queryFn: () => fetchConstituencies({ dataset: selectedDatasetId }),
     staleTime: 30_000,
   });
 
@@ -630,6 +634,7 @@ export function NepalMap({
       const id = typeof province === "string" ? Number(province) : province;
       if (!Number.isNaN(id)) {
         selectProvince(id);
+        onProvinceClick?.(id);
       }
     });
   }

@@ -3,6 +3,11 @@ import type {
   ConstituencyResult,
   SignalEvent,
   SourceHealth,
+  EarthquakeIncident,
+  CrisisSummary,
+  ForexRate,
+  EconomySummary,
+  MarketAssetQuote,
 } from "@repo/shared";
 
 const ENDPOINTS = {
@@ -10,6 +15,11 @@ const ENDPOINTS = {
   snapshot: "/v1/ingest/snapshot",
   event: "/v1/ingest/event",
   sourceHealth: "/v1/ingest/source-health",
+  crisisEarthquakes: "/v1/ingest/crisis/earthquakes",
+  crisisSummary: "/v1/ingest/crisis/summary",
+  economyForex: "/v1/ingest/economy/forex",
+  economySummary: "/v1/ingest/economy/summary",
+  economyAssets: "/v1/ingest/economy/assets",
 } as const;
 
 async function post(
@@ -52,6 +62,41 @@ export async function postSourceHealth(
   health: SourceHealth
 ): Promise<boolean> {
   return post(apiUrl, ENDPOINTS.sourceHealth, health);
+}
+
+export async function postEarthquakeIncidents(
+  apiUrl: string,
+  incidents: EarthquakeIncident[]
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.crisisEarthquakes, incidents);
+}
+
+export async function postCrisisSummary(
+  apiUrl: string,
+  summary: CrisisSummary
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.crisisSummary, summary);
+}
+
+export async function postForexRates(
+  apiUrl: string,
+  rates: ForexRate[]
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.economyForex, rates);
+}
+
+export async function postEconomySummary(
+  apiUrl: string,
+  summary: EconomySummary
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.economySummary, summary);
+}
+
+export async function postMarketAssetQuotes(
+  apiUrl: string,
+  quotes: MarketAssetQuote[]
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.economyAssets, quotes);
 }
 
 export type EcnIngestPayload = {

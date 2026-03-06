@@ -10,14 +10,5 @@
       "name": "Nepal election (X via Nitter RSS)",
       "query": "nepal election"
     }
-  ],
-  "reddit": [
-    { "name": "r/nepal", "subreddit": "nepal" },
-    { "name": "r/NepalPolitics", "subreddit": "NepalPolitics" },
-    { "name": "r/Nepal", "subreddit": "Nepal" },
-    { "name": "r/NepalStock", "subreddit": "NepalStock" },
-    { "name": "r/Nepali", "subreddit": "Nepali" },
-    { "name": "r/Nepalese", "subreddit": "Nepalese" },
-    { "name": "r/NepalInvestors", "subreddit": "NepalInvestors" }
   ]
 }

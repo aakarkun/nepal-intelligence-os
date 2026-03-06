@@ -2,8 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchNationalSummary } from "@/lib/api";
-import { formatNumber, timeAgo } from "@/lib/utils";
+import { formatNumber, formatNepalDateTime, timeAgo } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import type { NationalSummary } from "@repo/shared";
 
 function StatCard({
@@ -26,10 +27,13 @@ function StatCard({
 }
 
 export function NationalSummaryCards() {
+  const { selectedDatasetId, datasets } = useElectionDatasetStore();
+  const selectedDataset = datasets.find((dataset) => dataset.id === selectedDatasetId);
+  const isCurrentDataset = selectedDataset?.isCurrent ?? true;
   const { data, isLoading } = useQuery<NationalSummary>({
-    queryKey: ["national-summary"],
-    queryFn: fetchNationalSummary,
-    refetchInterval: 15_000,
+    queryKey: ["national-summary", selectedDatasetId],
+    queryFn: () => fetchNationalSummary(selectedDatasetId),
+    refetchInterval: isCurrentDataset ? 15_000 : false,
   });
 
   if (isLoading || !data) {
@@ -101,16 +105,10 @@ export function NationalSummaryCards() {
 
       <StatCard label="Last Update">
         <p className="font-mono text-2xl font-bold tabular-nums">
-          {timeAgo(data.timestamp)}
+          {isCurrentDataset ? timeAgo(data.timestamp) : formatNepalDateTime(data.timestamp)}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {new Date(data.timestamp).toLocaleTimeString("en-US", {
-            timeZone: "Asia/Kathmandu",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-          })}{" "}
-          NPT
+          {isCurrentDataset ? "NPT freshness clock" : "Archived snapshot timestamp"}
         </p>
       </StatCard>
     </div>
@@ -118,7 +116,11 @@ export function NationalSummaryCards() {
       <p className="mt-2 text-xs text-muted-foreground">
         Source: {data.sourceName ?? data.sourceId}
         {" · "}
-        Updated {timeAgo(data.sourceFetchedAt ?? data.timestamp)} ago
+        {isCurrentDataset
+          ? `Updated ${timeAgo(data.sourceFetchedAt ?? data.timestamp)} ago`
+          : `Archived snapshot from ${formatNepalDateTime(
+              data.sourceFetchedAt ?? data.timestamp
+            )}`}
       </p>
     )}
     </>

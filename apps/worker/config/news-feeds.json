@@ -4,10 +4,6 @@
     "url": "https://news.google.com/rss/search?q=nepal+election"
   },
   {
-    "name": "Online Khabar (English)",
-    "url": "https://english.onlinekhabar.com/feed"
-  },
-  {
     "name": "Online Khabar",
     "url": "https://www.onlinekhabar.com/feed"
   },
@@ -24,4 +20,3 @@
     "url": "https://annapurnapost.com/rss"
   }
 ]
-

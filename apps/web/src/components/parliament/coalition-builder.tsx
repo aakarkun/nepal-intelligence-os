@@ -5,14 +5,16 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchNationalSummary } from "@/lib/api";
 import { HOR_MAJORITY_THRESHOLD } from "@repo/shared";
 import { cn } from "@/lib/utils";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function CoalitionBuilder() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { selectedDatasetId } = useElectionDatasetStore();
 
   const { data: summary } = useQuery({
-    queryKey: ["national-summary"],
-    queryFn: fetchNationalSummary,
+    queryKey: ["national-summary", selectedDatasetId],
+    queryFn: () => fetchNationalSummary(selectedDatasetId),
     refetchInterval: 15_000,
   });
 

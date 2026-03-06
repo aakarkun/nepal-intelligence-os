@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { ConstituencyResult } from "@repo/shared";
-import { cn, formatNumber, timeAgo } from "@/lib/utils";
+import { cn, formatNepalDateTime, formatNumber, timeAgo } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { ArrowLeft, Copy, Check } from "lucide-react";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 
 interface ConstituencyDossierProps {
   data: ConstituencyResult;
@@ -42,6 +43,9 @@ function StatusBadge({ status }: { status: string }) {
 
 export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
   const [copied, setCopied] = useState(false);
+  const { selectedDatasetId, datasets } = useElectionDatasetStore();
+  const selectedDataset = datasets.find((dataset) => dataset.id === selectedDatasetId);
+  const isCurrentDataset = selectedDataset?.isCurrent ?? true;
 
   const sortedCandidates = [...data.candidates].sort(
     (a, b) => b.votes - a.votes
@@ -83,7 +87,11 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
           <p className="mt-1 text-xs text-muted-foreground">
             Source: {data.sourceName ?? data.sourceId}
             {" · "}
-            Updated {timeAgo(data.sourceFetchedAt ?? data.lastUpdate)} ago
+            {isCurrentDataset
+              ? `Updated ${timeAgo(data.sourceFetchedAt ?? data.lastUpdate)} ago`
+              : `Archived snapshot from ${formatNepalDateTime(
+                  data.sourceFetchedAt ?? data.lastUpdate
+                )}`}
           </p>
         )}
       </div>

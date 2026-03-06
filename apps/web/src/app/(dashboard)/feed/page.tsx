@@ -9,12 +9,11 @@ export default function FeedPage() {
           Signals Feed
         </h1>
         <p className="text-muted-foreground text-sm">
-          Live intelligence stream — all signals
+          Official, operational, anomaly, and social signals. News articles are separated into News Room.
         </p>
       </div>
       <SignalsFeed
-        socialOnly
-        allowedTypes={["note"] as SignalEventType[]}
+        allowedTypes={["official", "ingest", "anomaly", "note"] as SignalEventType[]}
       />
     </div>
   );

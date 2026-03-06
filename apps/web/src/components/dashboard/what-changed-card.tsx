@@ -5,8 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Clock } from "lucide-react";
 import { fetchConstituencies } from "@/lib/api";
-import { cn, timeAgo } from "@/lib/utils";
+import { cn, formatNepalDateTime, timeAgo } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import type { ConstituencyResult } from "@repo/shared";
 
 interface MarginDelta {
@@ -36,13 +37,16 @@ function getTopTwoColors(c: ConstituencyResult): [string, string] {
 
 export function WhatChangedCard() {
   const router = useRouter();
+  const { selectedDatasetId, datasets } = useElectionDatasetStore();
+  const selectedDataset = datasets.find((dataset) => dataset.id === selectedDatasetId);
+  const isCurrentDataset = selectedDataset?.isCurrent ?? true;
   const prevSnapshot = useRef<Map<string, ConstituencyResult>>(new Map());
   const lastSnapshotTime = useRef<number>(0);
 
   const { data: constituencies } = useQuery({
-    queryKey: ["constituencies"],
-    queryFn: () => fetchConstituencies(),
-    refetchInterval: 60_000,
+    queryKey: ["constituencies", selectedDatasetId],
+    queryFn: () => fetchConstituencies({ dataset: selectedDatasetId }),
+    refetchInterval: isCurrentDataset ? 60_000 : false,
   });
 
   const updateSnapshot = useCallback(() => {
@@ -61,11 +65,42 @@ export function WhatChangedCard() {
   }, [constituencies, updateSnapshot]);
 
   useEffect(() => {
+    if (!isCurrentDataset) return;
     const interval = setInterval(() => {
       updateSnapshot();
     }, 60_000);
     return () => clearInterval(interval);
-  }, [updateSnapshot]);
+  }, [isCurrentDataset, updateSnapshot]);
+
+  if (!isCurrentDataset) {
+    return (
+      <Card className="h-full">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="font-display text-base font-semibold">
+                What Changed
+              </CardTitle>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Archive mode
+              </p>
+            </div>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Change tracking is only available for the live dataset. Archived elections render as fixed snapshots for comparison.
+          </p>
+          {selectedDataset?.timestamp && (
+            <p className="text-[10px] text-muted-foreground">
+              Snapshot timestamp {formatNepalDateTime(selectedDataset.timestamp)}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
   const deltas: MarginDelta[] = [];
   if (constituencies && prevSnapshot.current.size > 0) {
