@@ -10,6 +10,7 @@ import {
   Radio,
 } from "lucide-react";
 import { useState } from "react";
+import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -179,7 +180,7 @@ function AIBriefingPanel() {
 }
 
 export function WarRoomPanel() {
-  const enabled = process.env.NEXT_PUBLIC_ENABLE_WAR_ROOM === "true";
+  const enabled = env.NEXT_PUBLIC_ENABLE_WAR_ROOM;
 
   if (!enabled) return <LockedState />;
 

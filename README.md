@@ -75,16 +75,27 @@ Services:
 
 | Variable | Description | Required |
 |----------|-------------|----------|
+| **API** | | |
 | `API_PORT` | API server port (default: 3001) | No |
+| `API_URL` | API base URL (used by worker; default: http://localhost:3001) | No |
+| **Frontend** | | |
 | `NEXT_PUBLIC_API_URL` | API URL for frontend (default: http://localhost:3001) | No |
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox GL JS access token | Yes |
 | `NEXT_PUBLIC_ENABLE_WAR_ROOM` | Enable War Room feature (default: false) | No |
-| `REPLAY_SPEED` | Fixture replay speed multiplier (default: 5) | No |
-| `LIVEKIT_URL` | LiveKit server URL (for War Room) | No |
+| **LiveKit (War Room)** | | |
+| `LIVEKIT_URL` | LiveKit server URL (e.g. wss://your-project.livekit.cloud) | No |
 | `LIVEKIT_API_KEY` | LiveKit API key | No |
 | `LIVEKIT_API_SECRET` | LiveKit API secret | No |
+| **Database / Redis** | | |
 | `DATABASE_URL` | PostgreSQL connection string (Phase 2) | No |
-| `REDIS_URL` | Redis connection string | No |
+| `REDIS_URL` | Redis connection string (optional; for SSE fan-out) | No |
+| **Worker** | | |
+| `REPLAY_SPEED` | Fixture replay speed multiplier (default: 5) | No |
+| `MODE` | `replay` or `live` (default: live) | No |
+| `CRON_ECN_MINUTES` | How often to poll ECN + news in live mode (minutes; 0 = run once and exit) | No |
+| `ECN_BASE_URL` | ECN results base URL (default: https://election.gov.np/results) | No |
+| `NEWS_FEEDS` | Optional; semicolon-separated Name&#124;URL pairs to extend/override news feeds | No |
+| `DEBUG_NEWS_TIMES` | Set to `true` to log feed item timestamps (debug) | No |
 
 ## Routes
 

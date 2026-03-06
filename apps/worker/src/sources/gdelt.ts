@@ -158,3 +158,16 @@ export async function fetchGdeltSignalEvents(): Promise<SignalEvent[]> {
   return chunks.flat();
 }
 
+/**
+ * Reddit-sourced content via GDELT — does not hit Reddit's servers, so no IP block risk.
+ * Returns articles/posts that GDELT has indexed from reddit.com (Nepal/election related).
+ */
+export async function fetchGdeltRedditEvents(): Promise<SignalEvent[]> {
+  return fetchGdeltEventsFromQuery({
+    query: "(nepal OR kathmandu) (election OR vote OR protest OR politics) domain:reddit.com",
+    sourceName: "GDELT — Reddit (Nepal)",
+    type: "note",
+    maxrecords: 30,
+  });
+}
+

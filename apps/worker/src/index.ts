@@ -1,13 +1,15 @@
-import path from "node:path";
 import { runReplay } from "./replay";
+import { env } from "./env";
 import { fetchEcnRaw, parseEcnRaw } from "./sources/ecn";
 import { fetchNewsRaw } from "./sources/news";
 import {
   fetchGdeltNewsEvents,
   fetchGdeltSignalEvents,
+  fetchGdeltRedditEvents,
 } from "./sources/gdelt";
 import { fetchTwitterEvents, type TwitterFeedConfig } from "./sources/twitter";
 import { fetchRedditEvents, type RedditFeedConfig } from "./sources/reddit";
+import { fetchNitterEvents, type NitterFeedConfig } from "./sources/nitter";
 import {
   normalizeEcnToSummary,
   normalizeEcnToConstituencies,
@@ -20,21 +22,14 @@ import {
 } from "./ingest-client";
 import type { SourceHealth } from "@repo/shared";
 
-const API_URL = process.env.API_URL ?? "http://localhost:3001";
-const REPLAY_SPEED = Number(process.env.REPLAY_SPEED) || 10;
-const MODE = (process.env.MODE ?? "replay") as "replay" | "live";
-
-const NEWS_FEEDS_PATH =
-  process.env.NEWS_FEEDS_PATH ??
-  path.resolve(import.meta.dir, "../config/news-feeds.json");
-
-const SOCIAL_FEEDS_PATH =
-  process.env.SOCIAL_FEEDS_PATH ??
-  path.resolve(import.meta.dir, "../config/social-feeds.json");
+const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH } = env;
 
 // GDELT is rate-limited fairly aggressively, so we only poll it at most
 // once every 15 minutes, regardless of the main cron frequency.
 const GDELT_MIN_INTERVAL_MS = 15 * 60 * 1000;
+
+// Reddit: delay between subreddit requests to avoid 403 (env REDDIT_DELAY_MS, default 5s).
+const REDDIT_DELAY_BETWEEN_FEEDS_MS = env.REDDIT_DELAY_MS;
 let lastGdeltNewsRun: number | null = null;
 let lastGdeltSignalRun: number | null = null;
 
@@ -44,7 +39,7 @@ async function runLiveEcn(): Promise<void> {
   const now = new Date().toISOString();
 
   try {
-    const { html } = await fetchEcnRaw({ baseUrl: process.env.ECN_BASE_URL });
+    const { html } = await fetchEcnRaw({ baseUrl: env.ECN_BASE_URL });
     const raw = parseEcnRaw(html);
     const summary = normalizeEcnToSummary(raw, sourceId, sourceName);
     const constituencies = normalizeEcnToConstituencies(raw, sourceId, sourceName);
@@ -104,7 +99,7 @@ async function runLiveNews(): Promise<void> {
   // Optional override/extension: semicolon-separated "Name|URL" pairs
   // from NEWS_FEEDS env, e.g.
   // NEWS_FEEDS=Google News — Nepal Election|https://...;Online Khabar|https://...
-  const feedsVar = process.env.NEWS_FEEDS;
+  const feedsVar = env.NEWS_FEEDS;
   if (feedsVar) {
     const entries = feedsVar.split(";").map((p) => p.trim());
     for (const entry of entries) {
@@ -119,13 +114,10 @@ async function runLiveNews(): Promise<void> {
 
   // Backwards compatibility: single NEWS_FEED_URL/NEWS_SOURCE_NAME envs
   if (feeds.length === 0) {
-    const legacyUrl = process.env.NEWS_FEED_URL;
-    if (legacyUrl) {
-      feeds.push({
-        feedUrl: legacyUrl,
-        sourceName: process.env.NEWS_SOURCE_NAME ?? "Primary News Feed",
-      });
-    }
+    feeds.push({
+      feedUrl: env.NEWS_FEED_URL,
+      sourceName: env.NEWS_SOURCE_NAME,
+    });
   }
 
   if (feeds.length === 0) {
@@ -242,6 +234,7 @@ async function runLiveSocial(): Promise<void> {
   type SocialConfig = {
     twitter?: TwitterFeedConfig[];
     reddit?: RedditFeedConfig[];
+    nitter?: NitterFeedConfig[];
   };
 
   let cfg: SocialConfig = {};
@@ -287,8 +280,37 @@ async function runLiveSocial(): Promise<void> {
     }
   }
 
+  // Nitter: X/Twitter via RSS (no API key, avoids direct X requests)
+  const nitterFeeds = cfg.nitter ?? [];
+  for (const feed of nitterFeeds) {
+    try {
+      const events = await fetchNitterEvents(feed);
+      for (const event of events) {
+        const ok = await postEvent(API_URL, event);
+        if (ok) totalPosted++;
+      }
+      if (events.length > 0) {
+        console.log(
+          `[live] Nitter ingest done from "${feed.name}": ${events.length} events`
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(
+        `[live] Nitter ingest failed for "${feed.name}":`,
+        message
+      );
+    }
+  }
+
   const redditFeeds = cfg.reddit ?? [];
-  for (const feed of redditFeeds) {
+  for (let i = 0; i < redditFeeds.length; i++) {
+    if (i > 0) {
+      await new Promise((r) =>
+        setTimeout(r, REDDIT_DELAY_BETWEEN_FEEDS_MS)
+      );
+    }
+    const feed = redditFeeds[i];
     try {
       const events = await fetchRedditEvents(feed);
       for (const event of events) {
@@ -307,6 +329,23 @@ async function runLiveSocial(): Promise<void> {
         message
       );
     }
+  }
+
+  // ─── GDELT Reddit (no direct Reddit requests — avoids IP block) ───────────────
+  try {
+    const gdeltRedditEvents = await fetchGdeltRedditEvents();
+    for (const event of gdeltRedditEvents) {
+      const ok = await postEvent(API_URL, event);
+      if (ok) totalPosted++;
+    }
+    if (gdeltRedditEvents.length > 0) {
+      console.log(
+        `[live] GDELT Reddit ingest done: ${gdeltRedditEvents.length} events`
+      );
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[live] GDELT Reddit ingest failed:", message);
   }
 
   // ─── GDELT Signals (15 min interval) ────────────────────────────────────────
@@ -378,7 +417,7 @@ if (MODE === "replay") {
 console.log("──────────────────────────────────────────");
 
 if (MODE === "live") {
-  const cronMinutes = Number(process.env.CRON_ECN_MINUTES) || 0;
+  const cronMinutes = env.CRON_ECN_MINUTES;
   if (cronMinutes > 0) {
     const intervalMs = cronMinutes * 60 * 1000;
     const runCycle = () => {

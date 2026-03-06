@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useQuery } from "@tanstack/react-query";
+import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
 import { fetchConstituencies } from "@/lib/api";
 import type { ConstituencyResult } from "@repo/shared";
@@ -12,8 +13,7 @@ import { useFilterStore } from "@/stores/filter-store";
 import { MapTooltip } from "./map-tooltip";
 import { MapControls, type LayerVisibility } from "./map-controls";
 
-mapboxgl.accessToken =
-  process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+mapboxgl.accessToken = env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 const NEPAL_CENTER: [number, number] = [84.124, 28.3949];
 const NEPAL_ZOOM = 6.5;

@@ -31,6 +31,7 @@ docs/
   - Web: News Room page (`/news-room`), nav + command palette, feed “news” type and “Read more” link for `event.url`.
 - **API:** Seed from worker fixtures on startup when store is empty.
 - **Web:** Dev/build/start use `bunx next` so `bun run dev:web` works.
+- **News, Reddit & X without IP blocks:** GDELT Reddit (no direct Reddit requests), Nitter RSS for X (no API key), Reddit backoff + configurable delay. See `docs/DATA-SOURCES-AVOIDING-BLOCKS.md` and `.env.example` (REDDIT_*, NITTER_BASE_URL).
 
 ## What’s next (from plans)
 
@@ -47,6 +48,8 @@ All design and implementation plans live under **`docs/plans/`**:
 | [LIVE-INGEST-AND-NEWS-ROOM-SUMMARY.md](docs/plans/LIVE-INGEST-AND-NEWS-ROOM-SUMMARY.md) | Short readable summary of live ingest and News Room. |
 | [2025-03-05-live-ingest-and-news-room-design.md](docs/plans/2025-03-05-live-ingest-and-news-room-design.md) | Full design: attribution, pipeline, worker layout, ECN, News Room. |
 | [2025-03-05-live-ingest-implementation-plan.md](docs/plans/2025-03-05-live-ingest-implementation-plan.md) | Phased implementation plan (tasks 1–13). |
+| [2025-03-06-scrapling-live-election-news-signals.md](docs/plans/2025-03-06-scrapling-live-election-news-signals.md) | Scrapling for ECN, news, signals. |
+| [DATA-SOURCES-AVOIDING-BLOCKS.md](docs/DATA-SOURCES-AVOIDING-BLOCKS.md) | News, Reddit & X — getting data without IP blocks. |
 
 ## How to run
 

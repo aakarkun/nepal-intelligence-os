@@ -5,6 +5,12 @@
       "query": "nepal election lang:en -is:retweet"
     }
   ],
+  "nitter": [
+    {
+      "name": "Nepal election (X via Nitter RSS)",
+      "query": "nepal election"
+    }
+  ],
   "reddit": [
     { "name": "r/nepal", "subreddit": "nepal" },
     { "name": "r/NepalPolitics", "subreddit": "NepalPolitics" },
