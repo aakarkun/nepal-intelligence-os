@@ -48,11 +48,40 @@ cp .env.example .env
 # Start the API server (port 3001)
 bun run dev:api
 
-# In another terminal — start the replay worker
+# In another terminal — start the worker
 bun run dev:worker
 
 # In another terminal — start the web UI (port 3000)
 bun run dev:web
+```
+
+Live mode now disables Reddit and GDELT by default to avoid rate limits and IP blocks. Re-enable them only when needed:
+
+```bash
+ENABLE_GDELT=true ENABLE_REDDIT=true bun run dev:worker
+```
+
+The worker now uses the Scrapling Ekantipur crawl for election data by default. Conservative defaults:
+
+- `CRON_ECN_MINUTES=30`
+- `SCRAPLING_REQUEST_DELAY_MS=1000`
+- `LIVE_STATE_PATH=.live-worker-state.json`
+
+That means the crawler runs roughly every 30 minutes and deliberately spaces constituency requests so a full pass can take a few minutes instead of hammering the source.
+The worker also persists the last completed live cycle, so restarting it waits until the next due window instead of scraping immediately again.
+
+Scrapling tools are available under `apps/scrapling/`:
+
+```bash
+cd apps/scrapling
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+scrapling install
+cd ../..
+
+bun run scrape:ecn
+bun run scrape:news
 ```
 
 ## Docker Deployment
@@ -92,8 +121,14 @@ Services:
 | **Worker** | | |
 | `REPLAY_SPEED` | Fixture replay speed multiplier (default: 5) | No |
 | `MODE` | `replay` or `live` (default: live) | No |
-| `CRON_ECN_MINUTES` | How often to poll ECN + news in live mode (minutes; 0 = run once and exit) | No |
-| `ECN_BASE_URL` | ECN results base URL (default: https://election.gov.np/results) | No |
+| `ENABLE_GDELT` | Enable GDELT news/social enrichment (default: false) | No |
+| `ENABLE_REDDIT` | Enable direct Reddit ingestion (default: false) | No |
+| `ENABLE_SCRAPLING_ECN` | Use the Scrapling Ekantipur election crawl in the worker (default: true) | No |
+| `CRON_ECN_MINUTES` | How often to run election/news polling in live mode (default: 30; `0` = run once and exit) | No |
+| `ECN_BASE_URL` | Ekantipur election base URL for the Scrapling crawl | No |
+| `LIVE_STATE_PATH` | File used to persist the last completed live worker cycle between restarts | No |
+| `SCRAPLING_REQUEST_DELAY_MS` | Delay between constituency page requests in the crawler (default: 1000) | No |
+| `MARKET_ASSET_MINUTES` | How often to refresh Gold/Silver/BTC quotes in live mode (default: 360) | No |
 | `NEWS_FEEDS` | Optional; semicolon-separated Name&#124;URL pairs to extend/override news feeds | No |
 | `DEBUG_NEWS_TIMES` | Set to `true` to log feed item timestamps (debug) | No |
 
@@ -107,8 +142,8 @@ Services:
 | `/constituencies/[id]` | Constituency Dossier | Active |
 | `/parliament` | Parliament Control | Active |
 | `/feed` | Signals Feed | Active |
-| `/economy` | Economic Pulse | Phase 2 stub |
-| `/disasters` | Crisis Monitor | Phase 2 stub |
+| `/economy` | Economic Pulse | Active |
+| `/disasters` | Crisis Monitor | Active |
 | `/war-room` | War Room | Scaffold |
 
 ## Replay Mode
@@ -127,6 +162,10 @@ REPLAY_SPEED=10 bun run dev:worker
 ```
 
 The replay cursor is persisted in SQLite, so restarting picks up where it left off. Delete `apps/worker/.replay-cursor.sqlite` to restart from the beginning.
+
+## Scrapling
+
+The repo now includes a Python Scrapling bridge in `apps/scrapling/` for Ekantipur election ingestion and news scraping. The Ekantipur crawler posts live election summaries and constituency snapshots into the API, and the worker uses it by default in live mode.
 
 ## Docs & plans
 
