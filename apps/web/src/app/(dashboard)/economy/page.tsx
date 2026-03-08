@@ -46,7 +46,7 @@ const ECONOMY_KEYWORDS = [
   "fuel",
 ];
 
-const TRACKED_CODES = ["USD", "EUR", "GBP"] as const;
+const TRACKED_CODES = ["AUD", "USD", "EUR", "GBP"] as const;
 
 function rateTone(change: number | null) {
   if (change === null || change === 0) {
@@ -147,53 +147,23 @@ export default function EconomyPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card className="border-border/30 bg-card/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
-              USD / NPR
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="font-display text-4xl font-bold tabular-nums leading-none">
-              {summary?.usdBuy ? summary.usdBuy.toFixed(2) : "--"}
-            </div>
-            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              NRB buying rate
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/30 bg-card/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
-              EUR / NPR
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="font-display text-4xl font-bold tabular-nums leading-none">
-              {summary?.eurBuy ? summary.eurBuy.toFixed(2) : "--"}
-            </div>
-            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Euro buying rate
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/30 bg-card/30">
-          <CardHeader className="pb-2">
-            <CardTitle className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
-              GBP / NPR
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="font-display text-4xl font-bold tabular-nums leading-none">
-              {summary?.gbpBuy ? summary.gbpBuy.toFixed(2) : "--"}
-            </div>
-            <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-              Pound sterling buying rate
-            </div>
-          </CardContent>
-        </Card>
+        {trackedRates.map((rate) => (
+          <Card key={rate.currencyCode} className="border-border/30 bg-card/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                {rate.currencyCode} / NPR
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="font-display text-4xl font-bold tabular-nums leading-none">
+                {rate.buy.toFixed(2)}
+              </div>
+              <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                {rate.currencyName} buying rate
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <Card className="border-border/30 bg-card/28">
