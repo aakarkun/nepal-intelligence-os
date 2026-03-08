@@ -1,3 +1,4 @@
+import path from "node:path";
 import type {
   NationalSummary,
   ConstituencyResult,
@@ -49,6 +50,32 @@ let crisisSummary: CrisisSummary | null = null;
 let forexRates: ForexRate[] = [];
 let economySummary: EconomySummary | null = null;
 let marketAssetQuotes: MarketAssetQuote[] = [];
+const PERSISTED_STATE_PATH =
+  process.env.API_STATE_PATH ??
+  path.resolve(import.meta.dir, "../.live-api-state.json");
+const BOOTSTRAP_STATE_PATH =
+  process.env.API_BOOTSTRAP_STATE_PATH ??
+  path.resolve(import.meta.dir, "../../../data/bootstrap/live-api-state.json");
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+type PersistedElectionDataset = {
+  meta: Omit<ElectionDatasetMeta, "isCurrent">;
+  nationalSummary: NationalSummary;
+  constituencyResults: ConstituencyResult[];
+};
+
+type PersistedApiState = {
+  currentElectionDatasetId: string | null;
+  electionDatasets: PersistedElectionDataset[];
+  signalEvents: SignalEvent[];
+  anomalies: Anomaly[];
+  sourceHealth: SourceHealth[];
+  earthquakeIncidents: EarthquakeIncident[];
+  crisisSummary: CrisisSummary | null;
+  forexRates: ForexRate[];
+  economySummary: EconomySummary | null;
+  marketAssetQuotes: MarketAssetQuote[];
+};
 
 function slugify(value: string): string {
   return value
@@ -105,6 +132,44 @@ function getDataset(datasetId?: string | null): ElectionDataset | undefined {
   const id = datasetId ?? currentElectionDatasetId;
   if (!id) return undefined;
   return electionDatasets.get(id);
+}
+
+function serializeState(): PersistedApiState {
+  return {
+    currentElectionDatasetId,
+    electionDatasets: Array.from(electionDatasets.values()).map((dataset) => ({
+      meta: dataset.meta,
+      nationalSummary: dataset.nationalSummary,
+      constituencyResults: Array.from(dataset.constituencyResults.values()),
+    })),
+    signalEvents: [...signalEvents],
+    anomalies: [...anomalies],
+    sourceHealth: Array.from(sourceHealth.values()),
+    earthquakeIncidents,
+    crisisSummary,
+    forexRates,
+    economySummary,
+    marketAssetQuotes,
+  };
+}
+
+async function persistState(): Promise<void> {
+  try {
+    await Bun.write(PERSISTED_STATE_PATH, JSON.stringify(serializeState(), null, 2));
+  } catch (err) {
+    console.warn(
+      "[nepal-intelligence-os] Failed to persist API state:",
+      err instanceof Error ? err.message : err
+    );
+  }
+}
+
+function schedulePersist(): void {
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    void persistState();
+  }, 150);
 }
 
 // ─── Readers ─────────────────────────────────────────────────────────────────
@@ -187,6 +252,57 @@ export function getElectionDatasets(): ElectionDatasetMeta[] {
     );
 }
 
+export async function loadPersistedState(): Promise<boolean> {
+  try {
+    const liveFile = Bun.file(PERSISTED_STATE_PATH);
+    const bootstrapFile = Bun.file(BOOTSTRAP_STATE_PATH);
+    const file = (await liveFile.exists()) ? liveFile : (await bootstrapFile.exists()) ? bootstrapFile : null;
+    if (!file) return false;
+
+    const raw = (await file.json()) as PersistedApiState;
+
+    electionDatasets.clear();
+    currentElectionDatasetId = raw.currentElectionDatasetId ?? null;
+
+    for (const dataset of raw.electionDatasets ?? []) {
+      electionDatasets.set(dataset.meta.id, {
+        meta: dataset.meta,
+        nationalSummary: dataset.nationalSummary,
+        constituencyResults: new Map(
+          (dataset.constituencyResults ?? []).map((result) => [
+            result.constituencyId,
+            result,
+          ])
+        ),
+      });
+    }
+
+    signalEvents.length = 0;
+    signalEvents.push(...(raw.signalEvents ?? []));
+
+    anomalies.length = 0;
+    anomalies.push(...(raw.anomalies ?? []));
+
+    sourceHealth.clear();
+    for (const health of raw.sourceHealth ?? []) {
+      sourceHealth.set(health.sourceId, health);
+    }
+
+    earthquakeIncidents = raw.earthquakeIncidents ?? [];
+    crisisSummary = raw.crisisSummary ?? null;
+    forexRates = raw.forexRates ?? [];
+    economySummary = raw.economySummary ?? null;
+    marketAssetQuotes = raw.marketAssetQuotes ?? [];
+    return true;
+  } catch (err) {
+    console.warn(
+      "[nepal-intelligence-os] Failed to load persisted API state:",
+      err instanceof Error ? err.message : err
+    );
+    return false;
+  }
+}
+
 // ─── Writers ─────────────────────────────────────────────────────────────────
 
 export function updateNationalSummary(summary: NationalSummary): void {
@@ -197,6 +313,7 @@ export function updateNationalSummary(summary: NationalSummary): void {
   );
   dataset.nationalSummary = summary;
   currentElectionDatasetId = dataset.meta.id;
+  schedulePersist();
 }
 
 export function updateConstituencyResult(result: ConstituencyResult): void {
@@ -207,48 +324,59 @@ export function updateConstituencyResult(result: ConstituencyResult): void {
   );
   dataset.constituencyResults.set(result.constituencyId, result);
   currentElectionDatasetId = dataset.meta.id;
+  schedulePersist();
 }
 
 export function addSignalEvent(event: SignalEvent): void {
   signalEvents.push(event);
+  schedulePersist();
 }
 
 export function addAnomaly(anomaly: Anomaly): void {
   anomalies.push(anomaly);
+  schedulePersist();
 }
 
 export function updateSourceHealth(health: SourceHealth): void {
   sourceHealth.set(health.sourceId, health);
+  schedulePersist();
 }
 
 export function replaceEarthquakeIncidents(incidents: EarthquakeIncident[]): void {
   earthquakeIncidents = incidents;
+  schedulePersist();
 }
 
 export function updateCrisisSummary(summary: CrisisSummary): void {
   crisisSummary = summary;
+  schedulePersist();
 }
 
 export function replaceForexRates(rates: ForexRate[]): void {
   forexRates = rates;
+  schedulePersist();
 }
 
 export function updateEconomySummary(summary: EconomySummary): void {
   economySummary = summary;
+  schedulePersist();
 }
 
 export function replaceMarketAssetQuotes(quotes: MarketAssetQuote[]): void {
   marketAssetQuotes = quotes;
+  schedulePersist();
 }
 
 export function resetElectionData(datasetId?: string): void {
   if (!datasetId) {
     currentElectionDatasetId = null;
     electionDatasets.clear();
+    schedulePersist();
     return;
   }
   electionDatasets.delete(datasetId);
   if (currentElectionDatasetId === datasetId) {
     currentElectionDatasetId = null;
   }
+  schedulePersist();
 }

@@ -35,6 +35,7 @@ Thumbs.db
 *.sqlite
 .replay-cursor.sqlite
 .live-worker-state.json
+.live-api-state.json
 
 # Debug
 npm-debug.log*

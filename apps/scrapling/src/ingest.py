@@ -37,10 +37,6 @@ def post_summary(payload: dict[str, Any]) -> Response:
     return _post("/v1/ingest/summary", payload)
 
 
-def post_reset_election(dataset_id: str) -> Response:
-    return _post("/v1/ingest/reset-election", {"datasetId": dataset_id})
-
-
 def post_snapshot(payload: dict[str, Any]) -> Response:
     return _post("/v1/ingest/snapshot", payload)
 

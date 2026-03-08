@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { api } from "./routes";
 import { createSSEResponse, startHeartbeat } from "./sse";
 import { seedFromFixturesIfEmpty } from "./seed";
+import { loadPersistedState } from "./store";
 
 const app = new Hono();
 
@@ -19,6 +20,11 @@ app.get("/health", (c) => {
 });
 
 const port = Number(process.env.API_PORT) || 3001;
+
+const restored = await loadPersistedState();
+if (restored) {
+  console.log("[nepal-intelligence-os] Restored live API state from JSON");
+}
 
 await seedFromFixturesIfEmpty();
 

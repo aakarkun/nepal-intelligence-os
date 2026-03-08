@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 
 from .config import ECN_BASE_URL, SCRAPLING_REQUEST_DELAY_MS
 from .fetcher import fetch_html
-from .ingest import post_reset_election, post_source_health, post_snapshot, post_summary
+from .ingest import post_source_health, post_snapshot, post_summary
 from .utils import iso_now
 
 DISTRICT_OPTION_RE = re.compile(
@@ -33,14 +33,14 @@ CONSTITUENCY_LINK_RE = re.compile(
 )
 
 PARTY_MAP = {
-    "CPN-UML": {"id": "ncp-uml", "short": "UML", "color": "#dc143c"},
-    "Nepali Congress": {"id": "nc", "short": "NC", "color": "#0066cc"},
-    "Nepali Communist Party": {"id": "ncp-mc", "short": "MC", "color": "#cc0000"},
-    "CPN (Maoist Centre)": {"id": "ncp-mc", "short": "MC", "color": "#cc0000"},
-    "Rastriya Swatantra Party": {"id": "rsp", "short": "RSP", "color": "#ff6600"},
-    "Rastriya Prajatantra Party": {"id": "rppp", "short": "RPP", "color": "#ff9900"},
-    "Janata Samajbadi Party": {"id": "jspn", "short": "JSPN", "color": "#009933"},
-    "Janata Samjbadi Party-Nepal": {"id": "jspn", "short": "JSPN", "color": "#009933"},
+    "CPN-UML": {"id": "ncp-uml", "short": "UML", "color": "#ee1c25"},
+    "Nepali Congress": {"id": "nc", "short": "NC", "color": "#3f653b"},
+    "Nepali Communist Party": {"id": "ncp-mc", "short": "MC", "color": "#ef4444"},
+    "CPN (Maoist Centre)": {"id": "ncp-mc", "short": "MC", "color": "#ef4444"},
+    "Rastriya Swatantra Party": {"id": "rsp", "short": "RSP", "color": "#1a97d5"},
+    "Rastriya Prajatantra Party": {"id": "rppp", "short": "RPP", "color": "#f97316"},
+    "Janata Samajbadi Party": {"id": "jspn", "short": "JSPN", "color": "#ef4444"},
+    "Janata Samjbadi Party-Nepal": {"id": "jspn", "short": "JSPN", "color": "#ef4444"},
     "Janata Samajbadi Party (Ekal Chunab Chinha)": {
         "id": "others",
         "short": "OTH",
@@ -180,11 +180,17 @@ def _parse_party_results(html: str) -> dict[str, dict[str, int | str]]:
     for match in PARTY_RESULTS_ROW_RE.finditer(html):
         party_name = match.group("party_name").strip()
         party_meta = _party_meta(party_name)
-        party_results[party_meta["partyId"]] = {
+        next_record = {
             "partyNumericId": match.group("party_numeric_id"),
             "wins": int(match.group("win")),
             "leads": int(match.group("lead")),
         }
+        current = party_results.get(party_meta["partyId"])
+        if current is None or (
+            int(next_record["wins"]) + int(next_record["leads"])
+            > int(current["wins"]) + int(current["leads"])
+        ):
+            party_results[party_meta["partyId"]] = next_record
     return party_results
 
 
@@ -283,11 +289,6 @@ def _build_summary(
     }
 
 
-def _dataset_id(fetched_at: str) -> str:
-    year = fetched_at[:4]
-    return f"ekantipur-{year}"
-
-
 def run_ecn() -> dict[str, object]:
     fetched_at = iso_now()
     source_health = {
@@ -325,7 +326,6 @@ def run_ecn() -> dict[str, object]:
             except Exception as exc:
                 failures.append(f"{target['url']}: {exc}")
 
-        post_reset_election(_dataset_id(fetched_at)).raise_for_status()
         for snapshot in snapshots:
             post_snapshot(snapshot).raise_for_status()
         summary = _build_summary(snapshots, fetched_at, party_results_from_page)
