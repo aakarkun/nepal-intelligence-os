@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchNationalSummary } from "@/lib/api";
 import { cn, formatNumber } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PartyMark, resolvePartyColor } from "@/components/party/party-mark";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { HOR_MAJORITY_THRESHOLD } from "@repo/shared";
 import type { NationalSummary, PartyResult } from "@repo/shared";
@@ -63,7 +64,10 @@ export function PartyStandings() {
                   className="relative flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500"
                   style={{
                     width: `${widthPct}%`,
-                    backgroundColor: party.partyColor,
+                    backgroundColor: resolvePartyColor(
+                      party.partyId,
+                      party.partyColor
+                    ),
                     minWidth: seats > 0 ? "2px" : undefined,
                   }}
                   title={`${party.partyShortName}: ${seats}`}
@@ -115,9 +119,12 @@ function PartyCard({ party }: { party: PartyResult }) {
       )}
     >
       <div className="flex items-center gap-1.5">
-        <span
-          className="inline-block h-2.5 w-2.5 rounded-full"
-          style={{ backgroundColor: party.partyColor }}
+        <PartyMark
+          partyId={party.partyId}
+          partyName={party.partyName}
+          partyShortName={party.partyShortName}
+          partyColor={party.partyColor}
+          size="sm"
         />
         <span className="text-xs font-semibold">{party.partyShortName}</span>
       </div>

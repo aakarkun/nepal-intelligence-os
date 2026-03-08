@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchNationalSummary } from "@/lib/api";
 import { formatNumber, formatNepalDateTime, timeAgo } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PartyMark } from "@/components/party/party-mark";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import type { NationalSummary } from "@repo/shared";
 
@@ -79,9 +80,12 @@ export function NationalSummaryCards() {
         {leadingParty && (
           <>
             <div className="flex items-center gap-2">
-              <span
-                className="inline-block h-3 w-3 rounded-full"
-                style={{ backgroundColor: leadingParty.partyColor }}
+              <PartyMark
+                partyId={leadingParty.partyId}
+                partyName={leadingParty.partyName}
+                partyShortName={leadingParty.partyShortName}
+                partyColor={leadingParty.partyColor}
+                size="md"
               />
               <span className="font-display text-lg font-semibold">
                 {leadingParty.partyShortName}

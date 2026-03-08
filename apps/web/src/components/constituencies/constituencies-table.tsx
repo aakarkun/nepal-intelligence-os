@@ -18,6 +18,7 @@ import { cn, formatNepalDateTime, formatNumber, timeAgo } from "@/lib/utils";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PartyMark } from "@/components/party/party-mark";
 import { ArrowUpDown, ChevronDown, ChevronUp, Search } from "lucide-react";
 
 type Candidate = ConstituencyResult["candidates"][number];
@@ -89,9 +90,11 @@ const columns = (
         if (!leader) return <span className="text-muted-foreground">—</span>;
         return (
           <div className="flex items-center gap-1.5">
-            <span
-              className="h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: leader.partyColor }}
+            <PartyMark
+              partyId={leader.partyId}
+              partyName={leader.partyName}
+              partyColor={leader.partyColor}
+              size="sm"
             />
             <span className="truncate">{leader.candidateName}</span>
           </div>

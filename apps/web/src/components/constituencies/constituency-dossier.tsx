@@ -7,6 +7,7 @@ import { cn, formatNepalDateTime, formatNumber, timeAgo } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PartyMark } from "@/components/party/party-mark";
 import {
   ResponsiveContainer,
   LineChart,
@@ -170,9 +171,11 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-1.5">
-                          <span
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: c.partyColor }}
+                          <PartyMark
+                            partyId={c.partyId}
+                            partyName={c.partyName}
+                            partyColor={c.partyColor}
+                            size="sm"
                           />
                           <span className={cn(i === 0 && "font-semibold")}>
                             {c.candidateName}
