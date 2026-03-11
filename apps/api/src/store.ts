@@ -92,7 +92,12 @@ function buildDatasetMeta(
   const year = new Date(timestamp).getUTCFullYear();
   const safeSourceId = sourceId ? slugify(sourceId) : "archive";
   const id = `${safeSourceId}-${year}`;
-  const labelSource = sourceName ?? sourceId ?? "Election Archive";
+  const rawLabelSource = sourceName ?? sourceId ?? "Election Archive";
+  // For national HoR elections, prefer a civic-facing label instead of the raw data source.
+  const labelSource =
+    sourceId === "ekantipur" || rawLabelSource.toLowerCase().includes("election commission")
+      ? "Nepal Election"
+      : rawLabelSource;
   return {
     id,
     label: `${labelSource} ${year}`,

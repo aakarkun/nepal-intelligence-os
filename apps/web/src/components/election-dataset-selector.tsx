@@ -5,6 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchElectionDatasets } from "@/lib/api";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 
+function getDisplayLabel(label: string, sourceId?: string | null): string {
+  if (sourceId === "ekantipur" || label.startsWith("Ekantipur Election")) {
+    return label.replace("Ekantipur Election", "Nepal Election");
+  }
+  return label;
+}
+
 export function ElectionDatasetSelector() {
   const { selectedDatasetId, setSelectedDatasetId, setDatasets } =
     useElectionDatasetStore();
@@ -36,12 +43,15 @@ export function ElectionDatasetSelector() {
         onChange={(e) => setSelectedDatasetId(e.target.value || null)}
         className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground"
       >
-        {datasets.map((dataset) => (
-          <option key={dataset.id} value={dataset.id}>
-            {dataset.label}
-            {dataset.isCurrent ? " (Current)" : ""}
-          </option>
-        ))}
+        {datasets.map((dataset) => {
+          const display = getDisplayLabel(dataset.label, dataset.sourceId);
+          return (
+            <option key={dataset.id} value={dataset.id}>
+              {display}
+              {dataset.isCurrent ? " (Current)" : ""}
+            </option>
+          );
+        })}
       </select>
     </label>
   );

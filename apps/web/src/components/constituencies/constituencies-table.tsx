@@ -252,15 +252,15 @@ export function ConstituenciesTable() {
         </div>
       </div>
 
-      <div className="overflow-auto rounded-md border border-border">
+      <div className="overflow-auto rounded-md border border-white/5 bg-card/10">
         <table className="min-w-full border-separate border-spacing-0 text-[11px] sm:text-xs">
-          <thead className="sticky top-0 z-10 bg-background">
+          <thead className="sticky top-0 z-10 bg-background/85 backdrop-blur">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="whitespace-nowrap border-b border-border px-3 py-2 text-left text-xs font-medium text-muted-foreground"
+                    className="whitespace-nowrap border-b border-white/10 px-3 py-2 text-left text-xs font-medium text-muted-foreground"
                   >
                     {header.isPlaceholder ? null : (
                       <button
@@ -304,7 +304,7 @@ export function ConstituenciesTable() {
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="cursor-pointer bg-card transition-colors hover:bg-muted"
+                  className="cursor-pointer transition-colors odd:bg-background even:bg-muted/30 hover:bg-muted"
                   onClick={() =>
                     router.push(
                       `/constituencies/${row.original.constituencyId}`
@@ -314,7 +314,7 @@ export function ConstituenciesTable() {
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="whitespace-nowrap border-b border-border/50 px-3 py-2"
+                      className="whitespace-nowrap border-b border-white/5 px-3 py-2"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

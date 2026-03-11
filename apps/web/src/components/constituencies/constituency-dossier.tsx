@@ -134,10 +134,10 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
           </div>
 
           {/* Results Table */}
-          <div className="overflow-auto rounded-md border border-border">
+          <div className="overflow-auto rounded-md border border-white/5 bg-card/10">
             <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
+              <thead className="bg-background/85 backdrop-blur">
+                <tr className="border-b border-white/10">
                   <th className="px-3 py-2 text-left font-medium text-muted-foreground">
                     #
                   </th>
@@ -164,7 +164,7 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
                   return (
                     <tr
                       key={c.candidateId}
-                      className="border-b border-border/50"
+                      className="border-b border-white/5 odd:bg-background even:bg-muted/20"
                     >
                       <td className="px-3 py-2 tabular-nums text-muted-foreground">
                         {i + 1}

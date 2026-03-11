@@ -1,6 +1,7 @@
 import { NationalSummaryCards } from "@/components/dashboard/national-summary-cards";
 import { PartyStandings } from "@/components/dashboard/party-standings";
-import { WhatChangedCard } from "@/components/dashboard/what-changed-card";
+import { RegionalOverview } from "@/components/dashboard/regional-overview";
+import { FederalProportionalCard } from "@/components/dashboard/federal-proportional-card";
 import { BattleSeats } from "@/components/dashboard/battle-seats";
 import { LiveEventsMini } from "@/components/dashboard/live-events-mini";
 import { CandidateWatch } from "@/components/dashboard/candidate-watch";
@@ -22,13 +23,14 @@ export default function SituationRoomPage() {
       </div>
       <NationalSummaryCards />
       <PartyStandings />
+      <FederalProportionalCard />
+      <RegionalOverview />
       <CandidateWatch />
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="md:col-span-2">
-          <WhatChangedCard />
+        <div className="space-y-4 md:col-span-2">
+          <BattleSeats />
         </div>
         <div className="space-y-4">
-          <BattleSeats />
           <LiveEventsMini />
         </div>
       </div>
