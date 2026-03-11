@@ -10,4 +10,8 @@ export const env = {
   NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "",
   NEXT_PUBLIC_ENABLE_WAR_ROOM:
     process.env.NEXT_PUBLIC_ENABLE_WAR_ROOM === "true",
+  NEXT_PUBLIC_CRON_ECN_MINUTES: Number.parseInt(
+    process.env.NEXT_PUBLIC_CRON_ECN_MINUTES ?? "30",
+    10
+  ),
 } as const;

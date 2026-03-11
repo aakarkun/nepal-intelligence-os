@@ -277,7 +277,8 @@ def _build_summary(
         reverse=True,
     )
     return {
-        "totalSeats": 165,
+        # House of Representatives: 275 total seats = 165 constituency (FPTP) + 110 PR
+        "totalSeats": 275,
         "totalConstituencies": 165,
         "countedConstituencies": counted,
         "totalVotesCast": total_votes_cast,
