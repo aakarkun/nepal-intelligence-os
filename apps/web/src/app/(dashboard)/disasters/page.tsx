@@ -216,13 +216,7 @@ export default function DisastersPage() {
         </Card>
 
         <div className="space-y-4">
-          <Card
-            id="anomalies"
-            className={cn(
-              highlightAnomalies &&
-                "border-status-error/70 shadow-[0_0_0_1px_rgba(220,20,60,0.4)] animate-health-dot"
-            )}
-          >
+          <Card>
             <CardContent className="p-6 space-y-3">
               <div className="flex items-center gap-2">
                 <MapPinned className="h-4 w-4 text-muted-foreground" />
@@ -255,7 +249,13 @@ export default function DisastersPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card
+            id="anomalies"
+            className={cn(
+              highlightAnomalies &&
+                "border-status-error/70 shadow-[0_0_0_1px_rgba(220,20,60,0.4)] animate-health-dot"
+            )}
+          >
             <CardContent className="p-6 space-y-3">
               <div className="flex items-center gap-2">
                 <Siren className="h-4 w-4 text-muted-foreground" />
