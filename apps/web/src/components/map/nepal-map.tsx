@@ -269,6 +269,13 @@ export function NepalMap({
     mapRef.current?.zoomOut({ duration: 300 });
   }, []);
 
+  const handleResetView = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.fitBounds(NEPAL_BOUNDS, { padding: 40, duration: 600 });
+    setSelectedProvince(null);
+  }, [setSelectedProvince]);
+
   // When province filter changes, zoom to that province (if not null)
   useEffect(() => {
     const map = mapRef.current;
@@ -280,15 +287,8 @@ export function NepalMap({
       return;
     }
 
-    const features = map.querySourceFeatures("provinces", {
-      sourceLayer: undefined,
-      filter: ["==", "PROVINCE", selectedProvince],
-    });
-
-    if (!features.length) return;
-
-    const coords = features[0].geometry;
-    if (coords.type !== "Polygon" && coords.type !== "MultiPolygon") return;
+    const allFeatures = map.querySourceFeatures("provinces");
+    if (!allFeatures.length) return;
 
     const bounds = new mapboxgl.LngLatBounds();
 
@@ -300,7 +300,18 @@ export function NepalMap({
       }
     }
 
-    addCoords((coords as any).coordinates);
+    for (const feature of allFeatures) {
+      const raw = (feature.properties as any)?.PROVINCE as number | string | undefined;
+      if (raw == null) continue;
+      const id = typeof raw === "string" ? Number(raw) : raw;
+      if (Number.isNaN(id) || id !== selectedProvince) continue;
+
+      const geom = feature.geometry;
+      if (!geom) continue;
+      if (geom.type === "Polygon" || geom.type === "MultiPolygon") {
+        addCoords((geom as any).coordinates);
+      }
+    }
 
     if (!bounds.isEmpty()) {
       map.fitBounds(bounds, { padding: 60, duration: 700 });
@@ -714,6 +725,7 @@ export function NepalMap({
             onZoomOut={handleZoomOut}
             selectedProvince={selectedProvince}
             onSelectProvince={setSelectedProvince}
+            onResetView={handleResetView}
           />
         </>
       )}

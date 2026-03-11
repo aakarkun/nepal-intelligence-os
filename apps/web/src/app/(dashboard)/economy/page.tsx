@@ -407,8 +407,11 @@ export default function EconomyPage() {
             <CardTitle className="font-display text-base">Signal Board</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {topNews.slice(0, 6).map((event) => (
-                <div key={event.id} className="rounded-md border border-border/25 bg-background/14 p-3">
+            {topNews.slice(0, 6).map((event, index) => (
+                <div
+                  key={`${event.id}-${index}`}
+                  className="rounded-md border border-border/25 bg-background/14 p-3"
+                >
                 <div className="text-sm font-medium leading-tight">{event.title}</div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   {event.source ?? "Unknown source"} · {timeAgo(event.timestamp)}

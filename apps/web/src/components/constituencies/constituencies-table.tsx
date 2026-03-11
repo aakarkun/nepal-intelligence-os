@@ -19,7 +19,8 @@ import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PartyMark } from "@/components/party/party-mark";
-import { ArrowUpDown, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { ArrowUpDown, ChevronDown, ChevronUp, Eye, EyeOff, Search } from "lucide-react";
+import { useRealtimeStore } from "@/stores/realtime-store";
 
 type Candidate = ConstituencyResult["candidates"][number];
 
@@ -65,8 +66,32 @@ function StatusBadge({ status }: { status: string }) {
 const columnHelper = createColumnHelper<ConstituencyResult>();
 
 const columns = (
-  isCurrentDataset: boolean
+  isCurrentDataset: boolean,
+  watchlist: string[],
+  toggleWatchlist: (id: string) => void
 ) => [
+  columnHelper.display({
+    id: "watch",
+    header: () => <span className="sr-only">Watch</span>,
+    cell: ({ row }) => {
+      const id = row.original.constituencyId;
+      const isWatched = watchlist.includes(id);
+      const Icon = isWatched ? EyeOff : Eye;
+      return (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleWatchlist(id);
+          }}
+          className="text-muted-foreground hover:text-nepal-red transition-colors"
+          title={isWatched ? "Remove from watchlist" : "Add to watchlist"}
+        >
+          <Icon className="h-3.5 w-3.5" />
+        </button>
+      );
+    },
+  }),
   columnHelper.accessor("constituencyName", {
     header: "Constituency",
     cell: (info) => (
@@ -151,6 +176,18 @@ export function ConstituenciesTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
+  const watchlist = useRealtimeStore((s) => s.watchlist);
+  const addToWatchlist = useRealtimeStore((s) => s.addToWatchlist);
+  const removeFromWatchlist = useRealtimeStore((s) => s.removeFromWatchlist);
+
+  const toggleWatchlist = (id: string) => {
+    if (watchlist.includes(id)) {
+      removeFromWatchlist(id);
+    } else {
+      addToWatchlist(id);
+    }
+  };
+
   const { data: constituencies = [], isLoading } = useQuery({
     queryKey: ["constituencies", selectedDatasetId],
     queryFn: () => fetchConstituencies({ dataset: selectedDatasetId }),
@@ -182,7 +219,7 @@ export function ConstituenciesTable() {
 
   const table = useReactTable({
     data: filteredData,
-    columns: columns(isCurrentDataset),
+    columns: columns(isCurrentDataset, watchlist, toggleWatchlist),
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,

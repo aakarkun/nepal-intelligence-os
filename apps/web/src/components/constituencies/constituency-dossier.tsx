@@ -13,8 +13,9 @@ import {
   LineChart,
   CartesianGrid,
 } from "recharts";
-import { ArrowLeft, Copy, Check } from "lucide-react";
+import { ArrowLeft, Copy, Check, Eye, EyeOff } from "lucide-react";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
+import { useRealtimeStore } from "@/stores/realtime-store";
 
 interface ConstituencyDossierProps {
   data: ConstituencyResult;
@@ -48,6 +49,18 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
   const selectedDataset = datasets.find((dataset) => dataset.id === selectedDatasetId);
   const isCurrentDataset = selectedDataset?.isCurrent ?? true;
 
+  const watchlist = useRealtimeStore((s) => s.watchlist);
+  const addToWatchlist = useRealtimeStore((s) => s.addToWatchlist);
+  const removeFromWatchlist = useRealtimeStore((s) => s.removeFromWatchlist);
+  const isWatched = watchlist.includes(data.constituencyId);
+  const candidateWatchlist = useRealtimeStore((s) => s.candidateWatchlist);
+  const addCandidateToWatchlist = useRealtimeStore(
+    (s) => s.addCandidateToWatchlist
+  );
+  const removeCandidateFromWatchlist = useRealtimeStore(
+    (s) => s.removeCandidateFromWatchlist
+  );
+
   const sortedCandidates = [...data.candidates].sort(
     (a, b) => b.votes - a.votes
   );
@@ -79,6 +92,27 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
             {data.constituencyName}
           </h1>
           <StatusBadge status={data.status} />
+          <button
+            type="button"
+            onClick={() =>
+              isWatched
+                ? removeFromWatchlist(data.constituencyId)
+                : addToWatchlist(data.constituencyId)
+            }
+            className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-[11px] text-muted-foreground hover:text-nepal-red hover:border-nepal-red/60 transition-colors"
+          >
+            {isWatched ? (
+              <>
+                <EyeOff className="h-3 w-3" />
+                Unwatch
+              </>
+            ) : (
+              <>
+                <Eye className="h-3 w-3" />
+                Watch
+              </>
+            )}
+          </button>
         </div>
         <p className="text-sm text-muted-foreground">
           {data.districtName} · Province {data.provinceId} ·{" "}
@@ -180,6 +214,40 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
                           <span className={cn(i === 0 && "font-semibold")}>
                             {c.candidateName}
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const exists = candidateWatchlist.some(
+                                (wc) => wc.candidateId === c.candidateId
+                              );
+                              if (exists) {
+                                removeCandidateFromWatchlist(c.candidateId);
+                              } else {
+                                addCandidateToWatchlist({
+                                  candidateId: c.candidateId,
+                                  constituencyId: data.constituencyId,
+                                  candidateName: c.candidateName,
+                                  partyName: c.partyName,
+                                });
+                              }
+                            }}
+                            className="ml-1 text-muted-foreground hover:text-nepal-red transition-colors"
+                            title={
+                              candidateWatchlist.some(
+                                (wc) => wc.candidateId === c.candidateId
+                              )
+                                ? "Unwatch candidate"
+                                : "Watch candidate"
+                            }
+                          >
+                            {candidateWatchlist.some(
+                              (wc) => wc.candidateId === c.candidateId
+                            ) ? (
+                              <EyeOff className="h-3 w-3" />
+                            ) : (
+                              <Eye className="h-3 w-3" />
+                            )}
+                          </button>
                         </div>
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">

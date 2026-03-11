@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
@@ -13,7 +14,7 @@ import {
   MapPinned,
 } from "lucide-react";
 import { fetchAnomalies, fetchCrisisSummary, fetchEarthquakeIncidents } from "@/lib/api";
-import { formatNepalDateTime, timeAgo } from "@/lib/utils";
+import { cn, formatNepalDateTime, timeAgo } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -45,6 +46,11 @@ const FEATURES = [
 ];
 
 export default function DisastersPage() {
+  const searchParams = useSearchParams();
+  const focusSection = searchParams.get("focus");
+  const [highlightAnomalies, setHighlightAnomalies] = useState(
+    focusSection === "anomalies"
+  );
   const { data: incidents = [] } = useQuery({
     queryKey: ["crisis-earthquakes"],
     queryFn: fetchEarthquakeIncidents,
@@ -66,6 +72,14 @@ export default function DisastersPage() {
     () => [...incidents].sort((a, b) => b.magnitude - a.magnitude).slice(0, 8),
     [incidents]
   );
+
+  useEffect(() => {
+    if (focusSection === "anomalies") {
+      setHighlightAnomalies(true);
+      const timer = setTimeout(() => setHighlightAnomalies(false), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [focusSection]);
 
   return (
     <div className="space-y-6">
@@ -202,7 +216,13 @@ export default function DisastersPage() {
         </Card>
 
         <div className="space-y-4">
-          <Card>
+          <Card
+            id="anomalies"
+            className={cn(
+              highlightAnomalies &&
+                "border-status-error/70 shadow-[0_0_0_1px_rgba(220,20,60,0.4)] animate-health-dot"
+            )}
+          >
             <CardContent className="p-6 space-y-3">
               <div className="flex items-center gap-2">
                 <MapPinned className="h-4 w-4 text-muted-foreground" />
@@ -243,27 +263,7 @@ export default function DisastersPage() {
                   Open anomaly queue
                 </h2>
               </div>
-              {anomalies.slice(0, 5).map((anomaly) => (
-                <div key={anomaly.id} className="rounded-md border border-border p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-sm font-medium">{anomaly.type}</div>
-                    <Badge variant={anomaly.severity === "critical" ? "error" : "stale"}>
-                      {anomaly.severity}
-                    </Badge>
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {anomaly.details}
-                  </div>
-                  <div className="mt-2 text-[11px] text-muted-foreground">
-                    {timeAgo(anomaly.timestamp)}
-                  </div>
-                </div>
-              ))}
-              {anomalies.length === 0 && (
-                <div className="text-sm text-muted-foreground">
-                  No active anomalies right now.
-                </div>
-              )}
+              <AnomalyQueue anomalies={anomalies} />
             </CardContent>
           </Card>
 
@@ -315,5 +315,77 @@ export default function DisastersPage() {
         })}
       </div>
     </div>
+  );
+}
+
+function AnomalyQueue({ anomalies }: { anomalies: Awaited<ReturnType<typeof fetchAnomalies>> }) {
+  const [page, setPage] = useState(0);
+  const pageSize = 5;
+
+  const sorted = useMemo(
+    () =>
+      [...anomalies].sort((a, b) => {
+        const ta = new Date(a.timestamp).getTime();
+        const tb = new Date(b.timestamp).getTime();
+        if (tb !== ta) return tb - ta;
+        const order: Record<string, number> = { critical: 3, warning: 2, info: 1 };
+        const sa = order[a.severity] ?? 0;
+        const sb = order[b.severity] ?? 0;
+        return sb - sa;
+      }),
+    [anomalies]
+  );
+
+  const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const safePage = Math.min(page, pageCount - 1);
+  const start = safePage * pageSize;
+  const pageItems = sorted.slice(start, start + pageSize);
+
+  if (sorted.length === 0) {
+    return <div className="text-sm text-muted-foreground">No active anomalies right now.</div>;
+  }
+
+  return (
+    <>
+      <div className="space-y-2">
+        {pageItems.map((anomaly) => (
+          <div key={anomaly.id} className="rounded-md border border-border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm font-medium">{anomaly.type}</div>
+              <Badge variant={anomaly.severity === "critical" ? "error" : "stale"}>
+                {anomaly.severity}
+              </Badge>
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">{anomaly.details}</div>
+            <div className="mt-2 text-[11px] text-muted-foreground">
+              {timeAgo(anomaly.timestamp)}
+            </div>
+          </div>
+        ))}
+      </div>
+      {sorted.length > pageSize && (
+        <div className="mt-3 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+            className="h-6 w-6 rounded border border-border text-xs text-muted-foreground disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            ←
+          </button>
+          <span className="text-[11px] text-muted-foreground">
+            {safePage + 1}/{pageCount}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+            disabled={safePage >= pageCount - 1}
+            className="h-6 w-6 rounded border border-border text-xs text-muted-foreground disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            →
+          </button>
+        </div>
+      )}
+    </>
   );
 }
