@@ -103,6 +103,39 @@ export const NationalSummarySchema = z.object({
   sourceFetchedAt: z.string().datetime().optional(),
 });
 
+export const CabinetEventTypeSchema = z.enum([
+  "meeting",
+  "appointment",
+  "reshuffle",
+  "other",
+]);
+export const CabinetEventSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  summary: z.string(),
+  publishedAt: z.string().datetime(),
+  source: z.literal("RSS Nepal"),
+  type: CabinetEventTypeSchema,
+  keywords: z.array(z.string()),
+  url: z.string().url().optional(),
+});
+export type CabinetEvent = z.infer<typeof CabinetEventSchema>;
+
+export const ParliamentSessionStatusSchema = z.enum([
+  "active",
+  "recess",
+  "prorogued",
+]);
+export const ParliamentSessionSchema = z.object({
+  sessionName: z.string(),
+  sessionStart: z.string(),
+  nextSittingDate: z.string().nullable(),
+  pendingBills: z.number().int().min(0).nullable(),
+  status: ParliamentSessionStatusSchema,
+  scrapedAt: z.string().datetime(),
+});
+export type ParliamentSession = z.infer<typeof ParliamentSessionSchema>;
+
 // ─── Signals & Anomalies ────────────────────────────────────────────────────
 
 export const SignalEventTypeSchema = z.enum([

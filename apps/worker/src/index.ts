@@ -33,6 +33,12 @@ import {
 } from "./ingest-client";
 import { fetchNepseSummary } from "./sources/nepse";
 import { fetchFloodAlerts } from "./sources/flood";
+import { fetchCabinetEvents } from "./sources/rss-nepal";
+import { fetchParliamentSession } from "./sources/parliament";
+import {
+  postCabinetEvents,
+  postParliamentSession,
+} from "./ingest-client";
 import type { SourceHealth } from "@repo/shared";
 
 const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH } = env;
@@ -592,6 +598,43 @@ async function runLiveFlood(): Promise<void> {
   }
 }
 
+async function runLiveCabinet(): Promise<void> {
+  try {
+    const events = await fetchCabinetEvents();
+    if (events.length > 0) {
+      await postCabinetEvents(API_URL, events);
+      console.log(`[live] Cabinet events ingest: ${events.length} items`);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[live] Cabinet events ingest failed:", message);
+  }
+}
+
+const PARLIAMENT_DAILY_MS = 24 * 60 * 60 * 1000;
+let lastParliamentRunAt: number | null = null;
+
+async function runLiveParliament(): Promise<void> {
+  const nowMs = Date.now();
+  if (
+    lastParliamentRunAt !== null &&
+    nowMs - lastParliamentRunAt < PARLIAMENT_DAILY_MS
+  ) {
+    return;
+  }
+  lastParliamentRunAt = nowMs;
+  try {
+    const session = await fetchParliamentSession();
+    if (session) {
+      await postParliamentSession(API_URL, session);
+      console.log("[live] Parliament session ingest done");
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[live] Parliament session ingest failed:", message);
+  }
+}
+
 async function runLiveEconomy(state: LiveWorkerState): Promise<void> {
   const now = new Date().toISOString();
   const assetIntervalMs = env.MARKET_ASSET_MINUTES * 60 * 1000;
@@ -707,6 +750,8 @@ async function runLiveCycle(): Promise<void> {
     runLiveSocial(),
     runLiveCrisis(),
     runLiveFlood(),
+    runLiveCabinet(),
+    runLiveParliament(),
     runLiveEconomy(state),
     ...(runNepse ? [runLiveNepse()] : []),
   ]);

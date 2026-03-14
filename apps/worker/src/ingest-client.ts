@@ -7,6 +7,8 @@ import type {
   CrisisSummary,
   CrisisIncident,
   FloodAlertsPayload,
+  CabinetEvent,
+  ParliamentSession,
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
@@ -26,6 +28,8 @@ const ENDPOINTS = {
   economyAssets: "/v1/ingest/economy/assets",
   economyNepse: "/v1/ingest/economy/nepse",
   crisisFloodAlerts: "/v1/ingest/crisis/flood-alerts",
+  politicsCabinetEvents: "/v1/ingest/politics/cabinet-events",
+  politicsParliamentSession: "/v1/ingest/politics/parliament-session",
 } as const;
 
 async function post(
@@ -124,6 +128,20 @@ export async function postFloodAlerts(
   payload: FloodAlertsPayload
 ): Promise<boolean> {
   return post(apiUrl, ENDPOINTS.crisisFloodAlerts, payload);
+}
+
+export async function postCabinetEvents(
+  apiUrl: string,
+  events: CabinetEvent[]
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.politicsCabinetEvents, events);
+}
+
+export async function postParliamentSession(
+  apiUrl: string,
+  session: ParliamentSession
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.politicsParliamentSession, session);
 }
 
 export type EcnIngestPayload = {

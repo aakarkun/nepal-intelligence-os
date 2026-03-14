@@ -8,6 +8,8 @@ import {
   CrisisSummarySchema,
   CrisisIncidentSchema,
   FloodAlertsPayloadSchema,
+  CabinetEventSchema,
+  ParliamentSessionSchema,
   ForexRateSchema,
   EconomySummarySchema,
   MarketAssetQuoteSchema,
@@ -26,6 +28,10 @@ import {
   getCrisisIncidents,
   getFloodAlerts,
   setFloodAlerts,
+  getCabinetEvents,
+  setCabinetEvents,
+  getParliamentSession,
+  setParliamentSession,
   getForexRates,
   getEconomySummary,
   getMarketAssetQuotes,
@@ -293,6 +299,15 @@ api.get("/crisis/flood-alerts", (c) => {
   return c.json(getFloodAlerts(status ?? undefined));
 });
 
+api.get("/politics/cabinet-events", (c) => {
+  const limit = Number(c.req.query("limit") ?? 10);
+  return c.json(getCabinetEvents(limit));
+});
+
+api.get("/politics/parliament-session", (c) => {
+  return c.json(getParliamentSession() ?? null);
+});
+
 api.get("/economy/forex", (c) => {
   return c.json(getForexRates());
 });
@@ -444,6 +459,30 @@ api.post("/ingest/crisis/flood-alerts", async (c) => {
     lastUpdated: parsed.data.lastUpdated,
   });
   return c.json({ ok: true, count: parsed.data.alerts.length });
+});
+
+api.post("/ingest/politics/cabinet-events", async (c) => {
+  const body = await c.req.json();
+  const parsed = CabinetEventSchema.array().safeParse(body);
+
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+
+  setCabinetEvents(parsed.data);
+  return c.json({ ok: true, count: parsed.data.length });
+});
+
+api.post("/ingest/politics/parliament-session", async (c) => {
+  const body = await c.req.json();
+  const parsed = ParliamentSessionSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+
+  setParliamentSession(parsed.data);
+  return c.json({ ok: true });
 });
 
 api.post("/ingest/economy/forex", async (c) => {

@@ -9,6 +9,8 @@ import type {
   CrisisSummary,
   CrisisIncident,
   FloodAlert,
+  CabinetEvent,
+  ParliamentSession,
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
@@ -143,6 +145,15 @@ export function fetchFloodAlerts(status?: string): Promise<{
 }> {
   const qs = status ? `?status=${encodeURIComponent(status)}` : "";
   return fetchJSON(`/v1/crisis/flood-alerts${qs}`);
+}
+
+export function fetchCabinetEvents(limit?: number): Promise<CabinetEvent[]> {
+  const qs = limit != null ? `?limit=${limit}` : "";
+  return fetchJSON(`/v1/politics/cabinet-events${qs}`);
+}
+
+export function fetchParliamentSession(): Promise<ParliamentSession | null> {
+  return fetchJSON<ParliamentSession | null>("/v1/politics/parliament-session");
 }
 
 export function fetchForexRates(): Promise<ForexRate[]> {

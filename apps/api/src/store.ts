@@ -13,6 +13,8 @@ import type {
   EconomySummary,
   MarketAssetQuote,
   NepseSummary,
+  CabinetEvent,
+  ParliamentSession,
 } from "@repo/shared";
 
 // ─── In-Memory Stores ────────────────────────────────────────────────────────
@@ -58,6 +60,8 @@ let forexRates: ForexRate[] = [];
 let economySummary: EconomySummary | null = null;
 let marketAssetQuotes: MarketAssetQuote[] = [];
 let nepseSummary: NepseSummary | null = null;
+let cabinetEvents: CabinetEvent[] = [];
+let parliamentSession: ParliamentSession | null = null;
 const PERSISTED_STATE_PATH =
   process.env.API_STATE_PATH ??
   path.resolve(import.meta.dir, "../.live-api-state.json");
@@ -87,6 +91,8 @@ type PersistedApiState = {
   floodAlerts: FloodAlert[];
   floodAlertsSeasonInactive: boolean;
   floodAlertsLastUpdated: string | null;
+  cabinetEvents: CabinetEvent[];
+  parliamentSession: ParliamentSession | null;
 };
 
 function slugify(value: string): string {
@@ -171,6 +177,8 @@ function serializeState(): PersistedApiState {
     floodAlerts,
     floodAlertsSeasonInactive,
     floodAlertsLastUpdated,
+    cabinetEvents,
+    parliamentSession,
   };
 }
 
@@ -281,6 +289,24 @@ export function setFloodAlerts(payload: {
   schedulePersist();
 }
 
+export function getCabinetEvents(limit = 20): CabinetEvent[] {
+  return cabinetEvents.slice(0, limit);
+}
+
+export function setCabinetEvents(events: CabinetEvent[]): void {
+  cabinetEvents = events.slice(0, 20);
+  schedulePersist();
+}
+
+export function getParliamentSession(): ParliamentSession | null {
+  return parliamentSession;
+}
+
+export function setParliamentSession(session: ParliamentSession | null): void {
+  parliamentSession = session;
+  schedulePersist();
+}
+
 export function getForexRates(): ForexRate[] {
   return forexRates;
 }
@@ -354,6 +380,8 @@ export async function loadPersistedState(): Promise<boolean> {
     floodAlerts = raw.floodAlerts ?? [];
     floodAlertsSeasonInactive = raw.floodAlertsSeasonInactive ?? false;
     floodAlertsLastUpdated = raw.floodAlertsLastUpdated ?? null;
+    cabinetEvents = raw.cabinetEvents ?? [];
+    parliamentSession = raw.parliamentSession ?? null;
     return true;
   } catch (err) {
     console.warn(
