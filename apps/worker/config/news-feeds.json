@@ -18,5 +18,13 @@
   {
     "name": "Annapurna Post",
     "url": "https://annapurnapost.com/rss"
+  },
+  {
+    "name": "Nagarik",
+    "url": "https://nagariknews.nagariknetwork.com/rss"
+  },
+  {
+    "name": "Nepali Times",
+    "url": "https://www.nepalitimes.com/feed/"
   }
 ]
