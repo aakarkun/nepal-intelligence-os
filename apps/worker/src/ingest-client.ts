@@ -9,6 +9,7 @@ import type {
   FloodAlertsPayload,
   CabinetEvent,
   ParliamentSession,
+  GeopoliticsArticle,
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
@@ -30,6 +31,7 @@ const ENDPOINTS = {
   crisisFloodAlerts: "/v1/ingest/crisis/flood-alerts",
   politicsCabinetEvents: "/v1/ingest/politics/cabinet-events",
   politicsParliamentSession: "/v1/ingest/politics/parliament-session",
+  worldArticles: "/v1/ingest/world/articles",
 } as const;
 
 async function post(
@@ -142,6 +144,13 @@ export async function postParliamentSession(
   session: ParliamentSession
 ): Promise<boolean> {
   return post(apiUrl, ENDPOINTS.politicsParliamentSession, session);
+}
+
+export async function postWorldArticles(
+  apiUrl: string,
+  articles: GeopoliticsArticle[]
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.worldArticles, articles);
 }
 
 export type EcnIngestPayload = {

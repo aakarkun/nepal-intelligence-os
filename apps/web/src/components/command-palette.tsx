@@ -12,6 +12,7 @@ import {
   Radio,
   Newspaper,
   TrendingUp,
+  Globe,
   AlertTriangle,
   Headphones,
   Diff,
@@ -36,6 +37,7 @@ const NAV_ITEMS = [
   { label: "Signals Feed", path: "/feed", icon: Radio },
   { label: "News Room", path: "/news-room", icon: Newspaper },
   { label: "Economy", path: "/economy", icon: TrendingUp },
+  { label: "World", path: "/world", icon: Globe },
   { label: "Crisis Monitor", path: "/disasters", icon: AlertTriangle },
   { label: "War Room", path: "/war-room", icon: Headphones },
 ];

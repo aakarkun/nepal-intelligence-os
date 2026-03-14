@@ -10,6 +10,7 @@ import {
   Radio,
   Newspaper,
   TrendingUp,
+  Globe,
   AlertTriangle,
   Headphones,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { href: "/feed", icon: Radio, label: "Signals Feed" },
   { href: "/news-room", icon: Newspaper, label: "News Room" },
   { href: "/economy", icon: TrendingUp, label: "Economy" },
+  { href: "/world", icon: Globe, label: "World" },
   { href: "/disasters", icon: AlertTriangle, label: "Crisis" },
   { href: "/war-room", icon: Headphones, label: "War Room" },
 ] as const;

@@ -136,6 +136,26 @@ export const ParliamentSessionSchema = z.object({
 });
 export type ParliamentSession = z.infer<typeof ParliamentSessionSchema>;
 
+export const GeopoliticsPanelSchema = z.enum([
+  "south_asia",
+  "diplomatic",
+  "remittance",
+  "un",
+]);
+export const GeopoliticsArticleSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  url: z.string().url(),
+  source: z.string(),
+  panel: GeopoliticsPanelSchema,
+  tone: z.number().nullable(),
+  publishedAt: z.string().datetime(),
+  language: z.string(),
+  imageUrl: z.string().url().nullable(),
+  fetchedAt: z.string().datetime(),
+});
+export type GeopoliticsArticle = z.infer<typeof GeopoliticsArticleSchema>;
+
 // ─── Signals & Anomalies ────────────────────────────────────────────────────
 
 export const SignalEventTypeSchema = z.enum([

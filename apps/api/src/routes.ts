@@ -10,6 +10,7 @@ import {
   FloodAlertsPayloadSchema,
   CabinetEventSchema,
   ParliamentSessionSchema,
+  GeopoliticsArticleSchema,
   ForexRateSchema,
   EconomySummarySchema,
   MarketAssetQuoteSchema,
@@ -32,6 +33,8 @@ import {
   setCabinetEvents,
   getParliamentSession,
   setParliamentSession,
+  getWorldArticles,
+  upsertWorldArticles,
   getForexRates,
   getEconomySummary,
   getMarketAssetQuotes,
@@ -308,6 +311,12 @@ api.get("/politics/parliament-session", (c) => {
   return c.json(getParliamentSession() ?? null);
 });
 
+api.get("/world/articles", (c) => {
+  const panel = c.req.query("panel");
+  const limit = Number(c.req.query("limit") ?? 20);
+  return c.json(getWorldArticles(panel ?? undefined, limit));
+});
+
 api.get("/economy/forex", (c) => {
   return c.json(getForexRates());
 });
@@ -483,6 +492,18 @@ api.post("/ingest/politics/parliament-session", async (c) => {
 
   setParliamentSession(parsed.data);
   return c.json({ ok: true });
+});
+
+api.post("/ingest/world/articles", async (c) => {
+  const body = await c.req.json();
+  const parsed = GeopoliticsArticleSchema.array().safeParse(body);
+
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+
+  upsertWorldArticles(parsed.data);
+  return c.json({ ok: true, count: parsed.data.length });
 });
 
 api.post("/ingest/economy/forex", async (c) => {

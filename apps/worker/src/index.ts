@@ -35,9 +35,11 @@ import { fetchNepseSummary } from "./sources/nepse";
 import { fetchFloodAlerts } from "./sources/flood";
 import { fetchCabinetEvents } from "./sources/rss-nepal";
 import { fetchParliamentSession } from "./sources/parliament";
+import { fetchWorldArticles } from "./sources/gdelt-world";
 import {
   postCabinetEvents,
   postParliamentSession,
+  postWorldArticles,
 } from "./ingest-client";
 import type { SourceHealth } from "@repo/shared";
 
@@ -613,6 +615,8 @@ async function runLiveCabinet(): Promise<void> {
 
 const PARLIAMENT_DAILY_MS = 24 * 60 * 60 * 1000;
 let lastParliamentRunAt: number | null = null;
+const WORLD_INTERVAL_MS = 30 * 60 * 1000;
+let lastWorldRunAt: number | null = null;
 
 async function runLiveParliament(): Promise<void> {
   const nowMs = Date.now();
@@ -632,6 +636,27 @@ async function runLiveParliament(): Promise<void> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.warn("[live] Parliament session ingest failed:", message);
+  }
+}
+
+async function runLiveWorld(): Promise<void> {
+  const nowMs = Date.now();
+  if (
+    lastWorldRunAt !== null &&
+    nowMs - lastWorldRunAt < WORLD_INTERVAL_MS
+  ) {
+    return;
+  }
+  lastWorldRunAt = nowMs;
+  try {
+    const articles = await fetchWorldArticles();
+    if (articles.length > 0) {
+      await postWorldArticles(API_URL, articles);
+      console.log(`[live] World articles ingest: ${articles.length}`);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[live] World articles ingest failed:", message);
   }
 }
 
@@ -752,6 +777,7 @@ async function runLiveCycle(): Promise<void> {
     runLiveFlood(),
     runLiveCabinet(),
     runLiveParliament(),
+    runLiveWorld(),
     runLiveEconomy(state),
     ...(runNepse ? [runLiveNepse()] : []),
   ]);

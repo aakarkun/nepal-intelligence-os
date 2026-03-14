@@ -15,6 +15,7 @@ import type {
   NepseSummary,
   CabinetEvent,
   ParliamentSession,
+  GeopoliticsArticle,
 } from "@repo/shared";
 
 // ─── In-Memory Stores ────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ let marketAssetQuotes: MarketAssetQuote[] = [];
 let nepseSummary: NepseSummary | null = null;
 let cabinetEvents: CabinetEvent[] = [];
 let parliamentSession: ParliamentSession | null = null;
+const worldArticles = new Map<string, GeopoliticsArticle>();
 const PERSISTED_STATE_PATH =
   process.env.API_STATE_PATH ??
   path.resolve(import.meta.dir, "../.live-api-state.json");
@@ -93,6 +95,7 @@ type PersistedApiState = {
   floodAlertsLastUpdated: string | null;
   cabinetEvents: CabinetEvent[];
   parliamentSession: ParliamentSession | null;
+  worldArticles: GeopoliticsArticle[];
 };
 
 function slugify(value: string): string {
@@ -179,6 +182,7 @@ function serializeState(): PersistedApiState {
     floodAlertsLastUpdated,
     cabinetEvents,
     parliamentSession,
+    worldArticles: Array.from(worldArticles.values()),
   };
 }
 
@@ -307,6 +311,23 @@ export function setParliamentSession(session: ParliamentSession | null): void {
   schedulePersist();
 }
 
+export function getWorldArticles(panel?: string, limit = 20): GeopoliticsArticle[] {
+  let list = Array.from(worldArticles.values());
+  if (panel) list = list.filter((a) => a.panel === panel);
+  list.sort(
+    (a, b) =>
+      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+  );
+  return list.slice(0, limit);
+}
+
+export function upsertWorldArticles(articles: GeopoliticsArticle[]): void {
+  for (const a of articles) {
+    worldArticles.set(a.id, a);
+  }
+  schedulePersist();
+}
+
 export function getForexRates(): ForexRate[] {
   return forexRates;
 }
@@ -382,6 +403,10 @@ export async function loadPersistedState(): Promise<boolean> {
     floodAlertsLastUpdated = raw.floodAlertsLastUpdated ?? null;
     cabinetEvents = raw.cabinetEvents ?? [];
     parliamentSession = raw.parliamentSession ?? null;
+    worldArticles.clear();
+    for (const a of raw.worldArticles ?? []) {
+      worldArticles.set(a.id, a);
+    }
     return true;
   } catch (err) {
     console.warn(

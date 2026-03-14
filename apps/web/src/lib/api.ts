@@ -11,6 +11,7 @@ import type {
   FloodAlert,
   CabinetEvent,
   ParliamentSession,
+  GeopoliticsArticle,
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
@@ -154,6 +155,14 @@ export function fetchCabinetEvents(limit?: number): Promise<CabinetEvent[]> {
 
 export function fetchParliamentSession(): Promise<ParliamentSession | null> {
   return fetchJSON<ParliamentSession | null>("/v1/politics/parliament-session");
+}
+
+export function fetchWorldArticles(panel?: string, limit?: number): Promise<GeopoliticsArticle[]> {
+  const params = new URLSearchParams();
+  if (panel) params.set("panel", panel);
+  if (limit != null) params.set("limit", String(limit));
+  const qs = params.toString();
+  return fetchJSON(`/v1/world/articles${qs ? `?${qs}` : ""}`);
 }
 
 export function fetchForexRates(): Promise<ForexRate[]> {
