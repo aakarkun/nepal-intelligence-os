@@ -8,6 +8,7 @@ import type {
   EarthquakeIncident,
   CrisisSummary,
   CrisisIncident,
+  FloodAlert,
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
@@ -133,6 +134,15 @@ export function fetchCrisisSummary(): Promise<CrisisSummary> {
 
 export function fetchCrisisIncidents(): Promise<CrisisIncident[]> {
   return fetchJSON("/v1/crisis/incidents");
+}
+
+export function fetchFloodAlerts(status?: string): Promise<{
+  alerts: FloodAlert[];
+  seasonInactive: boolean;
+  lastUpdated: string | null;
+}> {
+  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+  return fetchJSON(`/v1/crisis/flood-alerts${qs}`);
 }
 
 export function fetchForexRates(): Promise<ForexRate[]> {

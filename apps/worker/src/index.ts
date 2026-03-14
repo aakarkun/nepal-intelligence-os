@@ -25,6 +25,7 @@ import {
   postEarthquakeIncidents,
   postCrisisSummary,
   postCrisisIncidents,
+  postFloodAlerts,
   postForexRates,
   postEconomySummary,
   postMarketAssetQuotes,
@@ -553,25 +554,36 @@ async function runLiveCrisis(): Promise<void> {
   });
 }
 
+const FLOOD_INTERVAL_MS = 3 * 60 * 60 * 1000;
+let lastFloodRunAt: number | null = null;
+
 async function runLiveFlood(): Promise<void> {
+  const nowMs = Date.now();
+  if (
+    lastFloodRunAt !== null &&
+    nowMs - lastFloodRunAt < FLOOD_INTERVAL_MS
+  ) {
+    return;
+  }
+  lastFloodRunAt = nowMs;
   const now = new Date().toISOString();
   try {
-    const incidents = await fetchFloodAlerts();
-    await postCrisisIncidents(API_URL, incidents);
+    const payload = await fetchFloodAlerts();
+    await postFloodAlerts(API_URL, payload);
     await postSourceHealth(API_URL, {
       sourceId: "crisis:flood",
-      sourceName: "Flood / Landslide (DHM/NDRRMA pending)",
+      sourceName: "DHM Nepal — Flood / Landslide",
       lastUpdate: now,
       errorRate: 0,
       status: "live",
-      updateCount: incidents.length,
+      updateCount: payload.alerts.length,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[live] Flood alerts ingest failed:", message);
     await postSourceHealth(API_URL, {
       sourceId: "crisis:flood",
-      sourceName: "Flood / Landslide",
+      sourceName: "DHM Nepal — Flood / Landslide",
       lastUpdate: now,
       errorRate: 1,
       status: "error",

@@ -20,6 +20,7 @@ import {
   fetchCrisisSummary,
   fetchEarthquakeIncidents,
   fetchFeed,
+  fetchFloodAlerts,
 } from "@/lib/api";
 import { cn, formatNepalDateTime, timeAgo } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -212,6 +213,12 @@ function DisastersContent() {
     queryKey: ["crisis-incidents"],
     queryFn: fetchCrisisIncidents,
     refetchInterval: 30_000,
+  });
+
+  const { data: floodData } = useQuery({
+    queryKey: ["crisis-flood-alerts"],
+    queryFn: () => fetchFloodAlerts(),
+    refetchInterval: 60_000,
   });
 
   const criticalAnomalies = anomalies.filter((anomaly) => anomaly.severity === "critical");
@@ -582,23 +589,94 @@ function DisastersContent() {
 
         <TabsContent value="flood" className="space-y-4 mt-4">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-6 space-y-4">
               <div className="flex items-center gap-2">
                 <CloudRain className="h-4 w-4 text-muted-foreground" />
                 <h2 className="font-display text-base font-semibold">Flood & Landslide</h2>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                DHM / NDRRMA integration pending. Alerts will appear here when available.
-              </p>
-              {crisisIncidents.filter((i) => i.type === "flood").length > 0 && (
-                <ul className="mt-4 space-y-2">
-                  {crisisIncidents.filter((i) => i.type === "flood").map((inc) => (
-                    <li key={inc.id} className="rounded-md border border-border p-3 text-sm">
-                      <div className="font-medium">{inc.title}</div>
-                      <div className="text-xs text-muted-foreground">{inc.place} · {timeAgo(inc.timestamp)}</div>
-                    </li>
-                  ))}
-                </ul>
+              {floodData?.seasonInactive && (
+                <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+                  Monsoon monitoring active June–Sept. Showing last recorded bulletin.
+                </div>
+              )}
+              {floodData && (
+                <>
+                  {floodData.alerts.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      <Badge className="border-emerald-500/20 bg-emerald-500/8 text-emerald-400">
+                        {floodData.alerts.filter((a) => a.status === "normal").length} normal
+                      </Badge>
+                      <Badge className="border-amber-500/20 bg-amber-500/8 text-amber-400">
+                        {floodData.alerts.filter((a) => a.status === "warning").length} warning
+                      </Badge>
+                      <Badge className="border-red-500/20 bg-red-500/8 text-red-400">
+                        {floodData.alerts.filter((a) => a.status === "danger" || a.status === "extreme_danger").length} danger
+                      </Badge>
+                    </div>
+                  )}
+                  {floodData.alerts.length > 0 && (
+                  <ul className="space-y-3">
+                    {[...floodData.alerts]
+                      .sort((a, b) => {
+                        const order: Record<string, number> = {
+                          extreme_danger: 4,
+                          danger: 3,
+                          warning: 2,
+                          normal: 1,
+                        };
+                        return (order[b.status] ?? 0) - (order[a.status] ?? 0);
+                      })
+                      .map((station) => (
+                        <li key={station.id} className="rounded-md border border-border p-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <span className="font-medium">{station.stationName}</span>
+                              <span className="text-muted-foreground text-sm ml-2">
+                                {station.river}
+                                {station.district ? ` · ${station.district}` : ""}
+                              </span>
+                            </div>
+                            <Badge
+                              className={cn(
+                                station.status === "normal" && "border-emerald-500/20 bg-emerald-500/8 text-emerald-400",
+                                station.status === "warning" && "border-amber-500/20 bg-amber-500/8 text-amber-400",
+                                station.status === "danger" && "border-red-500/20 bg-red-500/8 text-red-400",
+                                station.status === "extreme_danger" && "border-red-500/20 bg-red-500/8 text-red-400 animate-pulse"
+                              )}
+                            >
+                              {station.status.replace("_", " ")}
+                            </Badge>
+                          </div>
+                          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>Level: {station.waterLevel.toFixed(2)} m</span>
+                            <span>Danger: {station.dangerLevel.toFixed(2)} m</span>
+                          </div>
+                          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="h-full rounded-full bg-red-500/80"
+                              style={{
+                                width: `${Math.min(100, (station.waterLevel / station.dangerLevel) * 100)}%`,
+                              }}
+                            />
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                  )}
+                  {floodData.alerts.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No station data in current bulletin.</p>
+                  )}
+                  {floodData.lastUpdated && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Last updated {formatNepalDateTime(floodData.lastUpdated)}
+                    </p>
+                  )}
+                </>
+              )}
+              {!floodData && (
+                <p className="text-sm text-muted-foreground">
+                  No flood station data yet. DHM bulletin is checked every 3 hours.
+                </p>
               )}
             </CardContent>
           </Card>

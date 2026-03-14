@@ -7,6 +7,7 @@ import {
   EarthquakeIncidentSchema,
   CrisisSummarySchema,
   CrisisIncidentSchema,
+  FloodAlertsPayloadSchema,
   ForexRateSchema,
   EconomySummarySchema,
   MarketAssetQuoteSchema,
@@ -23,6 +24,8 @@ import {
   getEarthquakeIncidents,
   getCrisisSummary,
   getCrisisIncidents,
+  getFloodAlerts,
+  setFloodAlerts,
   getForexRates,
   getEconomySummary,
   getMarketAssetQuotes,
@@ -285,6 +288,11 @@ api.get("/crisis/incidents", (c) => {
   return c.json(getCrisisIncidents());
 });
 
+api.get("/crisis/flood-alerts", (c) => {
+  const status = c.req.query("status");
+  return c.json(getFloodAlerts(status ?? undefined));
+});
+
 api.get("/economy/forex", (c) => {
   return c.json(getForexRates());
 });
@@ -420,6 +428,22 @@ api.post("/ingest/crisis/incidents", async (c) => {
 
   replaceCrisisIncidents(parsed.data);
   return c.json({ ok: true, count: parsed.data.length });
+});
+
+api.post("/ingest/crisis/flood-alerts", async (c) => {
+  const body = await c.req.json();
+  const parsed = FloodAlertsPayloadSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+
+  setFloodAlerts({
+    alerts: parsed.data.alerts,
+    seasonInactive: parsed.data.seasonInactive,
+    lastUpdated: parsed.data.lastUpdated,
+  });
+  return c.json({ ok: true, count: parsed.data.alerts.length });
 });
 
 api.post("/ingest/economy/forex", async (c) => {

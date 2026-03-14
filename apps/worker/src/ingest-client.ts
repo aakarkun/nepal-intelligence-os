@@ -6,6 +6,7 @@ import type {
   EarthquakeIncident,
   CrisisSummary,
   CrisisIncident,
+  FloodAlertsPayload,
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
@@ -24,6 +25,7 @@ const ENDPOINTS = {
   economySummary: "/v1/ingest/economy/summary",
   economyAssets: "/v1/ingest/economy/assets",
   economyNepse: "/v1/ingest/economy/nepse",
+  crisisFloodAlerts: "/v1/ingest/crisis/flood-alerts",
 } as const;
 
 async function post(
@@ -115,6 +117,13 @@ export async function postNepseSummary(
   summary: NepseSummary
 ): Promise<boolean> {
   return post(apiUrl, ENDPOINTS.economyNepse, summary);
+}
+
+export async function postFloodAlerts(
+  apiUrl: string,
+  payload: FloodAlertsPayload
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.crisisFloodAlerts, payload);
 }
 
 export type EcnIngestPayload = {

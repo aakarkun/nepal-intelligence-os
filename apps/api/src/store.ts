@@ -8,6 +8,7 @@ import type {
   EarthquakeIncident,
   CrisisSummary,
   CrisisIncident,
+  FloodAlert,
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
@@ -50,6 +51,9 @@ const sourceHealth = new Map<string, SourceHealth>();
 let earthquakeIncidents: EarthquakeIncident[] = [];
 let crisisSummary: CrisisSummary | null = null;
 let crisisIncidents: CrisisIncident[] = [];
+let floodAlerts: FloodAlert[] = [];
+let floodAlertsSeasonInactive = false;
+let floodAlertsLastUpdated: string | null = null;
 let forexRates: ForexRate[] = [];
 let economySummary: EconomySummary | null = null;
 let marketAssetQuotes: MarketAssetQuote[] = [];
@@ -80,6 +84,9 @@ type PersistedApiState = {
   economySummary: EconomySummary | null;
   marketAssetQuotes: MarketAssetQuote[];
   nepseSummary: NepseSummary | null;
+  floodAlerts: FloodAlert[];
+  floodAlertsSeasonInactive: boolean;
+  floodAlertsLastUpdated: string | null;
 };
 
 function slugify(value: string): string {
@@ -161,6 +168,9 @@ function serializeState(): PersistedApiState {
     economySummary,
     marketAssetQuotes,
     nepseSummary,
+    floodAlerts,
+    floodAlertsSeasonInactive,
+    floodAlertsLastUpdated,
   };
 }
 
@@ -243,6 +253,34 @@ export function getCrisisIncidents(): CrisisIncident[] {
   return crisisIncidents;
 }
 
+export function getFloodAlerts(statusFilter?: string): {
+  alerts: FloodAlert[];
+  seasonInactive: boolean;
+  lastUpdated: string | null;
+} {
+  let list = floodAlerts;
+  if (statusFilter) {
+    const statuses = statusFilter.split(",").map((s) => s.trim());
+    list = list.filter((a) => statuses.includes(a.status));
+  }
+  return {
+    alerts: list,
+    seasonInactive: floodAlertsSeasonInactive,
+    lastUpdated: floodAlertsLastUpdated,
+  };
+}
+
+export function setFloodAlerts(payload: {
+  alerts: FloodAlert[];
+  seasonInactive?: boolean;
+  lastUpdated: string;
+}): void {
+  floodAlerts = payload.alerts;
+  floodAlertsSeasonInactive = payload.seasonInactive ?? false;
+  floodAlertsLastUpdated = payload.lastUpdated;
+  schedulePersist();
+}
+
 export function getForexRates(): ForexRate[] {
   return forexRates;
 }
@@ -313,6 +351,9 @@ export async function loadPersistedState(): Promise<boolean> {
     economySummary = raw.economySummary ?? null;
     marketAssetQuotes = raw.marketAssetQuotes ?? [];
     nepseSummary = raw.nepseSummary ?? null;
+    floodAlerts = raw.floodAlerts ?? [];
+    floodAlertsSeasonInactive = raw.floodAlertsSeasonInactive ?? false;
+    floodAlertsLastUpdated = raw.floodAlertsLastUpdated ?? null;
     return true;
   } catch (err) {
     console.warn(

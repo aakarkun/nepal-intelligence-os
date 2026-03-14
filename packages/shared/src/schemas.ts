@@ -212,6 +212,36 @@ export const CrisisIncidentSchema = z.object({
   url: z.string().url().optional(),
 });
 
+export const FloodAlertStatusSchema = z.enum([
+  "normal",
+  "warning",
+  "danger",
+  "extreme_danger",
+]);
+export const FloodAlertTrendSchema = z.enum(["rising", "falling", "stable"]);
+
+export const FloodAlertSchema = z.object({
+  id: z.string(),
+  stationName: z.string(),
+  river: z.string(),
+  district: z.string(),
+  province: z.number().int().min(1).max(7),
+  waterLevel: z.number(),
+  normalLevel: z.number(),
+  warningLevel: z.number(),
+  dangerLevel: z.number(),
+  status: FloodAlertStatusSchema,
+  trend: FloodAlertTrendSchema.optional(),
+  observedAt: z.string().datetime(),
+  source: z.literal("DHM"),
+});
+
+export const FloodAlertsPayloadSchema = z.object({
+  alerts: z.array(FloodAlertSchema),
+  seasonInactive: z.boolean().optional(),
+  lastUpdated: z.string().datetime(),
+});
+
 // ─── Economy Intelligence ───────────────────────────────────────────────────
 
 export const ForexRateSchema = z.object({
@@ -339,6 +369,8 @@ export type SourceHealth = z.infer<typeof SourceHealthSchema>;
 export type EarthquakeIncident = z.infer<typeof EarthquakeIncidentSchema>;
 export type CrisisSummary = z.infer<typeof CrisisSummarySchema>;
 export type CrisisIncident = z.infer<typeof CrisisIncidentSchema>;
+export type FloodAlert = z.infer<typeof FloodAlertSchema>;
+export type FloodAlertsPayload = z.infer<typeof FloodAlertsPayloadSchema>;
 export type ForexRate = z.infer<typeof ForexRateSchema>;
 export type EconomySummary = z.infer<typeof EconomySummarySchema>;
 export type MarketAssetQuote = z.infer<typeof MarketAssetQuoteSchema>;
