@@ -24,12 +24,14 @@ import {
   postEvent,
   postEarthquakeIncidents,
   postCrisisSummary,
+  postCrisisIncidents,
   postForexRates,
   postEconomySummary,
   postMarketAssetQuotes,
   postNepseSummary,
 } from "./ingest-client";
 import { fetchNepseSummary } from "./sources/nepse";
+import { fetchFloodAlerts } from "./sources/flood";
 import type { SourceHealth } from "@repo/shared";
 
 const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH } = env;
@@ -550,6 +552,33 @@ async function runLiveCrisis(): Promise<void> {
   });
 }
 
+async function runLiveFlood(): Promise<void> {
+  const now = new Date().toISOString();
+  try {
+    const incidents = await fetchFloodAlerts();
+    await postCrisisIncidents(API_URL, incidents);
+    await postSourceHealth(API_URL, {
+      sourceId: "crisis:flood",
+      sourceName: "Flood / Landslide (DHM/NDRRMA pending)",
+      lastUpdate: now,
+      errorRate: 0,
+      status: "live",
+      updateCount: incidents.length,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[live] Flood alerts ingest failed:", message);
+    await postSourceHealth(API_URL, {
+      sourceId: "crisis:flood",
+      sourceName: "Flood / Landslide",
+      lastUpdate: now,
+      errorRate: 1,
+      status: "error",
+      updateCount: 0,
+    });
+  }
+}
+
 async function runLiveEconomy(state: LiveWorkerState): Promise<void> {
   const now = new Date().toISOString();
   const assetIntervalMs = env.MARKET_ASSET_MINUTES * 60 * 1000;
@@ -654,6 +683,7 @@ async function runLiveCycle(): Promise<void> {
     runLiveNews(),
     runLiveSocial(),
     runLiveCrisis(),
+    runLiveFlood(),
     runLiveEconomy(state),
     runLiveNepse(),
   ]);

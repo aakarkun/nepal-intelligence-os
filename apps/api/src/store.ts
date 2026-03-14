@@ -7,6 +7,7 @@ import type {
   SourceHealth,
   EarthquakeIncident,
   CrisisSummary,
+  CrisisIncident,
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
@@ -48,6 +49,7 @@ const anomalies: Anomaly[] = [];
 const sourceHealth = new Map<string, SourceHealth>();
 let earthquakeIncidents: EarthquakeIncident[] = [];
 let crisisSummary: CrisisSummary | null = null;
+let crisisIncidents: CrisisIncident[] = [];
 let forexRates: ForexRate[] = [];
 let economySummary: EconomySummary | null = null;
 let marketAssetQuotes: MarketAssetQuote[] = [];
@@ -235,6 +237,10 @@ export function getCrisisSummary(): CrisisSummary | null {
   return crisisSummary;
 }
 
+export function getCrisisIncidents(): CrisisIncident[] {
+  return crisisIncidents;
+}
+
 export function getForexRates(): ForexRate[] {
   return forexRates;
 }
@@ -361,6 +367,10 @@ export function replaceEarthquakeIncidents(incidents: EarthquakeIncident[]): voi
 export function updateCrisisSummary(summary: CrisisSummary): void {
   crisisSummary = summary;
   schedulePersist();
+}
+
+export function replaceCrisisIncidents(incidents: CrisisIncident[]): void {
+  crisisIncidents = incidents;
 }
 
 export function replaceForexRates(rates: ForexRate[]): void {

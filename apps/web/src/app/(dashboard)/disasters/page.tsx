@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import {
   fetchAnomalies,
+  fetchCrisisIncidents,
   fetchCrisisSummary,
   fetchEarthquakeIncidents,
   fetchFeed,
@@ -23,6 +24,7 @@ import {
 import { cn, formatNepalDateTime, timeAgo } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const FEATURES = [
   {
@@ -174,6 +176,8 @@ const STRIKE_TARGETS: { id: CrisisStrikeTargetId; label: string; keywords: strin
   },
 ];
 
+export type CrisisTab = "seismic" | "flood" | "conflict";
+
 export default function DisastersPage() {
   const searchParams = useSearchParams();
   const focusSection = searchParams.get("focus");
@@ -181,6 +185,7 @@ export default function DisastersPage() {
     focusSection === "anomalies"
   );
   const [activeTheater, setActiveTheater] = useState<CrisisTheater>("global");
+  const [crisisTab, setCrisisTab] = useState<CrisisTab>("seismic");
   const { data: incidents = [] } = useQuery({
     queryKey: ["crisis-earthquakes"],
     queryFn: fetchEarthquakeIncidents,
@@ -200,6 +205,12 @@ export default function DisastersPage() {
   const { data: crisisFeed } = useQuery({
     queryKey: ["feed", "crisis-context"],
     queryFn: () => fetchFeed(160, 0),
+    refetchInterval: 30_000,
+  });
+
+  const { data: crisisIncidents = [] } = useQuery({
+    queryKey: ["crisis-incidents"],
+    queryFn: fetchCrisisIncidents,
     refetchInterval: 30_000,
   });
 
@@ -348,28 +359,14 @@ export default function DisastersPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-muted-foreground">Signal theater:</span>
-        {(["nepal", "region", "global"] as const).map((theater) => (
-          <button
-            key={theater}
-            type="button"
-            onClick={() => setActiveTheater(theater)}
-            className={cn(
-              "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
-              activeTheater === theater
-                ? "border-border bg-muted text-foreground"
-                : "border-border/50 bg-transparent text-muted-foreground hover:bg-muted/50"
-            )}
-          >
-            {theater === "nepal" ? "Nepal" : theater === "region" ? "Region" : "Global"}
-            <span className="ml-1.5 font-mono text-[10px] opacity-80">
-              ({theaterCounts[theater]})
-            </span>
-          </button>
-        ))}
-      </div>
+      <Tabs value={crisisTab} onValueChange={(v) => setCrisisTab(v as CrisisTab)}>
+        <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsTrigger value="seismic">Seismic</TabsTrigger>
+          <TabsTrigger value="flood">Flood / Landslide</TabsTrigger>
+          <TabsTrigger value="conflict">Conflict / Protest</TabsTrigger>
+        </TabsList>
 
+        <TabsContent value="seismic" className="space-y-4 mt-4">
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="p-5 space-y-1">
@@ -560,6 +557,77 @@ export default function DisastersPage() {
 
           <Card>
             <CardContent className="p-6 space-y-3">
+              <h2 className="font-display text-base font-semibold">
+                Next direct crisis connectors
+              </h2>
+              {FEATURES.map((f) => {
+                const Icon = f.icon;
+                return (
+                  <div key={f.title} className="rounded-md border border-border p-3">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <div className="text-sm font-medium">{f.title}</div>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {f.description}
+                    </p>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+        </TabsContent>
+
+        <TabsContent value="flood" className="space-y-4 mt-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2">
+                <CloudRain className="h-4 w-4 text-muted-foreground" />
+                <h2 className="font-display text-base font-semibold">Flood & Landslide</h2>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                DHM / NDRRMA integration pending. Alerts will appear here when available.
+              </p>
+              {crisisIncidents.filter((i) => i.type === "flood").length > 0 && (
+                <ul className="mt-4 space-y-2">
+                  {crisisIncidents.filter((i) => i.type === "flood").map((inc) => (
+                    <li key={inc.id} className="rounded-md border border-border p-3 text-sm">
+                      <div className="font-medium">{inc.title}</div>
+                      <div className="text-xs text-muted-foreground">{inc.place} · {timeAgo(inc.timestamp)}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="conflict" className="space-y-4 mt-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Signal theater:</span>
+            {(["nepal", "region", "global"] as const).map((theater) => (
+              <button
+                key={theater}
+                type="button"
+                onClick={() => setActiveTheater(theater)}
+                className={cn(
+                  "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+                  activeTheater === theater
+                    ? "border-border bg-muted text-foreground"
+                    : "border-border/50 bg-transparent text-muted-foreground hover:bg-muted/50"
+                )}
+              >
+                {theater === "nepal" ? "Nepal" : theater === "region" ? "Region" : "Global"}
+                <span className="ml-1.5 font-mono text-[10px] opacity-80">
+                  ({theaterCounts[theater]})
+                </span>
+              </button>
+            ))}
+          </div>
+          <Card>
+            <CardContent className="p-6 space-y-3">
               <div className="flex items-center gap-2">
                 <Siren className="h-4 w-4 text-muted-foreground" />
                 <div>
@@ -598,7 +666,6 @@ export default function DisastersPage() {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-6 space-y-3">
               <div className="flex items-center gap-2">
@@ -639,30 +706,8 @@ export default function DisastersPage() {
               </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardContent className="p-6 space-y-3">
-              <h2 className="font-display text-base font-semibold">
-                Next direct crisis connectors
-              </h2>
-              {FEATURES.map((f) => {
-                const Icon = f.icon;
-                return (
-                  <div key={f.title} className="rounded-md border border-border p-3">
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      <div className="text-sm font-medium">{f.title}</div>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {f.description}
-                    </p>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       {/* planned connector grid removed to keep layout tighter; details now live in the \"Next direct crisis connectors\" card */}
     </div>

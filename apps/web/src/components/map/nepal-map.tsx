@@ -45,8 +45,11 @@ interface TooltipState {
   };
 }
 
+export type MapLayerMode = "election" | "seismic" | "incidents";
+
 interface NepalMapProps {
   className?: string;
+  layerMode?: MapLayerMode;
   onDistrictClick?: (districtName: string) => void;
   onProvinceClick?: (provinceId: number) => void;
   onConstituencyClick?: (id: string) => void;
@@ -188,6 +191,7 @@ function buildAnomalyGeoJSON(
 
 export function NepalMap({
   className,
+  layerMode = "election",
   onDistrictClick,
   onProvinceClick,
   onConstituencyClick,
@@ -407,6 +411,18 @@ export function NepalMap({
       map.setPaintProperty("province-fills", "fill-color", fillExpression);
     }
   }, [provinceColors]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    const showElection = layerMode === "election";
+    const visibility = showElection ? "visible" : "none";
+    for (const id of ["district-fills", "district-outlines", "province-fills", "province-outlines"]) {
+      if (map.getLayer(id)) {
+        map.setLayoutProperty(id, "visibility", visibility);
+      }
+    }
+  }, [layerMode]);
 
   function addGeoJsonLayers(map: mapboxgl.Map) {
     if (!geoJsonUrl) return;

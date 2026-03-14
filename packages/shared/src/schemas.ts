@@ -200,6 +200,18 @@ export const CrisisSummarySchema = z.object({
   }),
 });
 
+export const CrisisIncidentSchema = z.object({
+  id: z.string(),
+  type: z.enum(["flood", "protest", "fire"]),
+  title: z.string(),
+  place: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  timestamp: z.string().datetime(),
+  sourceId: z.string(),
+  url: z.string().url().optional(),
+});
+
 // ─── Economy Intelligence ───────────────────────────────────────────────────
 
 export const ForexRateSchema = z.object({
@@ -319,6 +331,7 @@ export type SourceStatus = z.infer<typeof SourceStatusSchema>;
 export type SourceHealth = z.infer<typeof SourceHealthSchema>;
 export type EarthquakeIncident = z.infer<typeof EarthquakeIncidentSchema>;
 export type CrisisSummary = z.infer<typeof CrisisSummarySchema>;
+export type CrisisIncident = z.infer<typeof CrisisIncidentSchema>;
 export type ForexRate = z.infer<typeof ForexRateSchema>;
 export type EconomySummary = z.infer<typeof EconomySummarySchema>;
 export type MarketAssetQuote = z.infer<typeof MarketAssetQuoteSchema>;

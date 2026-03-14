@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ElectionDatasetSelector } from "@/components/election-dataset-selector";
 import { GeographyDrawer } from "@/components/map/geography-drawer";
-import { NepalMap } from "@/components/map/nepal-map";
+import { NepalMap, type MapLayerMode } from "@/components/map/nepal-map";
 
 export default function MapPage() {
   const [selection, setSelection] = useState<
@@ -11,6 +11,7 @@ export default function MapPage() {
     | { type: "province"; provinceId: number }
     | null
   >(null);
+  const [layerMode, setLayerMode] = useState<MapLayerMode>("election");
 
   return (
     // Stretch to edges of main content, but respect Intel Rail on the right
@@ -22,13 +23,31 @@ export default function MapPage() {
         <p className="text-xs text-muted-foreground">
           Nepal district choropleth — click to explore
         </p>
-        <div className="mt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <ElectionDatasetSelector />
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">Layer:</span>
+            {(["election", "seismic", "incidents"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setLayerMode(mode)}
+                className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                  layerMode === mode
+                    ? "bg-nepal-red/20 text-nepal-red"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {mode === "election" ? "Election" : mode === "seismic" ? "Seismic" : "Incidents"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       <NepalMap
         className="w-full h-[calc(100vh-5rem)]"
+        layerMode={layerMode}
         onDistrictClick={(districtName) =>
           setSelection({ type: "district", districtName })
         }

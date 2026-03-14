@@ -5,6 +5,7 @@ import type {
   SourceHealth,
   EarthquakeIncident,
   CrisisSummary,
+  CrisisIncident,
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
@@ -18,6 +19,7 @@ const ENDPOINTS = {
   sourceHealth: "/v1/ingest/source-health",
   crisisEarthquakes: "/v1/ingest/crisis/earthquakes",
   crisisSummary: "/v1/ingest/crisis/summary",
+  crisisIncidents: "/v1/ingest/crisis/incidents",
   economyForex: "/v1/ingest/economy/forex",
   economySummary: "/v1/ingest/economy/summary",
   economyAssets: "/v1/ingest/economy/assets",
@@ -78,6 +80,13 @@ export async function postCrisisSummary(
   summary: CrisisSummary
 ): Promise<boolean> {
   return post(apiUrl, ENDPOINTS.crisisSummary, summary);
+}
+
+export async function postCrisisIncidents(
+  apiUrl: string,
+  incidents: CrisisIncident[]
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.crisisIncidents, incidents);
 }
 
 export async function postForexRates(

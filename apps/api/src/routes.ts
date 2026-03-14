@@ -6,6 +6,7 @@ import {
   SourceHealthSchema,
   EarthquakeIncidentSchema,
   CrisisSummarySchema,
+  CrisisIncidentSchema,
   ForexRateSchema,
   EconomySummarySchema,
   MarketAssetQuoteSchema,
@@ -21,6 +22,7 @@ import {
   getSourceHealth,
   getEarthquakeIncidents,
   getCrisisSummary,
+  getCrisisIncidents,
   getForexRates,
   getEconomySummary,
   getMarketAssetQuotes,
@@ -33,6 +35,7 @@ import {
   updateSourceHealth,
   replaceEarthquakeIncidents,
   updateCrisisSummary,
+  replaceCrisisIncidents,
   replaceForexRates,
   updateEconomySummary,
   replaceMarketAssetQuotes,
@@ -278,6 +281,10 @@ api.get("/crisis/summary", (c) => {
   );
 });
 
+api.get("/crisis/incidents", (c) => {
+  return c.json(getCrisisIncidents());
+});
+
 api.get("/economy/forex", (c) => {
   return c.json(getForexRates());
 });
@@ -401,6 +408,18 @@ api.post("/ingest/crisis/summary", async (c) => {
 
   updateCrisisSummary(parsed.data);
   return c.json({ ok: true });
+});
+
+api.post("/ingest/crisis/incidents", async (c) => {
+  const body = await c.req.json();
+  const parsed = CrisisIncidentSchema.array().safeParse(body);
+
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+
+  replaceCrisisIncidents(parsed.data);
+  return c.json({ ok: true, count: parsed.data.length });
 });
 
 api.post("/ingest/economy/forex", async (c) => {

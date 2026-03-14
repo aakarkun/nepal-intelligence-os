@@ -7,6 +7,7 @@ import type {
   SourceHealth,
   EarthquakeIncident,
   CrisisSummary,
+  CrisisIncident,
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
@@ -128,6 +129,10 @@ export function fetchEarthquakeIncidents(): Promise<EarthquakeIncident[]> {
 
 export function fetchCrisisSummary(): Promise<CrisisSummary> {
   return fetchJSON("/v1/crisis/summary");
+}
+
+export function fetchCrisisIncidents(): Promise<CrisisIncident[]> {
+  return fetchJSON("/v1/crisis/incidents");
 }
 
 export function fetchForexRates(): Promise<ForexRate[]> {
