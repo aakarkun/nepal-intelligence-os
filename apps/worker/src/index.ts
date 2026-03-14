@@ -47,6 +47,7 @@ let lastGdeltSignalRun: number | null = null;
 
 type LiveWorkerState = {
   lastCycleCompletedAt?: string;
+  lastNepseRunDate?: string;
   lastMarketAssetsFetchedAt?: string;
   lastMarketAssetQuotes?: Array<{
     assetCode: string;
@@ -676,8 +677,18 @@ async function runLiveNepse(): Promise<void> {
   }
 }
 
+function shouldRunNepseToday(state: LiveWorkerState): boolean {
+  const now = new Date();
+  const utcHour = now.getUTCHours();
+  const utcMin = now.getUTCMinutes();
+  const today = now.toISOString().slice(0, 10);
+  if (state.lastNepseRunDate === today) return false;
+  return utcHour > 9 || (utcHour === 9 && utcMin >= 30);
+}
+
 async function runLiveCycle(): Promise<void> {
   const state = await readLiveWorkerState();
+  const runNepse = shouldRunNepseToday(state);
   await Promise.allSettled([
     runLiveEcn(),
     runLiveNews(),
@@ -685,12 +696,15 @@ async function runLiveCycle(): Promise<void> {
     runLiveCrisis(),
     runLiveFlood(),
     runLiveEconomy(state),
-    runLiveNepse(),
+    ...(runNepse ? [runLiveNepse()] : []),
   ]);
-  await writeLiveWorkerState({
+  const nextState: LiveWorkerState = {
     lastCycleCompletedAt: new Date().toISOString(),
+    lastNepseRunDate: runNepse ? new Date().toISOString().slice(0, 10) : state.lastNepseRunDate,
     lastMarketAssetQuotes: state.lastMarketAssetQuotes,
-  });
+    lastMarketAssetsFetchedAt: state.lastMarketAssetsFetchedAt,
+  };
+  await writeLiveWorkerState(nextState);
 }
 
 async function startLiveScheduler(intervalMs: number): Promise<void> {

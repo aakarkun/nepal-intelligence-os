@@ -258,67 +258,99 @@ export default function EconomyPage() {
         })}
       </div>
 
-      {nepse && (
-        <Card className="border border-border bg-card/80 rounded-xl">
-          <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <LineChart className="h-4 w-4 text-muted-foreground" />
-              <CardTitle className="font-display text-base">NEPSE</CardTitle>
-              <span className="text-xs text-muted-foreground">
-                {nepse.sourceName}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex flex-wrap items-baseline gap-3">
-              <span className="font-display text-2xl font-bold tabular-nums">
-                {nepse.index > 0 ? nepse.index.toLocaleString() : "—"}
-              </span>
-              {nepse.changePercent != null && (
-                <span className={cn("text-sm tabular-nums", rateTone(nepse.change))}>
-                  {nepse.change != null && (nepse.change >= 0 ? "+" : "")}
-                  {nepse.changePercent.toFixed(2)}%
-                </span>
-              )}
-            </div>
-            {(nepse.topGainers?.length ?? 0) + (nepse.topLosers?.length ?? 0) > 0 && (
-              <div className="grid gap-2 sm:grid-cols-2">
-                {nepse.topGainers && nepse.topGainers.length > 0 && (
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Top gainers</div>
-                    <ul className="mt-1 space-y-0.5 text-sm">
-                      {nepse.topGainers.slice(0, 5).map((g) => (
-                        <li key={g.symbol} className="flex justify-between text-emerald-400">
-                          <span>{g.symbol}</span>
-                          <span className="tabular-nums">+{g.change.toFixed(2)}%</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+      <Card className="border border-border bg-card/80 rounded-xl">
+        <CardHeader className="pb-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <LineChart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="font-display text-base">NEPSE</CardTitle>
+            {nepse?.sourceName && (
+              <span className="text-xs text-muted-foreground">{nepse.sourceName}</span>
+            )}
+            {nepse?.marketStatus && (
+              <Badge
+                className={cn(
+                  nepse.marketStatus === "open"
+                    ? "border-emerald-500/20 bg-emerald-500/8 text-emerald-400"
+                    : "border-border/35 bg-muted/12 text-muted-foreground"
                 )}
-                {nepse.topLosers && nepse.topLosers.length > 0 && (
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Top losers</div>
-                    <ul className="mt-1 space-y-0.5 text-sm">
-                      {nepse.topLosers.slice(0, 5).map((g) => (
-                        <li key={g.symbol} className="flex justify-between text-red-400">
-                          <span>{g.symbol}</span>
-                          <span className="tabular-nums">{g.change.toFixed(2)}%</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+              >
+                {nepse.marketStatus === "open" ? "Open" : "Closed"}
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {nepse && nepse.index > 0 ? (
+            <>
+              <div className="flex flex-wrap items-baseline gap-3">
+                <span className="font-display text-2xl font-bold tabular-nums">
+                  {nepse.index.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+                {(nepse.change != null || nepse.changePercent != null) && (
+                  <span className={cn("text-sm tabular-nums", rateTone(nepse.change))}>
+                    {nepse.change != null && (nepse.change >= 0 ? "+" : "")}
+                    {nepse.change?.toFixed(2) ?? ""}
+                    {nepse.changePercent != null && (
+                      <span className="ml-1">
+                        ({nepse.changePercent >= 0 ? "+" : ""}
+                        {nepse.changePercent.toFixed(2)}%)
+                      </span>
+                    )}
+                  </span>
                 )}
               </div>
-            )}
-            {nepse.index === 0 && !nepse.topGainers?.length && !nepse.topLosers?.length && (
-              <p className="text-xs text-muted-foreground">
-                Live index and movers will appear when NEPSE data is available.
+              {nepse.totalTurnover != null && nepse.totalTurnover > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  Turnover: NPR {formatNumber(nepse.totalTurnover)}
+                </div>
+              )}
+              {(nepse.topGainers?.length ?? 0) + (nepse.topLosers?.length ?? 0) > 0 && (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {nepse.topGainers && nepse.topGainers.length > 0 && (
+                    <div>
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Top gainers</div>
+                      <ul className="mt-1 space-y-0.5 text-sm">
+                        {nepse.topGainers.slice(0, 5).map((g) => (
+                          <li key={g.symbol} className="flex justify-between text-emerald-400">
+                            <span>{g.symbol}</span>
+                            <span className="tabular-nums">
+                              +{"changePercent" in g ? g.changePercent.toFixed(2) : (g as { change: number }).change.toFixed(2)}%
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {nepse.topLosers && nepse.topLosers.length > 0 && (
+                    <div>
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Top losers</div>
+                      <ul className="mt-1 space-y-0.5 text-sm">
+                        {nepse.topLosers.slice(0, 5).map((g) => (
+                          <li key={g.symbol} className="flex justify-between text-red-400">
+                            <span>{g.symbol}</span>
+                            <span className="tabular-nums">
+                              {"changePercent" in g
+                                ? `${(g as { changePercent: number }).changePercent.toFixed(2)}%`
+                                : (g as { change: number }).change.toFixed(2)}%
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                As of {formatNepalDateTime(nepse.timestamp)} NPT
               </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Market data unavailable. {nepse?.timestamp ? `Last known: ${formatNepalDateTime(nepse.timestamp)} NPT` : "Waiting for first pull after market close."}
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card
         className={cn(

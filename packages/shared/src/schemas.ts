@@ -268,19 +268,26 @@ export const MarketAssetQuoteSchema = z.object({
   timestamp: z.string().datetime(),
 });
 
+export const NepseMarketStatusSchema = z.enum(["open", "closed"]);
+
+export const NepseMoverSchema = z.object({
+  symbol: z.string(),
+  price: z.number(),
+  changePercent: z.number(),
+});
+export type NepseMover = z.infer<typeof NepseMoverSchema>;
+
 export const NepseSummarySchema = z.object({
   sourceId: z.string(),
   sourceName: z.string(),
   timestamp: z.string().datetime(),
-  index: z.number(),
+  index: z.number().min(0),
   change: z.number().nullable(),
   changePercent: z.number().nullable(),
-  topGainers: z
-    .array(z.object({ symbol: z.string(), change: z.number() }))
-    .optional(),
-  topLosers: z
-    .array(z.object({ symbol: z.string(), change: z.number() }))
-    .optional(),
+  totalTurnover: z.number().min(0).optional(),
+  marketStatus: NepseMarketStatusSchema.optional(),
+  topGainers: z.array(NepseMoverSchema).max(5).optional(),
+  topLosers: z.array(NepseMoverSchema).max(5).optional(),
 });
 
 // ─── SSE Messages ────────────────────────────────────────────────────────────
@@ -335,5 +342,6 @@ export type CrisisIncident = z.infer<typeof CrisisIncidentSchema>;
 export type ForexRate = z.infer<typeof ForexRateSchema>;
 export type EconomySummary = z.infer<typeof EconomySummarySchema>;
 export type MarketAssetQuote = z.infer<typeof MarketAssetQuoteSchema>;
+export type NepseMarketStatus = z.infer<typeof NepseMarketStatusSchema>;
 export type NepseSummary = z.infer<typeof NepseSummarySchema>;
 export type SSEMessage = z.infer<typeof SSEMessageSchema>;

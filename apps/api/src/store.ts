@@ -79,6 +79,7 @@ type PersistedApiState = {
   forexRates: ForexRate[];
   economySummary: EconomySummary | null;
   marketAssetQuotes: MarketAssetQuote[];
+  nepseSummary: NepseSummary | null;
 };
 
 function slugify(value: string): string {
@@ -159,6 +160,7 @@ function serializeState(): PersistedApiState {
     forexRates,
     economySummary,
     marketAssetQuotes,
+    nepseSummary,
   };
 }
 
@@ -310,6 +312,7 @@ export async function loadPersistedState(): Promise<boolean> {
     forexRates = raw.forexRates ?? [];
     economySummary = raw.economySummary ?? null;
     marketAssetQuotes = raw.marketAssetQuotes ?? [];
+    nepseSummary = raw.nepseSummary ?? null;
     return true;
   } catch (err) {
     console.warn(
@@ -390,6 +393,7 @@ export function replaceMarketAssetQuotes(quotes: MarketAssetQuote[]): void {
 
 export function updateNepseSummary(summary: NepseSummary): void {
   nepseSummary = summary;
+  schedulePersist();
 }
 
 export function resetElectionData(datasetId?: string): void {
