@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -178,7 +178,7 @@ const STRIKE_TARGETS: { id: CrisisStrikeTargetId; label: string; keywords: strin
 
 export type CrisisTab = "seismic" | "flood" | "conflict";
 
-export default function DisastersPage() {
+function DisastersContent() {
   const searchParams = useSearchParams();
   const focusSection = searchParams.get("focus");
   const [highlightAnomalies, setHighlightAnomalies] = useState(
@@ -711,6 +711,14 @@ export default function DisastersPage() {
 
       {/* planned connector grid removed to keep layout tighter; details now live in the \"Next direct crisis connectors\" card */}
     </div>
+  );
+}
+
+export default function DisastersPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">Loading…</div>}>
+      <DisastersContent />
+    </Suspense>
   );
 }
 
