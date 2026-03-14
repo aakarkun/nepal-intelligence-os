@@ -692,7 +692,12 @@ if (MODE === "replay") {
 console.log("──────────────────────────────────────────");
 
 if (MODE === "live") {
-  const cronMinutes = env.CRON_ECN_MINUTES;
+  const cronMinutes = Math.max(1, env.CRON_ECN_MINUTES);
+  if (env.CRON_ECN_MINUTES < 1) {
+    console.warn(
+      "[worker] CRON_ECN_MINUTES < 1 is invalid; using 1 min to avoid overlap"
+    );
+  }
   if (cronMinutes > 0) {
     const intervalMs = cronMinutes * 60 * 1000;
     console.log(`  ECN + News + Social job every ${cronMinutes} min`);

@@ -56,13 +56,17 @@ export function formatNepalDateTime(timestamp: string): string {
   });
 }
 
+/** Uses NEXT_PUBLIC_SSE_STALE_SECONDS (default 90): live < threshold, stale < 5×, else error. */
 export function getConnectionStatusColor(
   lastHeartbeat: number | null
 ): "live" | "stale" | "error" {
   if (!lastHeartbeat) return "error";
+  const staleSeconds = env.NEXT_PUBLIC_SSE_STALE_SECONDS;
+  const liveThresholdMs = staleSeconds * 1000;
+  const staleThresholdMs = 5 * liveThresholdMs;
   const age = Date.now() - lastHeartbeat;
-  if (age < 60_000) return "live";
-  if (age < 300_000) return "stale";
+  if (age < liveThresholdMs) return "live";
+  if (age < staleThresholdMs) return "stale";
   return "error";
 }
 

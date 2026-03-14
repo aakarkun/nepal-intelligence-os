@@ -14,4 +14,9 @@ export const env = {
     process.env.NEXT_PUBLIC_CRON_ECN_MINUTES ?? "30",
     10
   ),
+  /** Seconds without heartbeat before status becomes stale; then error after 5× this. Default 90. */
+  NEXT_PUBLIC_SSE_STALE_SECONDS: Number.parseInt(
+    process.env.NEXT_PUBLIC_SSE_STALE_SECONDS ?? "90",
+    10
+  ) || 90,
 } as const;

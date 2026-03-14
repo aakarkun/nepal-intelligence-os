@@ -484,7 +484,7 @@ function SourceHealthSection() {
                   </span>
                 </div>
                 <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
-                  {s.lastUpdate ? timeAgo(s.lastUpdate) : "—"}
+                  Last success: {s.lastUpdate ? timeAgo(s.lastUpdate) : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between pl-3">
