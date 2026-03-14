@@ -10,6 +10,7 @@ import {
   Coins,
   Gem,
   Landmark,
+  LineChart,
   RadioTower,
   Scale,
   Search,
@@ -19,6 +20,7 @@ import {
   fetchFeed,
   fetchForexRates,
   fetchMarketAssetQuotes,
+  fetchNepseSummary,
   fetchSourceHealth,
 } from "@/lib/api";
 import { formatNepalDateTime, formatNumber, timeAgo } from "@/lib/utils";
@@ -86,6 +88,12 @@ export default function EconomyPage() {
   const { data: assetQuotes = [] } = useQuery({
     queryKey: ["economy", "assets"],
     queryFn: fetchMarketAssetQuotes,
+    refetchInterval: 30 * 60 * 1000,
+  });
+
+  const { data: nepse } = useQuery({
+    queryKey: ["economy", "nepse"],
+    queryFn: fetchNepseSummary,
     refetchInterval: 30 * 60 * 1000,
   });
 
@@ -249,6 +257,68 @@ export default function EconomyPage() {
           );
         })}
       </div>
+
+      {nepse && (
+        <Card className="border border-border bg-card/80 rounded-xl">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <LineChart className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="font-display text-base">NEPSE</CardTitle>
+              <span className="text-xs text-muted-foreground">
+                {nepse.sourceName}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap items-baseline gap-3">
+              <span className="font-display text-2xl font-bold tabular-nums">
+                {nepse.index > 0 ? nepse.index.toLocaleString() : "—"}
+              </span>
+              {nepse.changePercent != null && (
+                <span className={cn("text-sm tabular-nums", rateTone(nepse.change))}>
+                  {nepse.change != null && (nepse.change >= 0 ? "+" : "")}
+                  {nepse.changePercent.toFixed(2)}%
+                </span>
+              )}
+            </div>
+            {(nepse.topGainers?.length ?? 0) + (nepse.topLosers?.length ?? 0) > 0 && (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {nepse.topGainers && nepse.topGainers.length > 0 && (
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Top gainers</div>
+                    <ul className="mt-1 space-y-0.5 text-sm">
+                      {nepse.topGainers.slice(0, 5).map((g) => (
+                        <li key={g.symbol} className="flex justify-between text-emerald-400">
+                          <span>{g.symbol}</span>
+                          <span className="tabular-nums">+{g.change.toFixed(2)}%</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nepse.topLosers && nepse.topLosers.length > 0 && (
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Top losers</div>
+                    <ul className="mt-1 space-y-0.5 text-sm">
+                      {nepse.topLosers.slice(0, 5).map((g) => (
+                        <li key={g.symbol} className="flex justify-between text-red-400">
+                          <span>{g.symbol}</span>
+                          <span className="tabular-nums">{g.change.toFixed(2)}%</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+            {nepse.index === 0 && !nepse.topGainers?.length && !nepse.topLosers?.length && (
+              <p className="text-xs text-muted-foreground">
+                Live index and movers will appear when NEPSE data is available.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card
         className={cn(

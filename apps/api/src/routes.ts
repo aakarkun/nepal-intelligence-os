@@ -9,6 +9,7 @@ import {
   ForexRateSchema,
   EconomySummarySchema,
   MarketAssetQuoteSchema,
+  NepseSummarySchema,
 } from "@repo/shared";
 import {
   getNationalSummary,
@@ -23,6 +24,7 @@ import {
   getForexRates,
   getEconomySummary,
   getMarketAssetQuotes,
+  getNepseSummary,
   getElectionDatasets,
   updateNationalSummary,
   updateConstituencyResult,
@@ -34,6 +36,7 @@ import {
   replaceForexRates,
   updateEconomySummary,
   replaceMarketAssetQuotes,
+  updateNepseSummary,
   resetElectionData,
 } from "./store";
 import { broadcast } from "./sse";
@@ -303,6 +306,10 @@ api.get("/economy/assets", (c) => {
   return c.json(getMarketAssetQuotes());
 });
 
+api.get("/economy/nepse", (c) => {
+  return c.json(getNepseSummary() ?? null);
+});
+
 api.get("/election-datasets", (c) => {
   return c.json(getElectionDatasets());
 });
@@ -430,6 +437,18 @@ api.post("/ingest/economy/assets", async (c) => {
 
   replaceMarketAssetQuotes(parsed.data);
   return c.json({ ok: true, count: parsed.data.length });
+});
+
+api.post("/ingest/economy/nepse", async (c) => {
+  const body = await c.req.json();
+  const parsed = NepseSummarySchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+
+  updateNepseSummary(parsed.data);
+  return c.json({ ok: true });
 });
 
 api.post("/ingest/reset-election", async (c) => {

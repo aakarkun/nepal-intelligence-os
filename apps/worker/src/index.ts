@@ -27,7 +27,9 @@ import {
   postForexRates,
   postEconomySummary,
   postMarketAssetQuotes,
+  postNepseSummary,
 } from "./ingest-client";
+import { fetchNepseSummary } from "./sources/nepse";
 import type { SourceHealth } from "@repo/shared";
 
 const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH } = env;
@@ -618,6 +620,33 @@ async function runLiveEconomy(state: LiveWorkerState): Promise<void> {
   }
 }
 
+async function runLiveNepse(): Promise<void> {
+  const now = new Date().toISOString();
+  try {
+    const summary = await fetchNepseSummary();
+    await postNepseSummary(API_URL, summary);
+    await postSourceHealth(API_URL, {
+      sourceId: "economy:nepse",
+      sourceName: summary.sourceName,
+      lastUpdate: now,
+      errorRate: 0,
+      status: "live",
+      updateCount: 1,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[live] NEPSE ingest failed:", message);
+    await postSourceHealth(API_URL, {
+      sourceId: "economy:nepse",
+      sourceName: "NEPSE",
+      lastUpdate: now,
+      errorRate: 1,
+      status: "error",
+      updateCount: 0,
+    });
+  }
+}
+
 async function runLiveCycle(): Promise<void> {
   const state = await readLiveWorkerState();
   await Promise.allSettled([
@@ -626,6 +655,7 @@ async function runLiveCycle(): Promise<void> {
     runLiveSocial(),
     runLiveCrisis(),
     runLiveEconomy(state),
+    runLiveNepse(),
   ]);
   await writeLiveWorkerState({
     lastCycleCompletedAt: new Date().toISOString(),

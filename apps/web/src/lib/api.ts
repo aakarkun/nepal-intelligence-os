@@ -10,6 +10,7 @@ import type {
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
+  NepseSummary,
 } from "@repo/shared";
 
 export type ElectionDataset = {
@@ -139,6 +140,10 @@ export function fetchEconomySummary(): Promise<EconomySummary> {
 
 export function fetchMarketAssetQuotes(): Promise<MarketAssetQuote[]> {
   return fetchJSON("/v1/economy/assets");
+}
+
+export function fetchNepseSummary(): Promise<NepseSummary | null> {
+  return fetchJSON<NepseSummary | null>("/v1/economy/nepse");
 }
 
 export function fetchElectionDatasets(): Promise<ElectionDataset[]> {

@@ -256,6 +256,21 @@ export const MarketAssetQuoteSchema = z.object({
   timestamp: z.string().datetime(),
 });
 
+export const NepseSummarySchema = z.object({
+  sourceId: z.string(),
+  sourceName: z.string(),
+  timestamp: z.string().datetime(),
+  index: z.number(),
+  change: z.number().nullable(),
+  changePercent: z.number().nullable(),
+  topGainers: z
+    .array(z.object({ symbol: z.string(), change: z.number() }))
+    .optional(),
+  topLosers: z
+    .array(z.object({ symbol: z.string(), change: z.number() }))
+    .optional(),
+});
+
 // ─── SSE Messages ────────────────────────────────────────────────────────────
 
 export const SSEMessageSchema = z.discriminatedUnion("type", [
@@ -307,4 +322,5 @@ export type CrisisSummary = z.infer<typeof CrisisSummarySchema>;
 export type ForexRate = z.infer<typeof ForexRateSchema>;
 export type EconomySummary = z.infer<typeof EconomySummarySchema>;
 export type MarketAssetQuote = z.infer<typeof MarketAssetQuoteSchema>;
+export type NepseSummary = z.infer<typeof NepseSummarySchema>;
 export type SSEMessage = z.infer<typeof SSEMessageSchema>;

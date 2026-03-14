@@ -10,6 +10,7 @@ import type {
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
+  NepseSummary,
 } from "@repo/shared";
 
 // ─── In-Memory Stores ────────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ let crisisSummary: CrisisSummary | null = null;
 let forexRates: ForexRate[] = [];
 let economySummary: EconomySummary | null = null;
 let marketAssetQuotes: MarketAssetQuote[] = [];
+let nepseSummary: NepseSummary | null = null;
 const PERSISTED_STATE_PATH =
   process.env.API_STATE_PATH ??
   path.resolve(import.meta.dir, "../.live-api-state.json");
@@ -245,6 +247,10 @@ export function getMarketAssetQuotes(): MarketAssetQuote[] {
   return marketAssetQuotes;
 }
 
+export function getNepseSummary(): NepseSummary | null {
+  return nepseSummary;
+}
+
 export function getElectionDatasets(): ElectionDatasetMeta[] {
   return Array.from(electionDatasets.values())
     .map(({ meta }) => ({
@@ -370,6 +376,10 @@ export function updateEconomySummary(summary: EconomySummary): void {
 export function replaceMarketAssetQuotes(quotes: MarketAssetQuote[]): void {
   marketAssetQuotes = quotes;
   schedulePersist();
+}
+
+export function updateNepseSummary(summary: NepseSummary): void {
+  nepseSummary = summary;
 }
 
 export function resetElectionData(datasetId?: string): void {

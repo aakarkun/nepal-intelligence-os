@@ -8,6 +8,7 @@ import type {
   ForexRate,
   EconomySummary,
   MarketAssetQuote,
+  NepseSummary,
 } from "@repo/shared";
 
 const ENDPOINTS = {
@@ -20,6 +21,7 @@ const ENDPOINTS = {
   economyForex: "/v1/ingest/economy/forex",
   economySummary: "/v1/ingest/economy/summary",
   economyAssets: "/v1/ingest/economy/assets",
+  economyNepse: "/v1/ingest/economy/nepse",
 } as const;
 
 async function post(
@@ -97,6 +99,13 @@ export async function postMarketAssetQuotes(
   quotes: MarketAssetQuote[]
 ): Promise<boolean> {
   return post(apiUrl, ENDPOINTS.economyAssets, quotes);
+}
+
+export async function postNepseSummary(
+  apiUrl: string,
+  summary: NepseSummary
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.economyNepse, summary);
 }
 
 export type EcnIngestPayload = {
