@@ -50,4 +50,5 @@ export const env = {
   // Nitter: X/Twitter RSS without API key (optional; Nitter instances can be unstable)
   NITTER_BASE_URL:
     process.env.NITTER_BASE_URL ?? "https://nitter.poast.org",
+  ADMIN_SECRET: process.env.ADMIN_SECRET ?? undefined,
 } as const;

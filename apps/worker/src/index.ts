@@ -41,9 +41,24 @@ import {
   postParliamentSession,
   postWorldArticles,
 } from "./ingest-client";
+import { getCircuitBreaker } from "./lib/circuit-breaker";
 import type { SourceHealth } from "@repo/shared";
 
-const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH } = env;
+const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH, ADMIN_SECRET } = env;
+
+async function consumeResetIfRequested(sourceId: string): Promise<boolean> {
+  if (!ADMIN_SECRET) return false;
+  try {
+    const res = await fetch(`${API_URL.replace(/\/$/, "")}/v1/admin/consume-reset/${sourceId}`, {
+      headers: { "X-Admin-Secret": ADMIN_SECRET },
+    });
+    if (!res.ok) return false;
+    const data = (await res.json()) as { consumed?: boolean };
+    return data.consumed === true;
+  } catch {
+    return false;
+  }
+}
 
 // GDELT is rate-limited fairly aggressively, so we only poll it at most
 // once every 15 minutes, regardless of the main cron frequency.
@@ -574,10 +589,29 @@ async function runLiveFlood(): Promise<void> {
     return;
   }
   lastFloodRunAt = nowMs;
+  const cb = getCircuitBreaker("flood", 3);
+  if (await consumeResetIfRequested("flood")) cb.reset();
   const now = new Date().toISOString();
+  if (cb.isOpen()) {
+    const state = cb.getState();
+    console.warn(`[live] Source flood suspended after ${state.failures} failures`);
+    await postSourceHealth(API_URL, {
+      sourceId: "crisis:flood",
+      sourceName: "DHM Nepal — Flood / Landslide",
+      lastUpdate: now,
+      errorRate: 1,
+      status: "error",
+      updateCount: 0,
+      suspended: true,
+      suspendedAt: state.suspendedAt?.toISOString(),
+      failureCount: state.failures,
+    });
+    return;
+  }
   try {
     const payload = await fetchFloodAlerts();
     await postFloodAlerts(API_URL, payload);
+    cb.recordSuccess();
     await postSourceHealth(API_URL, {
       sourceId: "crisis:flood",
       sourceName: "DHM Nepal — Flood / Landslide",
@@ -587,6 +621,8 @@ async function runLiveFlood(): Promise<void> {
       updateCount: payload.alerts.length,
     });
   } catch (err) {
+    cb.recordFailure();
+    const state = cb.getState();
     const message = err instanceof Error ? err.message : String(err);
     console.error("[live] Flood alerts ingest failed:", message);
     await postSourceHealth(API_URL, {
@@ -596,6 +632,9 @@ async function runLiveFlood(): Promise<void> {
       errorRate: 1,
       status: "error",
       updateCount: 0,
+      suspended: state.suspended,
+      suspendedAt: state.suspendedAt?.toISOString(),
+      failureCount: state.failures,
     });
   }
 }
@@ -627,15 +666,56 @@ async function runLiveParliament(): Promise<void> {
     return;
   }
   lastParliamentRunAt = nowMs;
+  const cb = getCircuitBreaker("parliament", 3);
+  if (await consumeResetIfRequested("parliament")) cb.reset();
+  const now = new Date().toISOString();
+  if (cb.isOpen()) {
+    const state = cb.getState();
+    console.warn(`[live] Source parliament suspended after ${state.failures} failures`);
+    await postSourceHealth(API_URL, {
+      sourceId: "politics:parliament",
+      sourceName: "Parliament Secretariat",
+      lastUpdate: now,
+      errorRate: 1,
+      status: "error",
+      updateCount: 0,
+      suspended: true,
+      suspendedAt: state.suspendedAt?.toISOString(),
+      failureCount: state.failures,
+    });
+    return;
+  }
   try {
     const session = await fetchParliamentSession();
     if (session) {
       await postParliamentSession(API_URL, session);
       console.log("[live] Parliament session ingest done");
+      cb.recordSuccess();
     }
+    await postSourceHealth(API_URL, {
+      sourceId: "politics:parliament",
+      sourceName: "Parliament Secretariat",
+      lastUpdate: now,
+      errorRate: session ? 0 : 0,
+      status: "live",
+      updateCount: session ? 1 : 0,
+    });
   } catch (err) {
+    cb.recordFailure();
+    const state = cb.getState();
     const message = err instanceof Error ? err.message : String(err);
     console.warn("[live] Parliament session ingest failed:", message);
+    await postSourceHealth(API_URL, {
+      sourceId: "politics:parliament",
+      sourceName: "Parliament Secretariat",
+      lastUpdate: now,
+      errorRate: 1,
+      status: "error",
+      updateCount: 0,
+      suspended: state.suspended,
+      suspendedAt: state.suspendedAt?.toISOString(),
+      failureCount: state.failures,
+    });
   }
 }
 
@@ -648,15 +728,56 @@ async function runLiveWorld(): Promise<void> {
     return;
   }
   lastWorldRunAt = nowMs;
+  const now = new Date().toISOString();
+  const cb = getCircuitBreaker("gdelt", 3);
+  if (await consumeResetIfRequested("gdelt")) cb.reset();
+  if (cb.isOpen()) {
+    const state = cb.getState();
+    console.warn(`[live] Source gdelt suspended after ${state.failures} failures`);
+    await postSourceHealth(API_URL, {
+      sourceId: "world:gdelt",
+      sourceName: "GDELT / UN RSS",
+      lastUpdate: now,
+      errorRate: 1,
+      status: "error",
+      updateCount: 0,
+      suspended: true,
+      suspendedAt: state.suspendedAt?.toISOString(),
+      failureCount: state.failures,
+    });
+    return;
+  }
   try {
     const articles = await fetchWorldArticles();
     if (articles.length > 0) {
       await postWorldArticles(API_URL, articles);
       console.log(`[live] World articles ingest: ${articles.length}`);
+      cb.recordSuccess();
     }
+    await postSourceHealth(API_URL, {
+      sourceId: "world:gdelt",
+      sourceName: "GDELT / UN RSS",
+      lastUpdate: now,
+      errorRate: 0,
+      status: "live",
+      updateCount: articles.length,
+    });
   } catch (err) {
+    cb.recordFailure();
+    const state = cb.getState();
     const message = err instanceof Error ? err.message : String(err);
     console.warn("[live] World articles ingest failed:", message);
+    await postSourceHealth(API_URL, {
+      sourceId: "world:gdelt",
+      sourceName: "GDELT / UN RSS",
+      lastUpdate: now,
+      errorRate: 1,
+      status: "error",
+      updateCount: 0,
+      suspended: state.suspended,
+      suspendedAt: state.suspendedAt?.toISOString(),
+      failureCount: state.failures,
+    });
   }
 }
 
@@ -731,10 +852,29 @@ async function runLiveEconomy(state: LiveWorkerState): Promise<void> {
 }
 
 async function runLiveNepse(): Promise<void> {
+  const cb = getCircuitBreaker("nepse", 3);
+  if (await consumeResetIfRequested("nepse")) cb.reset();
   const now = new Date().toISOString();
+  if (cb.isOpen()) {
+    const state = cb.getState();
+    console.warn(`[live] Source nepse suspended after ${state.failures} failures`);
+    await postSourceHealth(API_URL, {
+      sourceId: "economy:nepse",
+      sourceName: "NEPSE",
+      lastUpdate: now,
+      errorRate: 1,
+      status: "error",
+      updateCount: 0,
+      suspended: true,
+      suspendedAt: state.suspendedAt?.toISOString(),
+      failureCount: state.failures,
+    });
+    return;
+  }
   try {
     const summary = await fetchNepseSummary();
     await postNepseSummary(API_URL, summary);
+    cb.recordSuccess();
     await postSourceHealth(API_URL, {
       sourceId: "economy:nepse",
       sourceName: summary.sourceName,
@@ -744,6 +884,8 @@ async function runLiveNepse(): Promise<void> {
       updateCount: 1,
     });
   } catch (err) {
+    cb.recordFailure();
+    const state = cb.getState();
     const message = err instanceof Error ? err.message : String(err);
     console.error("[live] NEPSE ingest failed:", message);
     await postSourceHealth(API_URL, {
@@ -753,6 +895,9 @@ async function runLiveNepse(): Promise<void> {
       errorRate: 1,
       status: "error",
       updateCount: 0,
+      suspended: state.suspended,
+      suspendedAt: state.suspendedAt?.toISOString(),
+      failureCount: state.failures,
     });
   }
 }

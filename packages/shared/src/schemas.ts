@@ -215,6 +215,9 @@ export const SourceHealthSchema = z.object({
   errorRate: z.number().min(0).max(1),
   status: SourceStatusSchema,
   updateCount: z.number().int().min(0),
+  suspended: z.boolean().optional(),
+  suspendedAt: z.string().datetime().optional(),
+  failureCount: z.number().int().min(0).optional(),
 });
 
 // ─── Crisis Intelligence ─────────────────────────────────────────────────────

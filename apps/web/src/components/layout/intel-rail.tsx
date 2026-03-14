@@ -487,12 +487,25 @@ function SourceHealthSection() {
                   Last success: {s.lastUpdate ? timeAgo(s.lastUpdate) : "—"}
                 </span>
               </div>
-              <div className="flex items-center justify-between pl-3">
+              <div className="flex items-center justify-between pl-3 flex-wrap gap-x-2 gap-y-0.5">
                 <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
                   {s.updateCount} updates
                   {s.sourceId === "social" && " • X + Reddit"}
                 </span>
-                {s.errorRate > 0 && (
+                {"suspended" in s && s.suspended && (
+                  <span className="text-[9px] text-status-error">
+                    Suspended · Failed {(s as { failureCount?: number }).failureCount ?? 0} times
+                    {(s as { suspendedAt?: string }).suspendedAt && (
+                      <> · Retry in {Math.max(0, 60 - Math.round((Date.now() - new Date((s as { suspendedAt: string }).suspendedAt).getTime()) / 60000))} min</>
+                    )}
+                  </span>
+                )}
+                {"failureCount" in s && (s as { failureCount?: number }).failureCount != null && (s as { failureCount: number }).failureCount > 0 && !(s as { suspended?: boolean }).suspended && (
+                  <span className="text-[9px] text-amber-500">
+                    Degraded ({(s as { failureCount: number }).failureCount} failures)
+                  </span>
+                )}
+                {s.errorRate > 0 && !("suspended" in s && s.suspended) && (
                   <span className="font-mono text-[9px] tabular-nums text-status-error">
                     {Math.round(s.errorRate * 100)}% error
                   </span>

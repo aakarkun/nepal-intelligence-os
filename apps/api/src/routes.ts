@@ -35,6 +35,7 @@ import {
   setParliamentSession,
   getWorldArticles,
   upsertWorldArticles,
+  getSourceHealth,
   getForexRates,
   getEconomySummary,
   getMarketAssetQuotes,
@@ -56,6 +57,8 @@ import {
 } from "./store";
 import { broadcast } from "./sse";
 import { detectAnomalies } from "./anomaly";
+
+const pendingResets = new Set<string>();
 
 export const api = new Hono().basePath("/v1");
 
@@ -267,6 +270,21 @@ api.get("/anomalies", (c) => {
 
 api.get("/sources/health", (c) => {
   return c.json(getSourceHealth());
+});
+
+api.get("/admin/sources/health", (c) => {
+  return c.json(getSourceHealth());
+});
+
+api.get("/admin/consume-reset/:sourceId", (c) => {
+  const secret = c.req.header("X-Admin-Secret");
+  if (process.env.ADMIN_SECRET && secret !== process.env.ADMIN_SECRET) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const sourceId = c.req.param("sourceId");
+  const consumed = pendingResets.has(sourceId);
+  if (consumed) pendingResets.delete(sourceId);
+  return c.json({ consumed });
 });
 
 api.get("/crisis/earthquakes", (c) => {
@@ -561,5 +579,19 @@ api.post("/ingest/reset-election", async (c) => {
       ? String((body as { datasetId?: string }).datasetId ?? "")
       : undefined;
   resetElectionData(datasetId || undefined);
+  return c.json({ ok: true });
+});
+
+api.post("/admin/sources/:sourceId/reset", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const secret =
+    body && typeof body === "object" && "secret" in body
+      ? String((body as { secret?: string }).secret ?? "")
+      : "";
+  if (!process.env.ADMIN_SECRET || secret !== process.env.ADMIN_SECRET) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const sourceId = c.req.param("sourceId");
+  pendingResets.add(sourceId);
   return c.json({ ok: true });
 });
