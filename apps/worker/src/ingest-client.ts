@@ -153,6 +153,17 @@ export async function postWorldArticles(
   return post(apiUrl, ENDPOINTS.worldArticles, articles);
 }
 
+/** Notify API that a watchlist item was triggered (e.g. after sending Telegram alert). */
+export async function postWatchlistTriggered(
+  apiUrl: string,
+  watchlistItemId: string
+): Promise<boolean> {
+  const endpoint = `/v1/ingest/watchlist/${watchlistItemId}/triggered`;
+  const url = `${apiUrl.replace(/\/$/, "")}${endpoint}`;
+  const res = await fetch(url, { method: "POST" });
+  return res.ok;
+}
+
 export type EcnIngestPayload = {
   summary: NationalSummary | null;
   constituencies: ConstituencyResult[];

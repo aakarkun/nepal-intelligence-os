@@ -16,6 +16,7 @@ import type {
   CabinetEvent,
   ParliamentSession,
   GeopoliticsArticle,
+  WatchlistItem,
 } from "@repo/shared";
 
 // ─── In-Memory Stores ────────────────────────────────────────────────────────
@@ -65,6 +66,7 @@ let nepseSummary: NepseSummary | null = null;
 let cabinetEvents: CabinetEvent[] = [];
 let parliamentSession: ParliamentSession | null = null;
 const worldArticles = new Map<string, GeopoliticsArticle>();
+let watchlistItems: WatchlistItem[] = [];
 const PERSISTED_STATE_PATH =
   process.env.API_STATE_PATH ??
   path.resolve(import.meta.dir, "../.live-api-state.json");
@@ -98,6 +100,7 @@ type PersistedApiState = {
   cabinetEvents: CabinetEvent[];
   parliamentSession: ParliamentSession | null;
   worldArticles: GeopoliticsArticle[];
+  watchlistItems: WatchlistItem[];
 };
 
 function slugify(value: string): string {
@@ -186,6 +189,7 @@ function serializeState(): PersistedApiState {
     cabinetEvents,
     parliamentSession,
     worldArticles: Array.from(worldArticles.values()),
+    watchlistItems: [...watchlistItems],
   };
 }
 
@@ -227,24 +231,41 @@ export function getConstituencyResult(
 
 export function getSignalEvents(
   limit = 20,
-  offset = 0
+  offset = 0,
+  type?: string,
+  severity?: string
 ): { events: SignalEvent[]; total: number } {
-  const sorted = signalEvents.slice().reverse();
+  let list = signalEvents;
+  if (type != null && type !== "") {
+    list = list.filter((e) => e.type === type);
+  }
+  if (severity != null && severity !== "") {
+    list = list.filter((e) => e.severity === severity);
+  }
+  const sorted = list.slice().reverse();
   return {
     events: sorted.slice(offset, offset + limit),
-    total: signalEvents.length,
+    total: sorted.length,
   };
 }
 
 export function getSocialSignalEvents(
   limit = 20,
-  offset = 0
+  offset = 0,
+  type?: string,
+  severity?: string
 ): { events: SignalEvent[]; total: number } {
-  const social = signalEvents.filter((e) => e.type === "note");
+  let social = signalEvents.filter((e) => e.type === "note");
+  if (type != null && type !== "") {
+    social = social.filter((e) => e.type === type);
+  }
+  if (severity != null && severity !== "") {
+    social = social.filter((e) => e.severity === severity);
+  }
   const sorted = social.slice().reverse();
   return {
     events: sorted.slice(offset, offset + limit),
-    total: social.length,
+    total: sorted.length,
   };
 }
 
@@ -362,6 +383,57 @@ export function getElectionDatasets(): ElectionDatasetMeta[] {
     );
 }
 
+export function getWatchlist(): WatchlistItem[] {
+  return [...watchlistItems];
+}
+
+function nanoid10(): string {
+  return crypto.randomUUID().replace(/-/g, "").slice(0, 10);
+}
+
+export function createWatchlistItem(
+  input: Omit<WatchlistItem, "id" | "createdAt">
+): WatchlistItem {
+  const now = new Date().toISOString();
+  const item: WatchlistItem = {
+    ...input,
+    id: nanoid10(),
+    createdAt: now,
+  };
+  watchlistItems.push(item);
+  schedulePersist();
+  return item;
+}
+
+export function deleteWatchlistItem(id: string): boolean {
+  const before = watchlistItems.length;
+  watchlistItems = watchlistItems.filter((w) => w.id !== id);
+  if (watchlistItems.length < before) {
+    schedulePersist();
+    return true;
+  }
+  return false;
+}
+
+export function toggleWatchlistItemActive(id: string): WatchlistItem | null {
+  const item = watchlistItems.find((w) => w.id === id);
+  if (!item) return null;
+  item.active = !item.active;
+  schedulePersist();
+  return item;
+}
+
+export function updateWatchlistItemLastTriggered(
+  id: string,
+  lastTriggeredAt: string
+): void {
+  const item = watchlistItems.find((w) => w.id === id);
+  if (item) {
+    item.lastTriggeredAt = lastTriggeredAt;
+    schedulePersist();
+  }
+}
+
 export async function loadPersistedState(): Promise<boolean> {
   try {
     const liveFile = Bun.file(PERSISTED_STATE_PATH);
@@ -414,6 +486,7 @@ export async function loadPersistedState(): Promise<boolean> {
     for (const a of raw.worldArticles ?? []) {
       worldArticles.set(a.id, a);
     }
+    watchlistItems = raw.watchlistItems ?? [];
     return true;
   } catch (err) {
     console.warn(

@@ -14,7 +14,19 @@ export default function NewsRoomPage() {
           Election updates and news with source attribution from curated news sources.
         </p>
       </div>
-      <SignalsFeed allowedTypes={["news"] as SignalEventType[]} />
+      <SignalsFeed
+        allowedTypes={
+          [
+            "news",
+            "political",
+            "security",
+            "economic",
+            "disaster",
+            "diplomatic",
+            "health",
+          ] as SignalEventType[]
+        }
+      />
     </div>
   );
 }

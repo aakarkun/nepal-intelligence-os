@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { fetchDistrictDetail, fetchProvinceDetail } from "@/lib/api";
 import { cn, formatNumber, timeAgo } from "@/lib/utils";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
-import { useFilterStore } from "@/stores/filter-store";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 
 type GeographySelection =
   | { type: "district"; districtName: string }
@@ -45,7 +46,7 @@ export function GeographyDrawer({
   onClose,
   onSelectDistrict,
 }: GeographyDrawerProps) {
-  const intelRailOpen = useFilterStore((s) => s.intelRailOpen);
+  const intelRailOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
   const { selectedDatasetId } = useElectionDatasetStore();
 
   const districtQuery = useQuery({

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { z } from "zod";
 import {
   ConstituencyResultSchema,
   NationalSummarySchema,
@@ -15,6 +16,8 @@ import {
   EconomySummarySchema,
   MarketAssetQuoteSchema,
   NepseSummarySchema,
+  WatchlistItemSchema,
+  WatchlistItemTypeSchema,
 } from "@repo/shared";
 import {
   getNationalSummary,
@@ -35,12 +38,16 @@ import {
   setParliamentSession,
   getWorldArticles,
   upsertWorldArticles,
-  getSourceHealth,
   getForexRates,
   getEconomySummary,
   getMarketAssetQuotes,
   getNepseSummary,
   getElectionDatasets,
+  getWatchlist,
+  createWatchlistItem,
+  deleteWatchlistItem,
+  toggleWatchlistItemActive,
+  updateWatchlistItemLastTriggered,
   updateNationalSummary,
   updateConstituencyResult,
   addSignalEvent,
@@ -57,6 +64,17 @@ import {
 } from "./store";
 import { broadcast } from "./sse";
 import { detectAnomalies } from "./anomaly";
+import {
+  buildContextAndPrompt,
+  callAnthropic,
+  type BriefResponse,
+} from "./intel-brief";
+import { getCircuitBreaker } from "./lib/circuit-breaker";
+
+const IntelBriefRequestSchema = z.object({
+  type: z.enum(["daily", "economic", "crisis", "custom"]),
+  query: z.string().optional(),
+});
 
 const pendingResets = new Set<string>();
 
@@ -255,13 +273,21 @@ api.get("/provinces/:id", (c) => {
 api.get("/feed", (c) => {
   const limit = Number(c.req.query("limit") ?? 20);
   const offset = Number(c.req.query("offset") ?? 0);
-  return c.json(getSignalEvents(limit, offset));
+  const type = c.req.query("type");
+  const severity = c.req.query("severity");
+  return c.json(
+    getSignalEvents(limit, offset, type ?? undefined, severity ?? undefined)
+  );
 });
 
 api.get("/feed/social", (c) => {
   const limit = Number(c.req.query("limit") ?? 20);
   const offset = Number(c.req.query("offset") ?? 0);
-  return c.json(getSocialSignalEvents(limit, offset));
+  const type = c.req.query("type");
+  const severity = c.req.query("severity");
+  return c.json(
+    getSocialSignalEvents(limit, offset, type ?? undefined, severity ?? undefined)
+  );
 });
 
 api.get("/anomalies", (c) => {
@@ -369,6 +395,99 @@ api.get("/economy/nepse", (c) => {
 
 api.get("/election-datasets", (c) => {
   return c.json(getElectionDatasets());
+});
+
+const WatchlistCreateSchema = z.object({
+  label: z.string().min(1),
+  type: WatchlistItemTypeSchema,
+  value: z.string().min(1),
+  threshold: z.number().optional(),
+  telegramChatId: z.string().optional(),
+  active: z.boolean().optional(),
+});
+
+api.get("/watchlist", (c) => {
+  return c.json(getWatchlist());
+});
+
+api.post("/watchlist", async (c) => {
+  const body = await c.req.json();
+  const parsed = WatchlistCreateSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  const item = createWatchlistItem({
+    ...parsed.data,
+    active: parsed.data.active ?? true,
+  });
+  return c.json(item, 201);
+});
+
+api.delete("/watchlist/:id", (c) => {
+  const id = c.req.param("id");
+  const deleted = deleteWatchlistItem(id);
+  return deleted ? c.json({ ok: true }) : c.json({ error: "Not found" }, 404);
+});
+
+api.patch("/watchlist/:id/toggle", (c) => {
+  const id = c.req.param("id");
+  const item = toggleWatchlistItemActive(id);
+  return item ? c.json(item) : c.json({ error: "Not found" }, 404);
+});
+
+// ─── Ingest: watchlist triggered (worker calls after sending alert) ──────────
+
+api.post("/ingest/watchlist/:id/triggered", (c) => {
+  const id = c.req.param("id");
+  updateWatchlistItemLastTriggered(id, new Date().toISOString());
+  return c.json({ ok: true });
+});
+
+// ─── Intel Briefing ─────────────────────────────────────────────────────────
+
+api.post("/intel/brief", async (c) => {
+  if (!process.env.ANTHROPIC_API_KEY?.trim()) {
+    return c.json({ error: "Intel service not configured" }, 503);
+  }
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON" }, 400);
+  }
+  const parsed = IntelBriefRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  const { type, query } = parsed.data;
+  const cb = getCircuitBreaker("anthropic", 3);
+  if (cb.isOpen()) {
+    return c.json(
+      { error: "Briefing service temporarily unavailable", detail: "Too many failures" },
+      503
+    );
+  }
+  try {
+    const { userMessage, dataPoints } = buildContextAndPrompt(type, query);
+    const brief = await callAnthropic(userMessage);
+    cb.recordSuccess();
+    const response: BriefResponse = {
+      type,
+      brief,
+      generatedAt: new Date().toISOString(),
+      dataPoints,
+    };
+    return c.json(response);
+  } catch (err) {
+    cb.recordFailure();
+    const message = err instanceof Error ? err.message : String(err);
+    const isConfig = message.includes("not configured");
+    if (isConfig) return c.json({ error: "Intel service not configured" }, 503);
+    return c.json(
+      { error: "Briefing generation failed", detail: message },
+      502
+    );
+  }
 });
 
 // ─── POST Ingest Routes ─────────────────────────────────────────────────────

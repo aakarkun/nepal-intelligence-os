@@ -14,10 +14,19 @@ import {
   StickyNote,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import {
+  useGetWatchlistQuery,
+  useCreateWatchlistItemMutation,
+  useDeleteWatchlistItemMutation,
+  useToggleWatchlistItemMutation,
+} from "@/store/api/watchlistApi";
+import type { RootState } from "@/store";
+import type { WatchlistItemType } from "@repo/shared";
 import { cn, timeAgo } from "@/lib/utils";
 import { useRealtimeStore } from "@/stores/realtime-store";
-import { useFilterStore } from "@/stores/filter-store";
 import { fetchAnomalies, fetchConstituency, fetchSourceHealth } from "@/lib/api";
+import { Bell, Plus, X } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /* Collapsible Section                                                  */
@@ -399,6 +408,190 @@ function CandidateWatchItem({
 }
 
 /* ------------------------------------------------------------------ */
+/* Alert rules (watchlist with Telegram) — RTK Query                    */
+/* ------------------------------------------------------------------ */
+
+const WATCHLIST_TYPES: { value: WatchlistItemType; label: string }[] = [
+  { value: "keyword", label: "Keyword" },
+  { value: "constituency", label: "Constituency" },
+  { value: "district", label: "District" },
+  { value: "price_threshold", label: "Price %" },
+  { value: "crisis_severity", label: "Crisis" },
+];
+
+function AlertRulesSection() {
+  const { data: items = [], isLoading } = useGetWatchlistQuery(undefined, {
+    pollingInterval: 30_000,
+  });
+  const [createItem] = useCreateWatchlistItemMutation();
+  const [deleteItem] = useDeleteWatchlistItemMutation();
+  const [toggleItem] = useToggleWatchlistItemMutation();
+  const [addOpen, setAddOpen] = useState(false);
+  const [label, setLabel] = useState("");
+  const [type, setType] = useState<WatchlistItemType>("keyword");
+  const [value, setValue] = useState("");
+  const [threshold, setThreshold] = useState("");
+  const [telegramChatId, setTelegramChatId] = useState("");
+
+  const handleAdd = () => {
+    if (!label.trim() || !value.trim()) return;
+    createItem({
+      label: label.trim(),
+      type,
+      value: value.trim(),
+      ...(type === "price_threshold" && threshold !== ""
+        ? { threshold: Number(threshold) }
+        : {}),
+      ...(telegramChatId.trim() ? { telegramChatId: telegramChatId.trim() } : {}),
+      active: true,
+    });
+    setLabel("");
+    setValue("");
+    setThreshold("");
+    setTelegramChatId("");
+    setAddOpen(false);
+  };
+
+  return (
+    <Section title="Alert rules" icon={Bell}>
+      {isLoading ? (
+        <p className="text-[10px] text-muted-foreground">Loading…</p>
+      ) : items.length === 0 && !addOpen ? (
+        <p className="text-[10px] text-muted-foreground">
+          No alert rules. Add one to get Telegram alerts.
+        </p>
+      ) : (
+        <div className="space-y-1.5">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="group flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/20 px-2 py-1.5"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="truncate text-[11px] font-medium text-foreground">
+                    {item.label}
+                  </span>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded px-1 font-mono text-[9px]",
+                      item.active
+                        ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                        : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {item.type.replace("_", " ")}
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  {item.lastTriggeredAt
+                    ? `Last triggered: ${timeAgo(item.lastTriggeredAt)}`
+                    : "Never triggered"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleItem(item.id)}
+                className="shrink-0 rounded p-1 text-muted-foreground hover:text-foreground"
+                title={item.active ? "Pause" : "Resume"}
+              >
+                {item.active ? (
+                  <Eye className="h-3 w-3" />
+                ) : (
+                  <EyeOff className="h-3 w-3 opacity-60" />
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteItem(item.id)}
+                className="shrink-0 rounded p-1 text-muted-foreground hover:text-nepal-red"
+                title="Remove"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+          {addOpen && (
+            <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2">
+              <input
+                type="text"
+                placeholder="Label"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                className="w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+              />
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value as WatchlistItemType)}
+                className="w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+              >
+                {WATCHLIST_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="Value (e.g. NABIL, danger, Madhesh)"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                className="w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+              />
+              {type === "price_threshold" && (
+                <input
+                  type="number"
+                  placeholder="Threshold %"
+                  value={threshold}
+                  onChange={(e) => setThreshold(e.target.value)}
+                  className="w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+                />
+              )}
+              <input
+                type="text"
+                placeholder="Telegram Chat ID (optional)"
+                value={telegramChatId}
+                onChange={(e) => setTelegramChatId(e.target.value)}
+                className="w-full rounded border border-border bg-background px-2 py-1 text-[11px]"
+              />
+              <p className="text-[9px] text-muted-foreground">
+                Get your chat ID from @userinfobot on Telegram
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  className="rounded bg-nepal-red/80 px-2 py-1 text-[11px] text-white hover:bg-nepal-red"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddOpen(false)}
+                  className="rounded border border-border px-2 py-1 text-[11px] text-muted-foreground"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          {!addOpen && (
+            <button
+              type="button"
+              onClick={() => setAddOpen(true)}
+              className="flex w-full items-center gap-1.5 rounded-md border border-dashed border-border px-2 py-1.5 text-[11px] text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+            >
+              <Plus className="h-3 w-3" />
+              Add Watch
+            </button>
+          )}
+        </div>
+      )}
+    </Section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Source Health Section                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -543,7 +736,7 @@ function NotesSection() {
 /* ------------------------------------------------------------------ */
 
 export function IntelRail() {
-  const isOpen = useFilterStore((s) => s.intelRailOpen);
+  const isOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
 
   if (!isOpen) return null;
 
@@ -554,6 +747,7 @@ export function IntelRail() {
         <ConnectionSection />
         <AnomaliesSection />
         <WatchlistSection />
+        <AlertRulesSection />
         <SourceHealthSection />
         <NotesSection />
       </aside>
@@ -563,6 +757,7 @@ export function IntelRail() {
         <ConnectionSection />
         <AnomaliesSection />
         <WatchlistSection />
+        <AlertRulesSection />
         <SourceHealthSection />
         <NotesSection />
       </aside>

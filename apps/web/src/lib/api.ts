@@ -107,16 +107,32 @@ export function fetchProvinceDetail(
 
 export function fetchFeed(
   limit = 20,
-  offset = 0
+  offset = 0,
+  type?: string,
+  severity?: string
 ): Promise<{ events: SignalEvent[]; total: number }> {
-  return fetchJSON(`/v1/feed?limit=${limit}&offset=${offset}`);
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (type && type !== "all") params.set("type", type);
+  if (severity && severity !== "all") params.set("severity", severity);
+  return fetchJSON(`/v1/feed?${params.toString()}`);
 }
 
 export function fetchSocialFeed(
   limit = 20,
-  offset = 0
+  offset = 0,
+  type?: string,
+  severity?: string
 ): Promise<{ events: SignalEvent[]; total: number }> {
-  return fetchJSON(`/v1/feed/social?limit=${limit}&offset=${offset}`);
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (type && type !== "all") params.set("type", type);
+  if (severity && severity !== "all") params.set("severity", severity);
+  return fetchJSON(`/v1/feed/social?${params.toString()}`);
 }
 
 export function fetchAnomalies(): Promise<Anomaly[]> {
@@ -184,4 +200,33 @@ export function fetchNepseSummary(): Promise<NepseSummary | null> {
 
 export function fetchElectionDatasets(): Promise<ElectionDataset[]> {
   return fetchJSON("/v1/election-datasets");
+}
+
+export type IntelBriefType = "daily" | "economic" | "crisis" | "custom";
+
+export type IntelBriefRequest = {
+  type: IntelBriefType;
+  query?: string;
+};
+
+export type IntelBriefResponse = {
+  type: string;
+  brief: string;
+  generatedAt: string;
+  dataPoints: number;
+};
+
+export async function fetchIntelBrief(
+  request: IntelBriefRequest
+): Promise<IntelBriefResponse> {
+  const res = await fetch(`${API_URL}/v1/intel/brief`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+    throw new Error(err.detail ?? err.error ?? `API error: ${res.status}`);
+  }
+  return res.json();
 }

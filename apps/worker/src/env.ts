@@ -51,4 +51,6 @@ export const env = {
   NITTER_BASE_URL:
     process.env.NITTER_BASE_URL ?? "https://nitter.poast.org",
   ADMIN_SECRET: process.env.ADMIN_SECRET ?? undefined,
+  /** Optional: for watchlist alerts to Telegram */
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN ?? undefined,
 } as const;

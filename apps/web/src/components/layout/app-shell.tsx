@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { useFilterStore } from "@/stores/filter-store";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import { TopBar } from "./top-bar";
 import { NavRail } from "./nav-rail";
 import { IntelRail } from "./intel-rail";
 import { Ticker } from "./ticker";
 import { CommandPalette } from "@/components/command-palette";
+import { IntelPanel } from "@/components/intel/intel-panel";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const intelRailOpen = useFilterStore((s) => s.intelRailOpen);
+  const intelRailOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
   const [commandOpen, setCommandOpen] = useState(false);
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <IntelRail />
       <Ticker />
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      <IntelPanel />
     </>
   );
 }

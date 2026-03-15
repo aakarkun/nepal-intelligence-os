@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSelector, useDispatch } from "react-redux";
 import {
   Info,
   Database,
@@ -10,6 +11,12 @@ import {
   Newspaper,
   Pin,
   MessageCircle,
+  Landmark,
+  Shield,
+  TrendingUp,
+  Mountain,
+  Globe,
+  Heart,
 } from "lucide-react";
 import Link from "next/link";
 import { fetchFeed, fetchSocialFeed } from "@/lib/api";
@@ -18,6 +25,8 @@ import { cn, timeAgo } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { RootState } from "@/store";
+import { setTypeFilter } from "@/store/slices/uiSlice";
 import type { SignalEvent, SignalSeverity, SignalEventType } from "@repo/shared";
 
 const typeConfig: Record<
@@ -28,8 +37,19 @@ const typeConfig: Record<
   ingest: { color: "#6b7280", icon: Database, label: "Ingest" },
   anomaly: { color: "#ef4444", icon: AlertTriangle, label: "Anomaly" },
   note: { color: "#f59e0b", icon: StickyNote, label: "Social" },
-  news: { color: "#10b981", icon: Newspaper, label: "News" },
+  news: { color: "#94a3b8", icon: Newspaper, label: "News" },
+  political: { color: "#60a5fa", icon: Landmark, label: "Political" },
+  security: { color: "#f87171", icon: Shield, label: "Security" },
+  economic: { color: "#34d399", icon: TrendingUp, label: "Economic" },
+  disaster: { color: "#fb923c", icon: Mountain, label: "Disaster" },
+  diplomatic: { color: "#a78bfa", icon: Globe, label: "Diplomatic" },
+  health: { color: "#f472b6", icon: Heart, label: "Health" },
 };
+
+/** Resolve config for event type; fall back to news for unknown/legacy types. */
+function getTypeConfig(type: string): (typeof typeConfig)[SignalEventType] {
+  return typeConfig[type as SignalEventType] ?? typeConfig.news;
+}
 
 const severityVariant: Record<SignalSeverity, "default" | "stale" | "error"> = {
   info: "default",
@@ -37,32 +57,54 @@ const severityVariant: Record<SignalSeverity, "default" | "stale" | "error"> = {
   critical: "error",
 };
 
+const DOMAIN_TYPES: SignalEventType[] = [
+  "political",
+  "security",
+  "economic",
+  "disaster",
+  "diplomatic",
+  "health",
+  "news",
+];
+
 export function SignalsFeed(
   props: { allowedTypes?: SignalEventType[]; socialOnly?: boolean } = {}
 ) {
   const { allowedTypes, socialOnly } = props;
+  const dispatch = useDispatch();
+  const typeFilter = useSelector((s: RootState) => s.ui.typeFilter);
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const visibleTypes = useMemo(
     () =>
       allowedTypes && allowedTypes.length > 0
         ? allowedTypes
-        : (["official", "ingest", "anomaly", "note", "news"] as SignalEventType[]),
+        : ([
+            "official",
+            "ingest",
+            "anomaly",
+            "note",
+            "news",
+            "political",
+            "security",
+            "economic",
+            "disaster",
+            "diplomatic",
+            "health",
+          ] as SignalEventType[]),
     [allowedTypes]
-  );
-  const [typeFilters, setTypeFilters] = useState<Set<SignalEventType>>(
-    new Set(visibleTypes)
   );
   const [sourceFilter, setSourceFilter] = useState<string>("all");
 
-  useEffect(() => {
-    setTypeFilters(new Set(visibleTypes));
-    setSourceFilter("all");
-  }, [visibleTypes]);
-
   const { data: feedData } = useQuery({
-    queryKey: [socialOnly ? "social-feed" : "feed"],
+    queryKey: [
+      socialOnly ? "social-feed" : "feed",
+      typeFilter,
+      severityFilter,
+    ],
     queryFn: () =>
-      socialOnly ? fetchSocialFeed(100, 0) : fetchFeed(100, 0),
+      socialOnly
+        ? fetchSocialFeed(100, 0, typeFilter === "all" ? undefined : typeFilter, severityFilter === "all" ? undefined : severityFilter)
+        : fetchFeed(100, 0, typeFilter === "all" ? undefined : typeFilter, severityFilter === "all" ? undefined : severityFilter),
     refetchInterval: 15_000,
   });
 
@@ -84,12 +126,12 @@ export function SignalsFeed(
   const filtered = useMemo(() => {
     return allEvents.filter((e) => {
       if (allowedTypes && !allowedTypes.includes(e.type)) return false;
-      if (!typeFilters.has(e.type)) return false;
+      if (typeFilter !== "all" && e.type !== typeFilter) return false;
       if (severityFilter !== "all" && e.severity !== severityFilter) return false;
       if (sourceFilter !== "all" && (e.source ?? "unknown") !== sourceFilter) return false;
       return true;
     });
-  }, [allEvents, typeFilters, severityFilter, allowedTypes, sourceFilter]);
+  }, [allEvents, typeFilter, severityFilter, allowedTypes, sourceFilter]);
 
   const sourceOptions = useMemo(() => {
     const seen = new Set<string>();
@@ -99,15 +141,6 @@ export function SignalsFeed(
     }
     return Array.from(seen).sort((a, b) => a.localeCompare(b));
   }, [allEvents, allowedTypes]);
-
-  function toggleType(type: SignalEventType) {
-    setTypeFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
-      return next;
-    });
-  }
 
   return (
     <div className="space-y-4">
@@ -141,22 +174,35 @@ export function SignalsFeed(
           )}
 
           {visibleTypes.length > 1 && (
-            <div className="flex gap-1.5">
-              {visibleTypes.map((type) => {
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                onClick={() => dispatch(setTypeFilter("all"))}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-xs transition-colors",
+                  typeFilter === "all"
+                    ? "border-white/20 bg-white/5"
+                    : "border-border text-muted-foreground opacity-50 hover:opacity-80"
+                )}
+              >
+                All Types
+              </button>
+              {DOMAIN_TYPES.filter((t) => visibleTypes.includes(t)).map((type) => {
                 const config = typeConfig[type];
+                const isActive = typeFilter === type;
                 return (
                   <button
                     key={type}
-                    onClick={() => toggleType(type)}
+                    onClick={() => dispatch(setTypeFilter(type))}
                     className={cn(
                       "flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-xs transition-colors",
-                      typeFilters.has(type)
+                      isActive
                         ? "border-white/20 bg-white/5"
-                        : "border-border text-muted-foreground opacity-50"
+                        : "border-border text-muted-foreground opacity-50 hover:opacity-80"
                     )}
+                    style={isActive ? { borderColor: config.color } : undefined}
                   >
                     <span
-                      className="h-1.5 w-1.5 rounded-full"
+                      className="h-1.5 w-1.5 rounded-full flex-shrink-0"
                       style={{ backgroundColor: config.color }}
                     />
                     {config.label}
@@ -170,7 +216,7 @@ export function SignalsFeed(
 
       <div className="space-y-0">
         {filtered.map((event) => {
-          const config = typeConfig[event.type];
+          const config = getTypeConfig(event.type);
           let Icon = config.icon;
 
           const isRedditSource = event.source?.startsWith("Reddit:");
@@ -209,17 +255,27 @@ export function SignalsFeed(
               </div>
 
               <div className="flex-1 min-w-0 space-y-1">
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-2 flex-wrap">
                   <Icon
                     className="h-3.5 w-3.5 mt-0.5 flex-shrink-0"
                     style={{ color: config.color }}
                   />
-                  <p className="text-sm font-medium leading-tight">
+                  <p className="text-sm font-medium leading-tight min-w-0 flex-1">
                     {event.title}
                   </p>
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0"
+                    style={{
+                      backgroundColor: `${config.color}20`,
+                      color: config.color,
+                      borderLeft: `2px solid ${config.color}`,
+                    }}
+                  >
+                    {config.label}
+                  </span>
                   <Badge
                     variant={severityVariant[event.severity]}
-                    className="ml-auto flex-shrink-0"
+                    className="flex-shrink-0"
                   >
                     {event.severity}
                   </Badge>

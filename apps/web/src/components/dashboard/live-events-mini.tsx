@@ -14,6 +14,12 @@ const EVENT_DOT_COLORS: Record<SignalEventType, string> = {
   anomaly: "bg-red-500",
   note: "bg-yellow-500",
   news: "bg-purple-500",
+  political: "bg-indigo-500",
+  security: "bg-red-600",
+  economic: "bg-emerald-500",
+  disaster: "bg-orange-500",
+  diplomatic: "bg-blue-600",
+  health: "bg-pink-500",
 };
 
 const ELECTION_KEYWORDS = [
