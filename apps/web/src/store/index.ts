@@ -8,7 +8,7 @@ import { uiSlice } from "./slices/uiSlice";
 const uiPersistConfig = {
   key: "nepal-intel-ui",
   storage,
-  whitelist: ["briefingPanelOpen", "intelRailOpen"],
+  whitelist: ["briefingPanelOpen", "intelRailOpen", "typeFilter"],
 };
 
 const watchlistApiPersistConfig = {

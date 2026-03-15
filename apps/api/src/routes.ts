@@ -273,13 +273,21 @@ api.get("/provinces/:id", (c) => {
 api.get("/feed", (c) => {
   const limit = Number(c.req.query("limit") ?? 20);
   const offset = Number(c.req.query("offset") ?? 0);
-  return c.json(getSignalEvents(limit, offset));
+  const type = c.req.query("type");
+  const severity = c.req.query("severity");
+  return c.json(
+    getSignalEvents(limit, offset, type ?? undefined, severity ?? undefined)
+  );
 });
 
 api.get("/feed/social", (c) => {
   const limit = Number(c.req.query("limit") ?? 20);
   const offset = Number(c.req.query("offset") ?? 0);
-  return c.json(getSocialSignalEvents(limit, offset));
+  const type = c.req.query("type");
+  const severity = c.req.query("severity");
+  return c.json(
+    getSocialSignalEvents(limit, offset, type ?? undefined, severity ?? undefined)
+  );
 });
 
 api.get("/anomalies", (c) => {

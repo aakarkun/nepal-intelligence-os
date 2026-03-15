@@ -231,24 +231,41 @@ export function getConstituencyResult(
 
 export function getSignalEvents(
   limit = 20,
-  offset = 0
+  offset = 0,
+  type?: string,
+  severity?: string
 ): { events: SignalEvent[]; total: number } {
-  const sorted = signalEvents.slice().reverse();
+  let list = signalEvents;
+  if (type != null && type !== "") {
+    list = list.filter((e) => e.type === type);
+  }
+  if (severity != null && severity !== "") {
+    list = list.filter((e) => e.severity === severity);
+  }
+  const sorted = list.slice().reverse();
   return {
     events: sorted.slice(offset, offset + limit),
-    total: signalEvents.length,
+    total: sorted.length,
   };
 }
 
 export function getSocialSignalEvents(
   limit = 20,
-  offset = 0
+  offset = 0,
+  type?: string,
+  severity?: string
 ): { events: SignalEvent[]; total: number } {
-  const social = signalEvents.filter((e) => e.type === "note");
+  let social = signalEvents.filter((e) => e.type === "note");
+  if (type != null && type !== "") {
+    social = social.filter((e) => e.type === type);
+  }
+  if (severity != null && severity !== "") {
+    social = social.filter((e) => e.severity === severity);
+  }
   const sorted = social.slice().reverse();
   return {
     events: sorted.slice(offset, offset + limit),
-    total: social.length,
+    total: sorted.length,
   };
 }
 

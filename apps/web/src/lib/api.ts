@@ -107,16 +107,32 @@ export function fetchProvinceDetail(
 
 export function fetchFeed(
   limit = 20,
-  offset = 0
+  offset = 0,
+  type?: string,
+  severity?: string
 ): Promise<{ events: SignalEvent[]; total: number }> {
-  return fetchJSON(`/v1/feed?limit=${limit}&offset=${offset}`);
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (type && type !== "all") params.set("type", type);
+  if (severity && severity !== "all") params.set("severity", severity);
+  return fetchJSON(`/v1/feed?${params.toString()}`);
 }
 
 export function fetchSocialFeed(
   limit = 20,
-  offset = 0
+  offset = 0,
+  type?: string,
+  severity?: string
 ): Promise<{ events: SignalEvent[]; total: number }> {
-  return fetchJSON(`/v1/feed/social?limit=${limit}&offset=${offset}`);
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (type && type !== "all") params.set("type", type);
+  if (severity && severity !== "all") params.set("severity", severity);
+  return fetchJSON(`/v1/feed/social?${params.toString()}`);
 }
 
 export function fetchAnomalies(): Promise<Anomaly[]> {
