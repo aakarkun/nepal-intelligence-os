@@ -76,6 +76,13 @@ import {
   type BriefResponse,
 } from "./intel-brief";
 import { getCircuitBreaker } from "./lib/circuit-breaker";
+import * as workerStateRepo from "./db/repos/worker-state.js";
+
+function requireWorkerSecret(c: { req: { header: (n: string) => string | undefined } }): boolean {
+  const secret = process.env.WORKER_SECRET;
+  if (!secret) return true;
+  return c.req.header("X-Worker-Secret") === secret;
+}
 
 const IntelBriefRequestSchema = z.object({
   type: z.enum(["daily", "economic", "crisis", "custom"]),
@@ -276,38 +283,36 @@ api.get("/provinces/:id", (c) => {
   });
 });
 
-api.get("/feed", (c) => {
+api.get("/feed", async (c) => {
   const limit = Number(c.req.query("limit") ?? 20);
   const offset = Number(c.req.query("offset") ?? 0);
   const type = c.req.query("type");
   const severity = c.req.query("severity");
-  return c.json(
-    getSignalEvents(limit, offset, type ?? undefined, severity ?? undefined)
-  );
+  const result = await getSignalEvents(limit, offset, type ?? undefined, severity ?? undefined);
+  return c.json(result);
 });
 
-api.get("/feed/social", (c) => {
+api.get("/feed/social", async (c) => {
   const limit = Number(c.req.query("limit") ?? 20);
   const offset = Number(c.req.query("offset") ?? 0);
   const type = c.req.query("type");
   const severity = c.req.query("severity");
-  return c.json(
-    getSocialSignalEvents(limit, offset, type ?? undefined, severity ?? undefined)
-  );
+  const result = await getSocialSignalEvents(limit, offset, type ?? undefined, severity ?? undefined);
+  return c.json(result);
 });
 
-api.get("/anomalies", (c) => {
+api.get("/anomalies", async (c) => {
   const context = c.req.query("context") as "election" | "operational" | "all" | undefined;
   const valid = context === "election" || context === "operational" || context === "all" ? context : undefined;
-  return c.json(getAnomalies(valid));
+  return c.json(await getAnomalies(valid));
 });
 
-api.get("/sources/health", (c) => {
-  return c.json(getSourceHealth());
+api.get("/sources/health", async (c) => {
+  return c.json(await getSourceHealth());
 });
 
-api.get("/admin/sources/health", (c) => {
-  return c.json(getSourceHealth());
+api.get("/admin/sources/health", async (c) => {
+  return c.json(await getSourceHealth());
 });
 
 api.get("/admin/consume-reset/:sourceId", (c) => {
@@ -319,6 +324,35 @@ api.get("/admin/consume-reset/:sourceId", (c) => {
   const consumed = pendingResets.has(sourceId);
   if (consumed) pendingResets.delete(sourceId);
   return c.json({ consumed });
+});
+
+// ─── Worker state (DB-backed; X-Worker-Secret) ───────────────────────────────
+
+api.get("/worker-state", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const state = await workerStateRepo.getWorkerState();
+  if (!state) return c.json({ error: "Worker state not found" }, 404);
+  return c.json(state);
+});
+
+api.patch("/worker-state", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
+  const partial: Parameters<typeof workerStateRepo.updateWorkerState>[0] = {};
+  const keys = [
+    "lastNepseRunAt", "lastCoingeckoRunAt", "lastMetalsRunAt", "lastNrbRunAt",
+    "lastNewsRunAt", "lastRssNepalRunAt", "lastParliamentRunAt", "lastDhmRunAt",
+    "lastGdacsRunAt", "lastGdeltRunAt", "lastUnRssRunAt", "lastUsgsRunAt",
+  ] as const;
+  for (const k of keys) {
+    if (body[k] !== undefined && typeof body[k] === "number") partial[k] = body[k];
+  }
+  await workerStateRepo.updateWorkerState(partial);
+  return c.json({ ok: true });
 });
 
 api.get("/crisis/earthquakes", (c) => {
@@ -345,28 +379,29 @@ api.get("/crisis/summary", (c) => {
   );
 });
 
-api.get("/crisis/incidents", (c) => {
-  return c.json(getCrisisIncidents());
+api.get("/crisis/incidents", async (c) => {
+  return c.json(await getCrisisIncidents());
 });
 
-api.get("/crisis/flood-alerts", (c) => {
+api.get("/crisis/flood-alerts", async (c) => {
   const status = c.req.query("status");
-  return c.json(getFloodAlerts(status ?? undefined));
+  return c.json(await getFloodAlerts(status ?? undefined));
 });
 
-api.get("/politics/cabinet-events", (c) => {
+api.get("/politics/cabinet-events", async (c) => {
   const limit = Number(c.req.query("limit") ?? 10);
-  return c.json(getCabinetEvents(limit));
+  return c.json(await getCabinetEvents(limit));
 });
 
-api.get("/politics/parliament-session", (c) => {
-  return c.json(getParliamentSession() ?? null);
+api.get("/politics/parliament-session", async (c) => {
+  const session = await getParliamentSession();
+  return c.json(session ?? null);
 });
 
-api.get("/world/articles", (c) => {
+api.get("/world/articles", async (c) => {
   const panel = c.req.query("panel");
   const limit = Number(c.req.query("limit") ?? 20);
-  return c.json(getWorldArticles(panel ?? undefined, limit));
+  return c.json(await getWorldArticles(panel ?? undefined, limit));
 });
 
 api.get("/economy/forex", (c) => {
@@ -414,8 +449,8 @@ const WatchlistCreateSchema = z.object({
   active: z.boolean().optional(),
 });
 
-api.get("/watchlist", (c) => {
-  return c.json(getWatchlist());
+api.get("/watchlist", async (c) => {
+  return c.json(await getWatchlist());
 });
 
 api.post("/watchlist", async (c) => {
@@ -424,30 +459,30 @@ api.post("/watchlist", async (c) => {
   if (!parsed.success) {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
-  const item = createWatchlistItem({
+  const item = await createWatchlistItem({
     ...parsed.data,
     active: parsed.data.active ?? true,
   });
   return c.json(item, 201);
 });
 
-api.delete("/watchlist/:id", (c) => {
+api.delete("/watchlist/:id", async (c) => {
   const id = c.req.param("id");
-  const deleted = deleteWatchlistItem(id);
+  const deleted = await deleteWatchlistItem(id);
   return deleted ? c.json({ ok: true }) : c.json({ error: "Not found" }, 404);
 });
 
-api.patch("/watchlist/:id/toggle", (c) => {
+api.patch("/watchlist/:id/toggle", async (c) => {
   const id = c.req.param("id");
-  const item = toggleWatchlistItemActive(id);
+  const item = await toggleWatchlistItemActive(id);
   return item ? c.json(item) : c.json({ error: "Not found" }, 404);
 });
 
 // ─── Ingest: watchlist triggered (worker calls after sending alert) ──────────
 
-api.post("/ingest/watchlist/:id/triggered", (c) => {
+api.post("/ingest/watchlist/:id/triggered", async (c) => {
   const id = c.req.param("id");
-  updateWatchlistItemLastTriggered(id, new Date().toISOString());
+  await updateWatchlistItemLastTriggered(id, new Date().toISOString());
   return c.json({ ok: true });
 });
 
@@ -476,7 +511,7 @@ api.post("/reactions", async (c) => {
   if (!parsed.success) {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
-  const result = addReaction({
+  const result = await addReaction({
     itemId: parsed.data.itemId,
     itemTitle: parsed.data.itemTitle,
     reaction: "like",
@@ -493,23 +528,23 @@ api.delete("/reactions/:itemId", async (c) => {
   if (!parsed.success) {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
-  const result = removeReaction(itemId, parsed.data.fingerprint);
+  const result = await removeReaction(itemId, parsed.data.fingerprint);
   return c.json(result);
 });
 
 // Must be before /reactions/:itemId or "batch" is matched as itemId
-api.get("/reactions/batch", (c) => {
+api.get("/reactions/batch", async (c) => {
   const idsParam = c.req.query("ids");
   const ids = idsParam ? idsParam.split(",").map((s) => s.trim()).filter(Boolean) : [];
   const fp = c.req.query("fp");
-  const result = getReactionsBatch(ids, fp ?? undefined);
+  const result = await getReactionsBatch(ids, fp ?? undefined);
   return c.json(result);
 });
 
-api.get("/reactions/:itemId", (c) => {
+api.get("/reactions/:itemId", async (c) => {
   const itemId = c.req.param("itemId");
   const fp = c.req.query("fp");
-  const result = getReactionStatus(itemId, fp ?? undefined);
+  const result = await getReactionStatus(itemId, fp ?? undefined);
   return c.json(result);
 });
 
@@ -519,7 +554,7 @@ api.patch("/reactions/associate-email", async (c) => {
   if (!parsed.success) {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
-  const updated = associateEmailWithFingerprint(parsed.data.fingerprint, parsed.data.email);
+  const updated = await associateEmailWithFingerprint(parsed.data.fingerprint, parsed.data.email);
   return c.json({ updated });
 });
 
@@ -548,7 +583,7 @@ api.post("/intel/brief", async (c) => {
     );
   }
   try {
-    const { userMessage, dataPoints } = buildContextAndPrompt(type, query);
+    const { userMessage, dataPoints } = await buildContextAndPrompt(type, query);
     const brief = await callAnthropic(userMessage);
     cb.recordSuccess();
     const response: BriefResponse = {
@@ -585,7 +620,7 @@ api.post("/ingest/snapshot", async (c) => {
 
   const anomalies = detectAnomalies(newResult, previousResult);
   for (const anomaly of anomalies) {
-    addAnomaly(anomaly);
+    await addAnomaly(anomaly);
     broadcast({ type: "anomaly", data: anomaly });
   }
 
@@ -617,7 +652,7 @@ api.post("/ingest/event", async (c) => {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
 
-  addSignalEvent(parsed.data);
+  await addSignalEvent(parsed.data);
   broadcast({ type: "event", data: parsed.data });
 
   return c.json({ ok: true });
@@ -631,7 +666,7 @@ api.post("/ingest/source-health", async (c) => {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
 
-  updateSourceHealth(parsed.data);
+  await updateSourceHealth(parsed.data);
   return c.json({ ok: true });
 });
 
@@ -667,7 +702,7 @@ api.post("/ingest/crisis/incidents", async (c) => {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
 
-  replaceCrisisIncidents(parsed.data);
+  await replaceCrisisIncidents(parsed.data);
   return c.json({ ok: true, count: parsed.data.length });
 });
 
@@ -679,7 +714,7 @@ api.post("/ingest/crisis/flood-alerts", async (c) => {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
 
-  setFloodAlerts({
+  await setFloodAlerts({
     alerts: parsed.data.alerts,
     seasonInactive: parsed.data.seasonInactive,
     lastUpdated: parsed.data.lastUpdated,
@@ -696,7 +731,7 @@ api.post("/ingest/politics/cabinet-events", async (c) => {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
 
-  setCabinetEvents(parsed.data);
+  await setCabinetEvents(parsed.data);
   return c.json({ ok: true, count: parsed.data.length });
 });
 
@@ -708,7 +743,7 @@ api.post("/ingest/politics/parliament-session", async (c) => {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
 
-  setParliamentSession(parsed.data);
+  await setParliamentSession(parsed.data);
   return c.json({ ok: true });
 });
 
@@ -720,7 +755,7 @@ api.post("/ingest/world/articles", async (c) => {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
 
-  upsertWorldArticles(parsed.data);
+  await upsertWorldArticles(parsed.data);
   return c.json({ ok: true, count: parsed.data.length });
 });
 

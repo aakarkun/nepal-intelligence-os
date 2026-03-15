@@ -46,7 +46,7 @@ import { runWatchlistCheck } from "./lib/watchlist-checker";
 import type { SourceHealth } from "@repo/shared";
 import path from "node:path";
 
-const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH, ADMIN_SECRET, TELEGRAM_BOT_TOKEN } = env;
+const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH, ADMIN_SECRET, WORKER_SECRET, TELEGRAM_BOT_TOKEN } = env;
 
 /** NEPSE closed on Nepal public holidays (Dashain, Tihar, national days). Loaded at live scheduler start. */
 let nepalHolidays: Set<string> = new Set();
@@ -114,23 +114,72 @@ type ElectionDatasetMeta = {
 
 async function readLiveWorkerState(): Promise<LiveWorkerState> {
   try {
-    const file = Bun.file(env.LIVE_STATE_PATH);
-    if (!(await file.exists())) return {};
-    const parsed = (await file.json()) as LiveWorkerState;
-    return parsed ?? {};
+    const base = API_URL.replace(/\/$/, "");
+    const headers: Record<string, string> = {};
+    if (WORKER_SECRET) headers["X-Worker-Secret"] = WORKER_SECRET;
+    const res = await fetch(`${base}/v1/worker-state`, { headers });
+    if (!res.ok) return {};
+    const row = (await res.json()) as {
+      lastNepseRunAt?: number | null;
+      lastCoingeckoRunAt?: number | null;
+      lastMetalsRunAt?: number | null;
+      lastNrbRunAt?: number | null;
+      lastNewsRunAt?: number | null;
+      lastRssNepalRunAt?: number | null;
+      lastParliamentRunAt?: number | null;
+      lastDhmRunAt?: number | null;
+      lastGdacsRunAt?: number | null;
+      lastGdeltRunAt?: number | null;
+      lastUnRssRunAt?: number | null;
+      lastUsgsRunAt?: number | null;
+    };
+    return {
+      lastNepseRunAt: row.lastNepseRunAt ?? undefined,
+      lastCoingeckoRunAt: row.lastCoingeckoRunAt ?? undefined,
+      lastMetalsRunAt: row.lastMetalsRunAt ?? undefined,
+      lastNrbRunAt: row.lastNrbRunAt ?? undefined,
+      lastNewsRunAt: row.lastNewsRunAt ?? undefined,
+      lastRssNepalRunAt: row.lastRssNepalRunAt ?? undefined,
+      lastParliamentRunAt: row.lastParliamentRunAt ?? undefined,
+      lastDhmRunAt: row.lastDhmRunAt ?? undefined,
+      lastGdacsRunAt: row.lastGdacsRunAt ?? undefined,
+      lastGdeltRunAt: row.lastGdeltRunAt ?? undefined,
+      lastUnRssRunAt: row.lastUnRssRunAt ?? undefined,
+      lastUsgsRunAt: row.lastUsgsRunAt ?? undefined,
+    };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.warn("[worker] Failed to read live worker state:", message);
+    console.warn("[worker] Failed to read live worker state from API:", message);
     return {};
   }
 }
 
 async function writeLiveWorkerState(state: LiveWorkerState): Promise<void> {
   try {
-    await Bun.write(env.LIVE_STATE_PATH, JSON.stringify(state, null, 2));
+    const base = API_URL.replace(/\/$/, "");
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (WORKER_SECRET) headers["X-Worker-Secret"] = WORKER_SECRET;
+    const body: Record<string, number> = {};
+    if (state.lastNepseRunAt != null) body.lastNepseRunAt = state.lastNepseRunAt;
+    if (state.lastCoingeckoRunAt != null) body.lastCoingeckoRunAt = state.lastCoingeckoRunAt;
+    if (state.lastMetalsRunAt != null) body.lastMetalsRunAt = state.lastMetalsRunAt;
+    if (state.lastNrbRunAt != null) body.lastNrbRunAt = state.lastNrbRunAt;
+    if (state.lastNewsRunAt != null) body.lastNewsRunAt = state.lastNewsRunAt;
+    if (state.lastRssNepalRunAt != null) body.lastRssNepalRunAt = state.lastRssNepalRunAt;
+    if (state.lastParliamentRunAt != null) body.lastParliamentRunAt = state.lastParliamentRunAt;
+    if (state.lastDhmRunAt != null) body.lastDhmRunAt = state.lastDhmRunAt;
+    if (state.lastGdacsRunAt != null) body.lastGdacsRunAt = state.lastGdacsRunAt;
+    if (state.lastGdeltRunAt != null) body.lastGdeltRunAt = state.lastGdeltRunAt;
+    if (state.lastUnRssRunAt != null) body.lastUnRssRunAt = state.lastUnRssRunAt;
+    if (state.lastUsgsRunAt != null) body.lastUsgsRunAt = state.lastUsgsRunAt;
+    await fetch(`${base}/v1/worker-state`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(body),
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.warn("[worker] Failed to persist live worker state:", message);
+    console.warn("[worker] Failed to persist live worker state to API:", message);
   }
 }
 

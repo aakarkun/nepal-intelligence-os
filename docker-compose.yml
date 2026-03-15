@@ -1,64 +1,51 @@
-version: "3.8"
+# Nepal Intelligence OS — run API + Worker + Postgres with Docker.
+# From repo root: docker compose up --build
+#
+# Then: API at http://localhost:3001, run Web locally with NEXT_PUBLIC_API_URL=http://localhost:3001
 
 services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: nepal_intel
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nepal_intel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
     ports:
       - "3001:3001"
-    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/nepal_intel
+      API_PORT: 3001
+      WORKER_SECRET: ${WORKER_SECRET:-}
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
 
   worker:
     build:
       context: .
       dockerfile: apps/worker/Dockerfile
-    env_file: .env
+    environment:
+      API_URL: http://api:3001
+      WORKER_SECRET: ${WORKER_SECRET:-}
+      MODE: live
     depends_on:
-      api:
-        condition: service_healthy
-    restart: unless-stopped
-
-  web:
-    build:
-      context: .
-      dockerfile: apps/web/Dockerfile
-    ports:
-      - "3000:3000"
-    env_file: .env
-    depends_on:
-      - api
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
-
-  caddy:
-    image: caddy:2-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - web
       - api
     restart: unless-stopped
 
 volumes:
-  redis_data:
-  caddy_data:
-  caddy_config:
+  pgdata:
