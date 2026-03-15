@@ -1,10 +1,10 @@
 # Nepal Intelligence OS — Current Status
 
-**Last updated:** 2026-03-07
+**Last updated:** 2026-03-15
 
 ## Overview
 
-Nepal Intelligence OS (YETI-OS) is a Bun monorepo for election monitoring and national intelligence. The election module now runs against a live Ekantipur-backed dataset with preserved archives, and the first typed Crisis and Economy source families are in place.
+Nepal Intelligence OS (YETI-OS) is a Bun monorepo for election monitoring and national intelligence. The API uses **PostgreSQL** (Drizzle ORM); election data (national summaries, constituency results) is **persisted in the DB** and hydrated on startup. Election scrape is **off by default** (finalized); worker runs news, economy, crisis, and other ingest on a schedule.
 
 ## Repo layout
 
@@ -23,7 +23,11 @@ docs/
 
 ## What’s done
 
-- **Election live ingest:**
+- **PostgreSQL + Drizzle:** API uses Postgres for reactions, signal events, worker state, source health, anomalies, crisis/flood/cabinet/parliament, and **election data** (national summaries, constituency results). Migrations run on API startup.
+- **Election data in DB:** Ingest `/ingest/summary` and `/ingest/snapshot` persist to `national_summaries` and `constituency_results`. API hydrates from DB on startup; seed from fixtures when DB is empty.
+- **Election scrape finalized:** Worker does not run ECN/election scrape by default (`SCRAPE_ELECTION` off). Set `SCRAPE_ELECTION=true` only when re-scraping is needed.
+- **NEPSE UX:** No "0.00 (-) Market closed" spam; worker does not post fallback summary/signals; Market Pulse and Economy show NEPSE only when real index data exists.
+- **Election live ingest (when enabled):**
   - Ekantipur Scrapling crawl now posts live national summary and constituency snapshots into the API.
   - Archived election data is preserved as a separate dataset instead of being overwritten by live ingest.
   - Dataset selector is wired through the Situation Room, map, parliament, constituencies, and dossier views.
@@ -39,15 +43,14 @@ docs/
   - Typed NRB forex ingestion now powers `/economy`.
   - Gold, Silver, and Bitcoin quotes are ingested separately on a slower cadence.
   - Economy page now renders direct-source FX and asset data instead of only keyword-matched headlines.
-- **UI platform updates:**
-  - Top-bar module pills now navigate to the actual module routes.
-  - Global card/border styling has been softened to reduce harsh white outlines.
+- **Env and Docker:** One root `.env.example` with [API], [Worker], [Web]; per-app `.env.example`; Docker Compose runs db + api + worker (web runs locally). See `docs/DOCKER.md`, `docs/HOSTING_PLAN.md`.
+- **UI:** Top-bar module pills, softened card styling.
 
 ## What’s next (from plans)
 
 - **Crisis expansion:** Add BIPAD and other Nepal-specific official incident sources alongside USGS.
-- **Economy expansion:** Add NEPSE or NRB macro/bulletin connectors so Economy is no longer FX-first.
-- **Operational hardening:** Persist live datasets and non-election modules beyond in-memory storage.
+- **Economy expansion:** Further NRB macro/bulletin connectors if needed.
+- **Deploy:** Set `WORKER_SECRET` (and optionally `ADMIN_SECRET`) when deploying to production (see `docs/VERIFY_BEFORE_MERGE.md` and `docs/HOSTING_PLAN.md`).
 
 ## Plans (in docs)
 
@@ -63,25 +66,28 @@ All design and implementation plans live under **`docs/plans/`**:
 
 ## How to run
 
+**Option A — Docker (db + api + worker):**
+
 ```bash
+docker compose up --build
+# Web: NEXT_PUBLIC_API_URL=http://localhost:3001 bun run dev:web
+```
+
+**Option B — Local (Postgres required for API):**
+
+```bash
+# Start Postgres (Docker or Homebrew), create DB nepal_intel, set DATABASE_URL in apps/api/.env or root .env
 bun install
-bun run dev:api      # API on 3001, seeds from fixtures if empty
-bun run dev:worker   # Worker; live mode keeps Reddit/GDELT disabled unless explicitly enabled
+bun run dev:api      # API on 3001; migrations + hydrate from DB; seeds from fixtures if DB empty
+bun run dev:worker   # Worker; live mode; election scrape off by default
 bun run dev:web      # Next.js on 3000
 ```
 
-Live worker (single run):  
-`MODE=live API_URL=http://localhost:3001 bun run --filter worker start`  
+Election scrape (only when needed):  
+`SCRAPE_ELECTION=true bun run dev:worker`
 
-Live worker on a schedule:  
-`MODE=live CRON_ECN_MINUTES=30 API_URL=http://localhost:3001 bun run --filter worker start`
+Reddit/GDELT (when needed):  
+`ENABLE_REDDIT=true ENABLE_GDELT=true bun run dev:worker`
 
-Enable Reddit/GDELT only when needed:
-
-`ENABLE_REDDIT=true ENABLE_GDELT=true MODE=live bun run dev:worker`
-
-Scrapling runs:
-
-`bun run scrape:ecn`
-
-`bun run scrape:news`
+Scrapling (standalone):  
+`bun run scrape:ecn` · `bun run scrape:news`

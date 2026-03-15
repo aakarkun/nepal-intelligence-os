@@ -61,14 +61,7 @@ Live mode now disables Reddit and GDELT by default to avoid rate limits and IP b
 ENABLE_GDELT=true ENABLE_REDDIT=true bun run dev:worker
 ```
 
-The worker now uses the Scrapling Ekantipur crawl for election data by default. Conservative defaults:
-
-- `CRON_ECN_MINUTES=30`
-- `SCRAPLING_REQUEST_DELAY_MS=1000`
-- `LIVE_STATE_PATH=.live-worker-state.json`
-
-That means the crawler runs roughly every 30 minutes and deliberately spaces constituency requests so a full pass can take a few minutes instead of hammering the source.
-The worker also persists the last completed live cycle, so restarting it waits until the next due window instead of scraping immediately again.
+**Election scrape:** Off by default (`SCRAPE_ELECTION` is not set). Election data is treated as finalized and stored in the API DB. Set `SCRAPE_ELECTION=true` in the worker env only when you need to re-scrape. When enabled, the worker uses the Scrapling Ekantipur crawl; conservative defaults: `CRON_ECN_MINUTES=30`, `SCRAPLING_REQUEST_DELAY_MS=1000`, `LIVE_STATE_PATH=.live-worker-state.json`.
 
 Scrapling tools are available under `apps/scrapling/`:
 
@@ -84,21 +77,26 @@ bun run scrape:ecn
 bun run scrape:news
 ```
 
-## Docker Deployment
+## Docker
+
+Run API, Worker, and Postgres with Docker. Web runs locally for dev (hot reload).
 
 ```bash
 cp .env.example .env
-# Edit .env with production values
+# Optional: set WORKER_SECRET, ADMIN_SECRET, ANTHROPIC_API_KEY in .env
 
 docker compose up --build
 ```
 
 Services:
-- **web** — Next.js on port 3000
-- **api** — Hono API on port 3001
-- **worker** — Replay/ingestion worker
-- **redis** — Cache layer (port 6379)
-- **caddy** — Reverse proxy with auto-HTTPS (ports 80/443)
+- **db** — PostgreSQL 16 (port 5432); API is the only service that connects
+- **api** — Hono API on port 3001; runs migrations on startup
+- **worker** — Live ingest (news, economy, crisis, etc.); no election scrape by default (see `SCRAPE_ELECTION`)
+
+Run the web app locally and point it at the API:  
+`NEXT_PUBLIC_API_URL=http://localhost:3001 bun run dev:web`
+
+See **[docs/DOCKER.md](docs/DOCKER.md)** for env and options.
 
 ## Environment Variables
 
@@ -115,16 +113,17 @@ Services:
 | `LIVEKIT_URL` | LiveKit server URL (e.g. wss://your-project.livekit.cloud) | No |
 | `LIVEKIT_API_KEY` | LiveKit API key | No |
 | `LIVEKIT_API_SECRET` | LiveKit API secret | No |
-| **Database / Redis** | | |
-| `DATABASE_URL` | PostgreSQL connection string (Phase 2) | No |
-| `REDIS_URL` | Redis connection string (optional; for SSE fan-out) | No |
+| **Database** | | |
+| `DATABASE_URL` | PostgreSQL connection string. **Required for API.** Only the API connects; worker and web do not. | Yes (API) |
 | **Worker** | | |
 | `REPLAY_SPEED` | Fixture replay speed multiplier (default: 5) | No |
 | `MODE` | `replay` or `live` (default: live) | No |
 | `ENABLE_GDELT` | Enable GDELT news/social enrichment (default: false) | No |
 | `ENABLE_REDDIT` | Enable direct Reddit ingestion (default: false) | No |
-| `ENABLE_SCRAPLING_ECN` | Use the Scrapling Ekantipur election crawl in the worker (default: true) | No |
-| `CRON_ECN_MINUTES` | How often to run election/news polling in live mode (default: 30; `0` = run once and exit) | No |
+| `SCRAPE_ELECTION` | Set to `true` to run election scrape (default: off — election finalized). Worker-only. | No |
+| `ENABLE_SCRAPLING_ECN` | When scrape runs: use Scrapling/Ekantipur (true) or legacy ECN parser (false) | No |
+| `CRON_ECN_MINUTES` | How often to run news/social/economy polling in live mode (default: 30; `0` = run once and exit) | No |
+| `WORKER_SECRET` | Shared secret for worker ↔ API (`/v1/worker-state`). Set same value in API and worker when deploying. | No |
 | `ECN_BASE_URL` | Ekantipur election base URL for the Scrapling crawl | No |
 | `LIVE_STATE_PATH` | File used to persist the last completed live worker cycle between restarts | No |
 | `SCRAPLING_REQUEST_DELAY_MS` | Delay between constituency page requests in the crawler (default: 1000) | No |
