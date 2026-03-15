@@ -1,4 +1,4 @@
-import type { SignalEvent } from "@repo/shared";
+import type { SignalEvent, SignalSeverity } from "@repo/shared";
 import type { NewsRawItem } from "../sources/news";
 
 function simpleHash(str: string): string {
@@ -10,6 +10,20 @@ function simpleHash(str: string): string {
   return Math.abs(h).toString(36);
 }
 
+const CRITICAL_PATTERNS = /\b(emergency|crisis|alert|catastrophe|disaster|evacuat|magnitude\s*[6-9]\.?\d*|m\s*[6-9]\.?\d*)/i;
+const WARNING_PATTERNS = /\b(protest|strike|blockade|curfew|violence|clash|arson|bandh)/i;
+
+/**
+ * Infers signal severity from title and body using keyword matching.
+ * Used when normalizing news/social to events so severity is set consistently.
+ */
+export function inferSeverity(title: string, body: string): SignalSeverity {
+  const text = `${title} ${body}`;
+  if (CRITICAL_PATTERNS.test(text)) return "critical";
+  if (WARNING_PATTERNS.test(text)) return "warning";
+  return "info";
+}
+
 export function normalizeNewsToEvents(
   items: NewsRawItem[],
   sourceId: string,
@@ -19,16 +33,18 @@ export function normalizeNewsToEvents(
   const events: SignalEvent[] = [];
 
   for (const item of items) {
-    const id = `news-${simpleHash((item.title ?? "") + (item.link ?? ""))}`;
+    const title = item.title ?? "Untitled";
+    const body = item.description ?? item.title ?? "";
+    const id = `news-${simpleHash(title + (item.link ?? ""))}`;
     const timestamp = item.pubDate
       ? new Date(item.pubDate).toISOString()
       : now;
     events.push({
       id,
       type: "news",
-      severity: "info",
-      title: item.title ?? "Untitled",
-      body: item.description ?? item.title ?? "",
+      severity: inferSeverity(title, body),
+      title,
+      body,
       timestamp,
       source: sourceName,
       url: item.link,
