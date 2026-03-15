@@ -205,7 +205,11 @@ export const AnomalyTypeSchema = z.enum([
   "count_mismatch",
   "duplicate_candidate",
   "missing_constituency",
+  "source_stale",
+  "source_error",
 ]);
+
+export const AnomalyContextSchema = z.enum(["election", "operational"]);
 
 export const AnomalySchema = z.object({
   id: z.string(),
@@ -215,6 +219,7 @@ export const AnomalySchema = z.object({
   details: z.string(),
   timestamp: z.string().datetime(),
   resolved: z.boolean().default(false),
+  context: AnomalyContextSchema.optional(),
 });
 
 // ─── Source Health ────────────────────────────────────────────────────────────
@@ -457,6 +462,7 @@ export type SignalSeverity = z.infer<typeof SignalSeveritySchema>;
 export type SignalEventEntities = z.infer<typeof SignalEventEntitiesSchema>;
 export type SignalEvent = z.infer<typeof SignalEventSchema>;
 export type AnomalyType = z.infer<typeof AnomalyTypeSchema>;
+export type AnomalyContext = z.infer<typeof AnomalyContextSchema>;
 export type Anomaly = z.infer<typeof AnomalySchema>;
 export type SourceStatus = z.infer<typeof SourceStatusSchema>;
 export type SourceHealth = z.infer<typeof SourceHealthSchema>;

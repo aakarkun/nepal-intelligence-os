@@ -31,7 +31,7 @@ import {
   postMarketAssetQuotes,
   postNepseSummary,
 } from "./ingest-client";
-import { fetchNepseSummary, getNepalDayOfWeek, getNptDateString, isNepalMarketOpen } from "./sources/nepse";
+import { fetchNepseSummary, getNepalDayOfWeek, getNptDateString, isNepalMarketOpen, nepseToSignalEvent } from "./sources/nepse";
 import { fetchFloodAlerts } from "./sources/flood";
 import { fetchCabinetEvents } from "./sources/rss-nepal";
 import { fetchParliamentSession } from "./sources/parliament";
@@ -921,6 +921,8 @@ async function runLiveNepse(): Promise<void> {
   try {
     const summary = await fetchNepseSummary();
     await postNepseSummary(API_URL, summary);
+    const signalEvent = nepseToSignalEvent(summary);
+    await postEvent(API_URL, signalEvent);
     cb.recordSuccess();
     await postSourceHealth(API_URL, {
       sourceId: "economy:nepse",

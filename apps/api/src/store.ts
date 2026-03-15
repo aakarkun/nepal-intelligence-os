@@ -269,8 +269,57 @@ export function getSocialSignalEvents(
   };
 }
 
-export function getAnomalies(): Anomaly[] {
-  return anomalies.filter((a) => !a.resolved);
+/** Operational anomalies derived live from source health (stale/error). */
+export function getOperationalAnomalies(): Anomaly[] {
+  const list: Anomaly[] = [];
+  const now = new Date().toISOString();
+  for (const h of sourceHealth.values()) {
+    if (h.status === "stale") {
+      list.push({
+        id: `operational-source-${h.sourceId}`,
+        type: "source_stale",
+        severity: "warning",
+        details: `${h.sourceName} has not updated recently (last: ${h.lastUpdate})`,
+        timestamp: h.lastUpdate,
+        resolved: false,
+        context: "operational",
+      });
+    } else if (h.status === "error") {
+      list.push({
+        id: `operational-source-${h.sourceId}`,
+        type: "source_error",
+        severity: "critical",
+        details: `${h.sourceName} is reporting errors (error rate: ${(h.errorRate * 100).toFixed(0)}%)`,
+        timestamp: h.lastUpdate,
+        resolved: false,
+        context: "operational",
+      });
+    }
+  }
+  return list;
+}
+
+export type AnomalyContextFilter = "election" | "operational" | "all";
+
+export function getAnomalies(context?: AnomalyContextFilter): Anomaly[] {
+  const stored = anomalies.filter((a) => !a.resolved);
+  const electionOnly = stored.filter((a) => a.context !== "operational");
+  const operational = getOperationalAnomalies();
+
+  switch (context) {
+    case "election":
+      return electionOnly;
+    case "operational":
+      return operational;
+    case "all":
+    default:
+      const byId = new Map<string, Anomaly>();
+      for (const a of operational) byId.set(a.id, a);
+      for (const a of electionOnly) byId.set(a.id, a);
+      return Array.from(byId.values()).sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+  }
 }
 
 export function getSourceHealth(): SourceHealth[] {

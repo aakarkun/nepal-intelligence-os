@@ -25,7 +25,12 @@ import type { RootState } from "@/store";
 import type { WatchlistItemType } from "@repo/shared";
 import { cn, timeAgo } from "@/lib/utils";
 import { useRealtimeStore } from "@/stores/realtime-store";
-import { fetchAnomalies, fetchConstituency, fetchSourceHealth } from "@/lib/api";
+import {
+  fetchAnomalies,
+  fetchConstituency,
+  fetchSourceHealth,
+  type AnomalyContextFilter,
+} from "@/lib/api";
 import { Bell, Plus, X } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -107,23 +112,31 @@ function ConnectionSection() {
 /* Anomalies Section                                                    */
 /* ------------------------------------------------------------------ */
 
+const ANOMALY_VIEW_LABELS: Record<AnomalyContextFilter, string> = {
+  operational: "Live",
+  election: "Election",
+  all: "All",
+};
+
 function AnomaliesSection() {
+  const [anomalyView, setAnomalyView] = useState<AnomalyContextFilter>("operational");
   const realtimeAnomalies = useRealtimeStore((s) => s.anomalies);
   const { data: apiAnomalies = [] } = useQuery({
-    queryKey: ["anomalies"],
-    queryFn: fetchAnomalies,
+    queryKey: ["anomalies", anomalyView],
+    queryFn: () => fetchAnomalies(anomalyView),
     refetchInterval: 30_000,
   });
 
   const merged = useMemo(() => {
-    const byId = new Map<string, typeof realtimeAnomalies[number]>();
+    const byId = new Map<string, typeof apiAnomalies[number]>();
     for (const a of apiAnomalies) {
       byId.set(a.id, a);
     }
-    for (const a of realtimeAnomalies) {
-      byId.set(a.id, a);
+    if (anomalyView === "election" || anomalyView === "all") {
+      for (const a of realtimeAnomalies) {
+        byId.set(a.id, a);
+      }
     }
-    // Sort primarily by recency (latest first), severity as tiebreaker.
     const severityOrder: Record<string, number> = {
       critical: 3,
       warning: 2,
@@ -137,7 +150,7 @@ function AnomaliesSection() {
       const sb = severityOrder[b.severity] ?? 0;
       return sb - sa;
     });
-  }, [apiAnomalies, realtimeAnomalies]);
+  }, [apiAnomalies, realtimeAnomalies, anomalyView]);
 
   const topItems = merged.slice(0, 5);
 
@@ -186,8 +199,29 @@ function AnomaliesSection() {
         )
       }
     >
+      <div className="mb-2 flex gap-0.5 rounded-md bg-muted/50 p-0.5">
+        {(["operational", "election", "all"] as const).map((ctx) => (
+          <button
+            key={ctx}
+            type="button"
+            onClick={() => setAnomalyView(ctx)}
+            className={cn(
+              "flex-1 rounded px-1.5 py-1 text-[9px] font-medium transition-colors",
+              anomalyView === ctx
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground/80"
+            )}
+          >
+            {ANOMALY_VIEW_LABELS[ctx]}
+          </button>
+        ))}
+      </div>
       {topItems.length === 0 ? (
-        <p className="text-[10px] text-muted-foreground">No anomalies detected</p>
+        <p className="text-[10px] text-muted-foreground">
+          {anomalyView === "operational"
+            ? "No source issues; feeds are live"
+            : "No anomalies detected"}
+        </p>
       ) : (
         <>
           <ul className="space-y-2">
@@ -202,7 +236,11 @@ function AnomaliesSection() {
                       a.severity === "info" && "bg-muted text-muted-foreground"
                     )}
                   >
-                    {a.type}
+                    {a.type === "source_stale"
+                      ? "Stale"
+                      : a.type === "source_error"
+                        ? "Error"
+                        : a.type.replace(/_/g, " ")}
                   </span>
                 </div>
                 <p

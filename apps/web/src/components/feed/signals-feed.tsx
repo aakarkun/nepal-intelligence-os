@@ -144,7 +144,7 @@ export function SignalsFeed(
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Tabs value={severityFilter} onValueChange={setSeverityFilter}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
@@ -154,65 +154,63 @@ export function SignalsFeed(
           </TabsList>
         </Tabs>
 
-        <div className="ml-auto flex items-center gap-2">
-          {sourceOptions.length > 1 && (
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>Source</span>
-              <select
-                value={sourceFilter}
-                onChange={(e) => setSourceFilter(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground"
-              >
-                <option value="all">All sources</option>
-                {sourceOptions.map((source) => (
-                  <option key={source} value={source}>
-                    {source}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
+        {sourceOptions.length > 1 && (
+          <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Source</span>
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+              className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground"
+            >
+              <option value="all">All sources</option>
+              {sourceOptions.map((source) => (
+                <option key={source} value={source}>
+                  {source}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
 
-          {visibleTypes.length > 1 && (
-            <div className="flex flex-wrap items-center gap-1.5">
+      {visibleTypes.length > 1 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button
+            onClick={() => dispatch(setTypeFilter("all"))}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-xs transition-colors",
+              typeFilter === "all"
+                ? "border-white/20 bg-white/5"
+                : "border-border text-muted-foreground opacity-50 hover:opacity-80"
+            )}
+          >
+            All Types
+          </button>
+          {DOMAIN_TYPES.filter((t) => visibleTypes.includes(t)).map((type) => {
+            const config = typeConfig[type];
+            const isActive = typeFilter === type;
+            return (
               <button
-                onClick={() => dispatch(setTypeFilter("all"))}
+                key={type}
+                onClick={() => dispatch(setTypeFilter(type))}
                 className={cn(
                   "flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-xs transition-colors",
-                  typeFilter === "all"
+                  isActive
                     ? "border-white/20 bg-white/5"
                     : "border-border text-muted-foreground opacity-50 hover:opacity-80"
                 )}
+                style={isActive ? { borderColor: config.color } : undefined}
               >
-                All Types
+                <span
+                  className="h-1.5 w-1.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: config.color }}
+                />
+                {config.label}
               </button>
-              {DOMAIN_TYPES.filter((t) => visibleTypes.includes(t)).map((type) => {
-                const config = typeConfig[type];
-                const isActive = typeFilter === type;
-                return (
-                  <button
-                    key={type}
-                    onClick={() => dispatch(setTypeFilter(type))}
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-xs transition-colors",
-                      isActive
-                        ? "border-white/20 bg-white/5"
-                        : "border-border text-muted-foreground opacity-50 hover:opacity-80"
-                    )}
-                    style={isActive ? { borderColor: config.color } : undefined}
-                  >
-                    <span
-                      className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: config.color }}
-                    />
-                    {config.label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            );
+          })}
         </div>
-      </div>
+      )}
 
       <div className="space-y-0">
         {filtered.map((event) => {

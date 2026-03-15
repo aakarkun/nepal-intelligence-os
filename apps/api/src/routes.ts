@@ -291,7 +291,9 @@ api.get("/feed/social", (c) => {
 });
 
 api.get("/anomalies", (c) => {
-  return c.json(getAnomalies());
+  const context = c.req.query("context") as "election" | "operational" | "all" | undefined;
+  const valid = context === "election" || context === "operational" || context === "all" ? context : undefined;
+  return c.json(getAnomalies(valid));
 });
 
 api.get("/sources/health", (c) => {

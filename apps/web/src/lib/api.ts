@@ -135,8 +135,13 @@ export function fetchSocialFeed(
   return fetchJSON(`/v1/feed/social?${params.toString()}`);
 }
 
-export function fetchAnomalies(): Promise<Anomaly[]> {
-  return fetchJSON("/v1/anomalies");
+export type AnomalyContextFilter = "election" | "operational" | "all";
+
+export function fetchAnomalies(context?: AnomalyContextFilter): Promise<Anomaly[]> {
+  const params = new URLSearchParams();
+  if (context && context !== "all") params.set("context", context);
+  const qs = params.toString();
+  return fetchJSON(`/v1/anomalies${qs ? `?${qs}` : ""}`);
 }
 
 export function fetchSourceHealth(): Promise<SourceHealth[]> {

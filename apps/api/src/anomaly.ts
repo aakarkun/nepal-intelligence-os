@@ -25,21 +25,23 @@ export function detectAnomalies(
           details: `${candidate.candidateName} (${candidate.partyName}) votes dropped from ${prev.votes} to ${candidate.votes}`,
           timestamp: now,
           resolved: false,
+          context: "election",
         });
       }
 
       if (prev.votes > 0) {
         const increase = (candidate.votes - prev.votes) / prev.votes;
         if (increase > SUDDEN_JUMP_THRESHOLD) {
-          detected.push({
-            id: crypto.randomUUID(),
-            type: "sudden_jump",
-            severity: "warning" as SignalSeverity,
-            constituencyId: newResult.constituencyId,
-            details: `${candidate.candidateName} (${candidate.partyName}) votes jumped ${(increase * 100).toFixed(1)}% (${prev.votes} → ${candidate.votes})`,
-            timestamp: now,
-            resolved: false,
-          });
+        detected.push({
+          id: crypto.randomUUID(),
+          type: "sudden_jump",
+          severity: "warning" as SignalSeverity,
+          constituencyId: newResult.constituencyId,
+          details: `${candidate.candidateName} (${candidate.partyName}) votes jumped ${(increase * 100).toFixed(1)}% (${prev.votes} → ${candidate.votes})`,
+          timestamp: now,
+          resolved: false,
+          context: "election",
+        });
         }
       }
     }
@@ -58,6 +60,7 @@ export function detectAnomalies(
       details: `Candidate vote sum (${candidateVoteSum}) does not match reported totalVotes (${newResult.totalVotes})`,
       timestamp: now,
       resolved: false,
+      context: "election",
     });
   }
 

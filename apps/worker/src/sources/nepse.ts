@@ -1,5 +1,5 @@
 import { parseHTML } from "linkedom";
-import type { NepseSummary, NepseMarketStatus } from "@repo/shared";
+import type { NepseSummary, NepseMarketStatus, SignalEvent } from "@repo/shared";
 
 /**
  * NEPSE has no official public API. We scrape Merolagani (fallback Sharesansar).
@@ -255,5 +255,47 @@ export async function fetchNepseSummary(): Promise<NepseSummary> {
     change: null,
     changePercent: null,
     marketStatus: "closed",
+  };
+}
+
+/**
+ * Build a trading-signal event from NEPSE summary for the Signals Feed.
+ * Surfaces index move and top movers with an "invest wisely" disclaimer.
+ */
+export function nepseToSignalEvent(summary: NepseSummary): SignalEvent {
+  const ts = summary.timestamp;
+  const id = `nepse-${ts.replace(/[^0-9]/g, "").slice(0, 14)}`;
+  const idx = summary.index.toFixed(2);
+  const changeStr =
+    summary.change != null && summary.changePercent != null
+      ? `${summary.change >= 0 ? "+" : ""}${summary.change.toFixed(2)} (${summary.changePercent >= 0 ? "+" : ""}${summary.changePercent.toFixed(2)}%)`
+      : "—";
+  const status = summary.marketStatus === "open" ? "Market open." : "Market closed.";
+  const gainers =
+    (summary.topGainers?.length ?? 0) > 0
+      ? "Top gainers: " +
+        (summary.topGainers ?? [])
+          .slice(0, 3)
+          .map((g) => `${g.symbol} ${g.changePercent >= 0 ? "+" : ""}${g.changePercent.toFixed(1)}%`)
+          .join(", ") + "."
+      : "";
+  const losers =
+    (summary.topLosers?.length ?? 0) > 0
+      ? " Top losers: " +
+        (summary.topLosers ?? [])
+          .slice(0, 3)
+          .map((l) => `${l.symbol} ${l.changePercent.toFixed(1)}%`)
+          .join(", ") + "."
+      : "";
+  const title = `NEPSE ${idx} (${changeStr}) — ${status}`;
+  const body = [gainers, losers].filter(Boolean).join("") + " This is not investment advice; invest wisely.";
+  return {
+    id,
+    type: "economic",
+    severity: "info",
+    title,
+    body,
+    timestamp: ts,
+    source: summary.sourceName,
   };
 }
