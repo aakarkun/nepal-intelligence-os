@@ -39,10 +39,12 @@ export type BriefResponse = {
   dataPoints: number;
 };
 
-function buildDailyContext(): { context: string; dataPoints: number } {
-  const signals = getSignalEvents(10, 0);
-  const cabinet = getCabinetEvents(5);
-  const incidents = getCrisisIncidents().slice(0, 5);
+async function buildDailyContext(): Promise<{ context: string; dataPoints: number }> {
+  const [signals, cabinet, incidents] = await Promise.all([
+    getSignalEvents(10, 0),
+    getCabinetEvents(5),
+    getCrisisIncidents(),
+  ]);
   const parts: string[] = [];
   let dataPoints = 0;
 
@@ -57,7 +59,7 @@ function buildDailyContext(): { context: string; dataPoints: number } {
     dataPoints += 1;
   });
   parts.push("\n## Crisis incidents (active)");
-  incidents.forEach((i) => {
+  incidents.slice(0, 5).forEach((i) => {
     parts.push(`- ${i.title} — ${i.severity ?? "unknown"} (${i.timestamp})`);
     dataPoints += 1;
   });
@@ -87,11 +89,13 @@ function buildEconomicContext(): { context: string; dataPoints: number } {
   return { context: parts.join("\n") || "No economic data available.", dataPoints };
 }
 
-function buildCrisisContext(): { context: string; dataPoints: number } {
-  const incidents = getCrisisIncidents();
-  const earthquakes = getEarthquakeIncidents();
-  const anomalies = getAnomalies();
-  const flood = getFloodAlerts();
+async function buildCrisisContext(): Promise<{ context: string; dataPoints: number }> {
+  const [incidents, earthquakes, anomalies, flood] = await Promise.all([
+    getCrisisIncidents(),
+    Promise.resolve(getEarthquakeIncidents()),
+    getAnomalies(),
+    getFloodAlerts(),
+  ]);
   const parts: string[] = [];
   let dataPoints = 0;
   parts.push("## Crisis incidents");
@@ -106,7 +110,7 @@ function buildCrisisContext(): { context: string; dataPoints: number } {
   });
   parts.push("\n## Open anomalies");
   anomalies.forEach((a) => {
-    parts.push(`- ${a.title ?? a.type} — ${a.timestamp}`);
+    parts.push(`- ${a.details ?? a.type} — ${a.timestamp}`);
     dataPoints += 1;
   });
   parts.push("\n## Flood alerts");
@@ -115,10 +119,12 @@ function buildCrisisContext(): { context: string; dataPoints: number } {
   return { context: parts.join("\n") || "No crisis data.", dataPoints };
 }
 
-function buildFullContext(): { context: string; dataPoints: number } {
-  const daily = buildDailyContext();
-  const economic = buildEconomicContext();
-  const crisis = buildCrisisContext();
+async function buildFullContext(): Promise<{ context: string; dataPoints: number }> {
+  const [daily, economic, crisis] = await Promise.all([
+    buildDailyContext(),
+    Promise.resolve(buildEconomicContext()),
+    buildCrisisContext(),
+  ]);
   const context = [
     "--- SIGNALS & HEADLINES ---",
     daily.context,
@@ -131,13 +137,13 @@ function buildFullContext(): { context: string; dataPoints: number } {
   return { context, dataPoints };
 }
 
-export function buildContextAndPrompt(
+export async function buildContextAndPrompt(
   type: BriefType,
   query?: string
-): { userMessage: string; dataPoints: number } {
+): Promise<{ userMessage: string; dataPoints: number }> {
   switch (type) {
     case "daily": {
-      const { context, dataPoints } = buildDailyContext();
+      const { context, dataPoints } = await buildDailyContext();
       const userMessage = `Generate a Daily Nepal Intelligence Brief from this live data. Structure it as:
 SITUATION: (2 sentences on the political situation)
 ECONOMY: (1 sentence on key economic moves)
@@ -149,7 +155,7 @@ ${context}`;
       return { userMessage, dataPoints };
     }
     case "economic": {
-      const { context, dataPoints } = buildEconomicContext();
+      const { context, dataPoints } = await buildEconomicContext();
       const userMessage = `Write a 3-paragraph economic briefing for a Nepal financial journalist. Cover: stock market, forex movements, and commodity prices.
 
 Data:
@@ -157,7 +163,7 @@ ${context}`;
       return { userMessage, dataPoints };
     }
     case "crisis": {
-      const { context, dataPoints } = buildCrisisContext();
+      const { context, dataPoints } = await buildCrisisContext();
       const userMessage = `Summarise the current crisis situation in Nepal for a field journalist. List active threats by severity. Be factual and concise.
 
 Data:
@@ -165,7 +171,7 @@ ${context}`;
       return { userMessage, dataPoints };
     }
     case "custom": {
-      const { context, dataPoints } = buildFullContext();
+      const { context, dataPoints } = await buildFullContext();
       const userMessage = `${query ?? "Summarise the current situation."}
 
 Answer using only this live Nepal data:

@@ -1,4 +1,10 @@
-import path from "node:path";
+/**
+ * Store: re-exports from PostgreSQL repos (src/db/repos) with same signatures
+ * for route compatibility. In-memory state only for data without a table yet
+ * (election datasets, national summary, constituency results, forex, economy,
+ * market assets, nepse summary, crisis summary, earthquake incidents, flood metadata).
+ */
+
 import type {
   NationalSummary,
   ConstituencyResult,
@@ -17,10 +23,20 @@ import type {
   ParliamentSession,
   GeopoliticsArticle,
   WatchlistItem,
-  Reaction,
 } from "@repo/shared";
+import * as signalEventsRepo from "./db/repos/signal-events.js";
+import * as socialSignalEventsRepo from "./db/repos/social-signal-events.js";
+import * as worldArticlesRepo from "./db/repos/world-articles.js";
+import * as watchlistRepo from "./db/repos/watchlist-items.js";
+import * as reactionsRepo from "./db/repos/reactions.js";
+import * as cabinetRepo from "./db/repos/cabinet-events.js";
+import * as parliamentRepo from "./db/repos/parliament-sessions.js";
+import * as floodRepo from "./db/repos/flood-alerts.js";
+import * as sourceHealthRepo from "./db/repos/source-health.js";
+import * as anomaliesRepo from "./db/repos/anomalies.js";
+import * as crisisRepo from "./db/repos/crisis-incidents.js";
 
-// ─── In-Memory Stores ────────────────────────────────────────────────────────
+// ─── In-memory (no table yet) ────────────────────────────────────────────────
 
 export type ElectionDatasetMeta = {
   id: string;
@@ -48,70 +64,8 @@ function emptySummary(): NationalSummary {
   };
 }
 
-const electionDatasets = new Map<string, ElectionDataset>();
-let currentElectionDatasetId: string | null = null;
-const signalEvents: SignalEvent[] = [];
-const anomalies: Anomaly[] = [];
-const sourceHealth = new Map<string, SourceHealth>();
-let earthquakeIncidents: EarthquakeIncident[] = [];
-let crisisSummary: CrisisSummary | null = null;
-let crisisIncidents: CrisisIncident[] = [];
-let floodAlerts: FloodAlert[] = [];
-let floodAlertsSeasonInactive = false;
-let floodAlertsLastUpdated: string | null = null;
-let floodAlertsSource: "dhm" | "gdacs" | null = null;
-let forexRates: ForexRate[] = [];
-let economySummary: EconomySummary | null = null;
-let marketAssetQuotes: MarketAssetQuote[] = [];
-let nepseSummary: NepseSummary | null = null;
-let cabinetEvents: CabinetEvent[] = [];
-let parliamentSession: ParliamentSession | null = null;
-const worldArticles = new Map<string, GeopoliticsArticle>();
-let watchlistItems: WatchlistItem[] = [];
-let reactions: Reaction[] = [];
-const PERSISTED_STATE_PATH =
-  process.env.API_STATE_PATH ??
-  path.resolve(import.meta.dir, "../.live-api-state.json");
-const BOOTSTRAP_STATE_PATH =
-  process.env.API_BOOTSTRAP_STATE_PATH ??
-  path.resolve(import.meta.dir, "../../../data/bootstrap/live-api-state.json");
-let persistTimer: ReturnType<typeof setTimeout> | null = null;
-
-type PersistedElectionDataset = {
-  meta: Omit<ElectionDatasetMeta, "isCurrent">;
-  nationalSummary: NationalSummary;
-  constituencyResults: ConstituencyResult[];
-};
-
-type PersistedApiState = {
-  currentElectionDatasetId: string | null;
-  electionDatasets: PersistedElectionDataset[];
-  signalEvents: SignalEvent[];
-  anomalies: Anomaly[];
-  sourceHealth: SourceHealth[];
-  earthquakeIncidents: EarthquakeIncident[];
-  crisisIncidents: CrisisIncident[];
-  crisisSummary: CrisisSummary | null;
-  forexRates: ForexRate[];
-  economySummary: EconomySummary | null;
-  marketAssetQuotes: MarketAssetQuote[];
-  nepseSummary: NepseSummary | null;
-  floodAlerts: FloodAlert[];
-  floodAlertsSeasonInactive: boolean;
-  floodAlertsLastUpdated: string | null;
-  floodAlertsSource: "dhm" | "gdacs" | null;
-  cabinetEvents: CabinetEvent[];
-  parliamentSession: ParliamentSession | null;
-  worldArticles: GeopoliticsArticle[];
-  watchlistItems: WatchlistItem[];
-  reactions: Reaction[];
-};
-
 function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 function buildDatasetMeta(
@@ -123,19 +77,26 @@ function buildDatasetMeta(
   const safeSourceId = sourceId ? slugify(sourceId) : "archive";
   const id = `${safeSourceId}-${year}`;
   const rawLabelSource = sourceName ?? sourceId ?? "Election Archive";
-  // For national HoR elections, prefer a civic-facing label instead of the raw data source.
   const labelSource =
     sourceId === "ekantipur" || rawLabelSource.toLowerCase().includes("election commission")
       ? "Nepal Election"
       : rawLabelSource;
-  return {
-    id,
-    label: `${labelSource} ${year}`,
-    sourceId,
-    sourceName,
-    timestamp,
-  };
+  return { id, label: `${labelSource} ${year}`, sourceId, sourceName, timestamp };
 }
+
+const electionDatasets = new Map<string, ElectionDataset>();
+let currentElectionDatasetId: string | null = null;
+
+let floodSeasonInactive = false;
+let floodLastUpdated: string | null = null;
+let floodSource: "dhm" | "gdacs" | null = null;
+
+let forexRates: ForexRate[] = [];
+let economySummary: EconomySummary | null = null;
+let marketAssetQuotes: MarketAssetQuote[] = [];
+let nepseSummary: NepseSummary | null = null;
+let crisisSummary: CrisisSummary | null = null;
+let earthquakeIncidents: EarthquakeIncident[] = [];
 
 function ensureElectionDataset(
   sourceId: string | undefined,
@@ -145,13 +106,7 @@ function ensureElectionDataset(
   const meta = buildDatasetMeta(sourceId, sourceName, timestamp);
   const existing = electionDatasets.get(meta.id);
   if (existing) {
-    existing.meta = {
-      ...existing.meta,
-      sourceId,
-      sourceName,
-      timestamp,
-      label: meta.label,
-    };
+    existing.meta = { ...existing.meta, sourceId, sourceName, timestamp, label: meta.label };
     return existing;
   }
   const dataset: ElectionDataset = {
@@ -169,56 +124,11 @@ function getDataset(datasetId?: string | null): ElectionDataset | undefined {
   return electionDatasets.get(id);
 }
 
-function serializeState(): PersistedApiState {
-  return {
-    currentElectionDatasetId,
-    electionDatasets: Array.from(electionDatasets.values()).map((dataset) => ({
-      meta: dataset.meta,
-      nationalSummary: dataset.nationalSummary,
-      constituencyResults: Array.from(dataset.constituencyResults.values()),
-    })),
-    signalEvents: [...signalEvents],
-    anomalies: [...anomalies],
-    sourceHealth: Array.from(sourceHealth.values()),
-    earthquakeIncidents,
-    crisisIncidents: [...crisisIncidents],
-    crisisSummary,
-    forexRates,
-    economySummary,
-    marketAssetQuotes,
-    nepseSummary,
-    floodAlerts,
-    floodAlertsSeasonInactive,
-    floodAlertsLastUpdated,
-    floodAlertsSource,
-    cabinetEvents,
-    parliamentSession,
-    worldArticles: Array.from(worldArticles.values()),
-    watchlistItems: [...watchlistItems],
-    reactions: [...reactions],
-  };
+function nanoid10(): string {
+  return crypto.randomUUID().replace(/-/g, "").slice(0, 10);
 }
 
-async function persistState(): Promise<void> {
-  try {
-    await Bun.write(PERSISTED_STATE_PATH, JSON.stringify(serializeState(), null, 2));
-  } catch (err) {
-    console.warn(
-      "[nepal-intelligence-os] Failed to persist API state:",
-      err instanceof Error ? err.message : err
-    );
-  }
-}
-
-function schedulePersist(): void {
-  if (persistTimer) clearTimeout(persistTimer);
-  persistTimer = setTimeout(() => {
-    persistTimer = null;
-    void persistState();
-  }, 150);
-}
-
-// ─── Readers ─────────────────────────────────────────────────────────────────
+// ─── Readers (sync: in-memory) ───────────────────────────────────────────────
 
 export function getNationalSummary(datasetId?: string): NationalSummary {
   return getDataset(datasetId)?.nationalSummary ?? emptySummary();
@@ -233,181 +143,6 @@ export function getConstituencyResult(
   datasetId?: string
 ): ConstituencyResult | undefined {
   return getDataset(datasetId)?.constituencyResults.get(id);
-}
-
-export function getSignalEvents(
-  limit = 20,
-  offset = 0,
-  type?: string,
-  severity?: string
-): { events: SignalEvent[]; total: number } {
-  let list = signalEvents;
-  if (type != null && type !== "") {
-    list = list.filter((e) => e.type === type);
-  }
-  if (severity != null && severity !== "") {
-    list = list.filter((e) => e.severity === severity);
-  }
-  const sorted = list.slice().reverse();
-  return {
-    events: sorted.slice(offset, offset + limit),
-    total: sorted.length,
-  };
-}
-
-export function getSocialSignalEvents(
-  limit = 20,
-  offset = 0,
-  type?: string,
-  severity?: string
-): { events: SignalEvent[]; total: number } {
-  let social = signalEvents.filter((e) => e.type === "note");
-  if (type != null && type !== "") {
-    social = social.filter((e) => e.type === type);
-  }
-  if (severity != null && severity !== "") {
-    social = social.filter((e) => e.severity === severity);
-  }
-  const sorted = social.slice().reverse();
-  return {
-    events: sorted.slice(offset, offset + limit),
-    total: sorted.length,
-  };
-}
-
-/** Operational anomalies derived live from source health (stale/error). */
-export function getOperationalAnomalies(): Anomaly[] {
-  const list: Anomaly[] = [];
-  const now = new Date().toISOString();
-  for (const h of sourceHealth.values()) {
-    if (h.status === "stale") {
-      list.push({
-        id: `operational-source-${h.sourceId}`,
-        type: "source_stale",
-        severity: "warning",
-        details: `${h.sourceName} has not updated recently (last: ${h.lastUpdate})`,
-        timestamp: h.lastUpdate,
-        resolved: false,
-        context: "operational",
-      });
-    } else if (h.status === "error") {
-      list.push({
-        id: `operational-source-${h.sourceId}`,
-        type: "source_error",
-        severity: "critical",
-        details: `${h.sourceName} is reporting errors (error rate: ${(h.errorRate * 100).toFixed(0)}%)`,
-        timestamp: h.lastUpdate,
-        resolved: false,
-        context: "operational",
-      });
-    }
-  }
-  return list;
-}
-
-export type AnomalyContextFilter = "election" | "operational" | "all";
-
-export function getAnomalies(context?: AnomalyContextFilter): Anomaly[] {
-  const stored = anomalies.filter((a) => !a.resolved);
-  const electionOnly = stored.filter((a) => a.context !== "operational");
-  const operational = getOperationalAnomalies();
-
-  switch (context) {
-    case "election":
-      return electionOnly;
-    case "operational":
-      return operational;
-    case "all":
-    default:
-      const byId = new Map<string, Anomaly>();
-      for (const a of operational) byId.set(a.id, a);
-      for (const a of electionOnly) byId.set(a.id, a);
-      return Array.from(byId.values()).sort(
-        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-  }
-}
-
-export function getSourceHealth(): SourceHealth[] {
-  return Array.from(sourceHealth.values());
-}
-
-export function getEarthquakeIncidents(): EarthquakeIncident[] {
-  return earthquakeIncidents;
-}
-
-export function getCrisisSummary(): CrisisSummary | null {
-  return crisisSummary;
-}
-
-export function getCrisisIncidents(): CrisisIncident[] {
-  return crisisIncidents;
-}
-
-export function getFloodAlerts(statusFilter?: string): {
-  alerts: FloodAlert[];
-  seasonInactive: boolean;
-  lastUpdated: string | null;
-} {
-  let list = floodAlerts;
-  if (statusFilter) {
-    const statuses = statusFilter.split(",").map((s) => s.trim());
-    list = list.filter((a) => statuses.includes(a.status));
-  }
-  return {
-    alerts: list,
-    seasonInactive: floodAlertsSeasonInactive,
-    lastUpdated: floodAlertsLastUpdated,
-    alertsSource: floodAlertsSource ?? undefined,
-  };
-}
-
-export function setFloodAlerts(payload: {
-  alerts: FloodAlert[];
-  seasonInactive?: boolean;
-  lastUpdated: string;
-  alertsSource?: "dhm" | "gdacs";
-}): void {
-  floodAlerts = payload.alerts;
-  floodAlertsSeasonInactive = payload.seasonInactive ?? false;
-  floodAlertsLastUpdated = payload.lastUpdated;
-  floodAlertsSource = payload.alertsSource ?? null;
-  schedulePersist();
-}
-
-export function getCabinetEvents(limit = 20): CabinetEvent[] {
-  return cabinetEvents.slice(0, limit);
-}
-
-export function setCabinetEvents(events: CabinetEvent[]): void {
-  cabinetEvents = events.slice(0, 20);
-  schedulePersist();
-}
-
-export function getParliamentSession(): ParliamentSession | null {
-  return parliamentSession;
-}
-
-export function setParliamentSession(session: ParliamentSession | null): void {
-  parliamentSession = session;
-  schedulePersist();
-}
-
-export function getWorldArticles(panel?: string, limit = 20): GeopoliticsArticle[] {
-  let list = Array.from(worldArticles.values());
-  if (panel) list = list.filter((a) => a.panel === panel);
-  list.sort(
-    (a, b) =>
-      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-  );
-  return list.slice(0, limit);
-}
-
-export function upsertWorldArticles(articles: GeopoliticsArticle[]): void {
-  for (const a of articles) {
-    worldArticles.set(a.id, a);
-  }
-  schedulePersist();
 }
 
 export function getForexRates(): ForexRate[] {
@@ -428,218 +163,198 @@ export function getNepseSummary(): NepseSummary | null {
 
 export function getElectionDatasets(): ElectionDatasetMeta[] {
   return Array.from(electionDatasets.values())
-    .map(({ meta }) => ({
-      ...meta,
-      isCurrent: meta.id === currentElectionDatasetId,
-    }))
-    .sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
+    .map(({ meta }) => ({ ...meta, isCurrent: meta.id === currentElectionDatasetId }))
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
 
-export function getWatchlist(): WatchlistItem[] {
-  return [...watchlistItems];
+export function getEarthquakeIncidents(): EarthquakeIncident[] {
+  return earthquakeIncidents;
 }
 
-function nanoid10(): string {
-  return crypto.randomUUID().replace(/-/g, "").slice(0, 10);
+export function getCrisisSummary(): CrisisSummary | null {
+  return crisisSummary;
 }
 
-export function createWatchlistItem(
-  input: Omit<WatchlistItem, "id" | "createdAt">
-): WatchlistItem {
-  const now = new Date().toISOString();
-  const item: WatchlistItem = {
-    ...input,
-    id: nanoid10(),
-    createdAt: now,
+// ─── Readers (async: from DB) ───────────────────────────────────────────────
+
+export async function getSignalEvents(
+  limit = 20,
+  offset = 0,
+  type?: string,
+  severity?: string
+): Promise<{ events: SignalEvent[]; total: number }> {
+  return signalEventsRepo.getSignalEvents({ limit, offset, type, severity });
+}
+
+export async function getSocialSignalEvents(
+  limit = 20,
+  offset = 0,
+  type?: string,
+  severity?: string
+): Promise<{ events: SignalEvent[]; total: number }> {
+  return socialSignalEventsRepo.getSocialSignalEvents({ limit, type, severity });
+}
+
+export async function getWorldArticles(
+  panel?: string,
+  limit = 20
+): Promise<GeopoliticsArticle[]> {
+  return worldArticlesRepo.getWorldArticles({ panel, limit });
+}
+
+export async function getWatchlist(): Promise<WatchlistItem[]> {
+  return watchlistRepo.getWatchlistItems();
+}
+
+export async function getCabinetEvents(limit = 20): Promise<CabinetEvent[]> {
+  return cabinetRepo.getCabinetEvents({ limit });
+}
+
+export async function getParliamentSession(): Promise<ParliamentSession | null> {
+  return parliamentRepo.getCurrentSession();
+}
+
+export async function getSourceHealth(): Promise<SourceHealth[]> {
+  return sourceHealthRepo.getAllSourceHealth();
+}
+
+export async function getCrisisIncidents(): Promise<CrisisIncident[]> {
+  return crisisRepo.getCrisisIncidents({ limit: 500 });
+}
+
+/** Operational anomalies from source health; stored anomalies from DB. */
+export type AnomalyContextFilter = "election" | "operational" | "all";
+
+export async function getAnomalies(context?: AnomalyContextFilter): Promise<Anomaly[]> {
+  const [storedRows, healthList] = await Promise.all([
+    anomaliesRepo.getAnomalies({ resolved: false, limit: 200 }),
+    sourceHealthRepo.getAllSourceHealth(),
+  ]);
+  const stored: Anomaly[] = storedRows.map((r) => ({
+    id: r.id,
+    type: r.type as Anomaly["type"],
+    severity: r.severity as Anomaly["severity"],
+    details: r.description,
+    timestamp: r.detectedAt,
+    resolved: r.resolved,
+    context: "election" as const,
+  }));
+  const electionOnly = stored.filter((a) => a.context !== "operational");
+  const operational: Anomaly[] = healthList.flatMap((h) => {
+    if (h.status === "stale")
+      return [{
+        id: `operational-source-${h.sourceId}`,
+        type: "source_stale" as const,
+        severity: "warning" as const,
+        details: `${h.sourceName} has not updated recently (last: ${h.lastUpdate})`,
+        timestamp: h.lastUpdate,
+        resolved: false,
+        context: "operational" as const,
+      }];
+    if (h.status === "error")
+      return [{
+        id: `operational-source-${h.sourceId}`,
+        type: "source_error" as const,
+        severity: "critical" as const,
+        details: `${h.sourceName} is reporting errors (error rate: ${(h.errorRate * 100).toFixed(0)}%)`,
+        timestamp: h.lastUpdate,
+        resolved: false,
+        context: "operational" as const,
+      }];
+    return [];
+  });
+  switch (context) {
+    case "election":
+      return electionOnly;
+    case "operational":
+      return operational;
+    case "all":
+    default: {
+      const byId = new Map<string, Anomaly>();
+      for (const a of operational) byId.set(a.id, a);
+      for (const a of electionOnly) byId.set(a.id, a);
+      return Array.from(byId.values()).sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+    }
+  }
+}
+
+export async function getFloodAlerts(statusFilter?: string): Promise<{
+  alerts: FloodAlert[];
+  seasonInactive: boolean;
+  lastUpdated: string | null;
+  alertsSource?: "dhm" | "gdacs";
+}> {
+  const statuses = statusFilter
+    ? statusFilter.split(",").map((s) => s.trim()).filter(Boolean)
+    : undefined;
+  const all = await floodRepo.getFloodAlerts(
+    statuses?.length === 1 ? { status: statuses[0] } : {}
+  );
+  const alerts =
+    statuses && statuses.length > 1 ? all.filter((a) => statuses.includes(a.status)) : all;
+  return {
+    alerts,
+    seasonInactive: floodSeasonInactive,
+    lastUpdated: floodLastUpdated,
+    alertsSource: floodSource ?? undefined,
   };
-  watchlistItems.push(item);
-  schedulePersist();
-  return item;
 }
 
-export function deleteWatchlistItem(id: string): boolean {
-  const before = watchlistItems.length;
-  watchlistItems = watchlistItems.filter((w) => w.id !== id);
-  if (watchlistItems.length < before) {
-    schedulePersist();
-    return true;
-  }
-  return false;
-}
+// ─── Reactions (async: from DB) ───────────────────────────────────────────────
 
-export function toggleWatchlistItemActive(id: string): WatchlistItem | null {
-  const item = watchlistItems.find((w) => w.id === id);
-  if (!item) return null;
-  item.active = !item.active;
-  schedulePersist();
-  return item;
-}
-
-export function updateWatchlistItemLastTriggered(
-  id: string,
-  lastTriggeredAt: string
-): void {
-  const item = watchlistItems.find((w) => w.id === id);
-  if (item) {
-    item.lastTriggeredAt = lastTriggeredAt;
-    schedulePersist();
-  }
-}
-
-// ─── Reactions ──────────────────────────────────────────────────────────────
-
-export function addReaction(input: {
+export async function addReaction(input: {
   itemId: string;
   itemTitle: string;
   reaction: "like";
   email: string | null;
   fingerprint: string;
-}): { liked: true; count: number } {
-  const existing = reactions.find(
-    (r) => r.itemId === input.itemId && r.fingerprint === input.fingerprint
-  );
-  if (existing) {
-    const count = reactions.filter((r) => r.itemId === input.itemId).length;
-    return { liked: true, count };
-  }
-  const reaction: Reaction = {
-    id: nanoid10(),
+}): Promise<{ liked: true; count: number }> {
+  const id = nanoid10();
+  await reactionsRepo.insertReaction({
+    id,
     itemId: input.itemId,
     itemTitle: input.itemTitle.slice(0, 60),
     reaction: "like",
     email: input.email ?? null,
     fingerprint: input.fingerprint,
-    createdAt: new Date().toISOString(),
-  };
-  reactions.push(reaction);
-  schedulePersist();
-  void persistState(); // persist immediately so reload doesn't lose likes
-  const count = reactions.filter((r) => r.itemId === input.itemId).length;
+  });
+  const { count } = await reactionsRepo.getReactionStatus(input.itemId, input.fingerprint);
   return { liked: true, count };
 }
 
-export function removeReaction(itemId: string, fingerprint: string): { liked: false; count: number } {
-  reactions = reactions.filter(
-    (r) => !(r.itemId === itemId && r.fingerprint === fingerprint)
-  );
-  schedulePersist();
-  void persistState(); // persist immediately so reload doesn't lose likes
-  const count = reactions.filter((r) => r.itemId === itemId).length;
+export async function removeReaction(
+  itemId: string,
+  fingerprint: string
+): Promise<{ liked: false; count: number }> {
+  await reactionsRepo.deleteReaction(itemId, fingerprint);
+  const { count } = await reactionsRepo.getReactionStatus(itemId, undefined);
   return { liked: false, count };
 }
 
-export function getReactionStatus(
+export async function getReactionStatus(
   itemId: string,
   fingerprint: string | undefined
-): { count: number; liked: boolean } {
-  const count = reactions.filter((r) => r.itemId === itemId).length;
-  const liked =
-    fingerprint != null &&
-    reactions.some((r) => r.itemId === itemId && r.fingerprint === fingerprint);
-  return { count, liked };
+): Promise<{ count: number; liked: boolean }> {
+  return reactionsRepo.getReactionStatus(itemId, fingerprint);
 }
 
-const BATCH_IDS_MAX = 50;
-
-export function getReactionsBatch(
+export async function getReactionsBatch(
   ids: string[],
   fingerprint: string | undefined
-): Record<string, { count: number; liked: boolean }> {
-  const limited = ids.slice(0, BATCH_IDS_MAX);
-  const result: Record<string, { count: number; liked: boolean }> = {};
-  for (const id of limited) {
-    result[id] = getReactionStatus(id, fingerprint);
-  }
-  return result;
+): Promise<Record<string, { count: number; liked: boolean }>> {
+  return reactionsRepo.getReactionsBatch(ids, fingerprint);
 }
 
-export function associateEmailWithFingerprint(
+export async function associateEmailWithFingerprint(
   fingerprint: string,
   email: string
-): number {
-  let updated = 0;
-  for (const r of reactions) {
-    if (r.fingerprint === fingerprint && r.email == null) {
-      r.email = email;
-      updated++;
-    }
-  }
-  if (updated > 0) {
-    schedulePersist();
-    void persistState();
-  }
-  return updated;
+): Promise<number> {
+  return reactionsRepo.associateEmail(fingerprint, email);
 }
 
-export async function loadPersistedState(): Promise<boolean> {
-  try {
-    const liveFile = Bun.file(PERSISTED_STATE_PATH);
-    const bootstrapFile = Bun.file(BOOTSTRAP_STATE_PATH);
-    const file = (await liveFile.exists()) ? liveFile : (await bootstrapFile.exists()) ? bootstrapFile : null;
-    if (!file) return false;
-
-    const raw = (await file.json()) as PersistedApiState;
-
-    electionDatasets.clear();
-    currentElectionDatasetId = raw.currentElectionDatasetId ?? null;
-
-    for (const dataset of raw.electionDatasets ?? []) {
-      electionDatasets.set(dataset.meta.id, {
-        meta: dataset.meta,
-        nationalSummary: dataset.nationalSummary,
-        constituencyResults: new Map(
-          (dataset.constituencyResults ?? []).map((result) => [
-            result.constituencyId,
-            result,
-          ])
-        ),
-      });
-    }
-
-    signalEvents.length = 0;
-    signalEvents.push(...(raw.signalEvents ?? []));
-
-    anomalies.length = 0;
-    anomalies.push(...(raw.anomalies ?? []));
-
-    sourceHealth.clear();
-    for (const health of raw.sourceHealth ?? []) {
-      sourceHealth.set(health.sourceId, health);
-    }
-
-    earthquakeIncidents = raw.earthquakeIncidents ?? [];
-    crisisIncidents = raw.crisisIncidents ?? [];
-    crisisSummary = raw.crisisSummary ?? null;
-    forexRates = raw.forexRates ?? [];
-    economySummary = raw.economySummary ?? null;
-    marketAssetQuotes = raw.marketAssetQuotes ?? [];
-    nepseSummary = raw.nepseSummary ?? null;
-    floodAlerts = raw.floodAlerts ?? [];
-    floodAlertsSeasonInactive = raw.floodAlertsSeasonInactive ?? false;
-    floodAlertsLastUpdated = raw.floodAlertsLastUpdated ?? null;
-    floodAlertsSource = raw.floodAlertsSource ?? null;
-    cabinetEvents = raw.cabinetEvents ?? [];
-    parliamentSession = raw.parliamentSession ?? null;
-    worldArticles.clear();
-    for (const a of raw.worldArticles ?? []) {
-      worldArticles.set(a.id, a);
-    }
-    watchlistItems = raw.watchlistItems ?? [];
-    reactions = raw.reactions ?? [];
-    return true;
-  } catch (err) {
-    console.warn(
-      "[nepal-intelligence-os] Failed to load persisted API state:",
-      err instanceof Error ? err.message : err
-    );
-    return false;
-  }
-}
-
-// ─── Writers ─────────────────────────────────────────────────────────────────
+// ─── Writers (sync: in-memory) ───────────────────────────────────────────────
 
 export function updateNationalSummary(summary: NationalSummary): void {
   const dataset = ensureElectionDataset(
@@ -649,7 +364,6 @@ export function updateNationalSummary(summary: NationalSummary): void {
   );
   dataset.nationalSummary = summary;
   currentElectionDatasetId = dataset.meta.id;
-  schedulePersist();
 }
 
 export function updateConstituencyResult(result: ConstituencyResult): void {
@@ -660,69 +374,124 @@ export function updateConstituencyResult(result: ConstituencyResult): void {
   );
   dataset.constituencyResults.set(result.constituencyId, result);
   currentElectionDatasetId = dataset.meta.id;
-  schedulePersist();
-}
-
-export function addSignalEvent(event: SignalEvent): void {
-  signalEvents.push(event);
-  schedulePersist();
-}
-
-export function addAnomaly(anomaly: Anomaly): void {
-  anomalies.push(anomaly);
-  schedulePersist();
-}
-
-export function updateSourceHealth(health: SourceHealth): void {
-  sourceHealth.set(health.sourceId, health);
-  schedulePersist();
 }
 
 export function replaceEarthquakeIncidents(incidents: EarthquakeIncident[]): void {
   earthquakeIncidents = incidents;
-  schedulePersist();
 }
 
-export function updateCrisisSummary(summary: CrisisSummary): void {
+export function updateCrisisSummary(summary: CrisisSummary | null): void {
   crisisSummary = summary;
-  schedulePersist();
-}
-
-export function replaceCrisisIncidents(incidents: CrisisIncident[]): void {
-  crisisIncidents = incidents;
-  schedulePersist();
 }
 
 export function replaceForexRates(rates: ForexRate[]): void {
   forexRates = rates;
-  schedulePersist();
 }
 
-export function updateEconomySummary(summary: EconomySummary): void {
+export function updateEconomySummary(summary: EconomySummary | null): void {
   economySummary = summary;
-  schedulePersist();
 }
 
 export function replaceMarketAssetQuotes(quotes: MarketAssetQuote[]): void {
   marketAssetQuotes = quotes;
-  schedulePersist();
 }
 
-export function updateNepseSummary(summary: NepseSummary): void {
+export function updateNepseSummary(summary: NepseSummary | null): void {
   nepseSummary = summary;
-  schedulePersist();
 }
 
 export function resetElectionData(datasetId?: string): void {
   if (!datasetId) {
     currentElectionDatasetId = null;
     electionDatasets.clear();
-    schedulePersist();
     return;
   }
   electionDatasets.delete(datasetId);
-  if (currentElectionDatasetId === datasetId) {
-    currentElectionDatasetId = null;
-  }
-  schedulePersist();
+  if (currentElectionDatasetId === datasetId) currentElectionDatasetId = null;
+}
+
+// ─── Writers (async: to DB) ──────────────────────────────────────────────────
+
+export async function addSignalEvent(event: SignalEvent): Promise<void> {
+  await signalEventsRepo.insertSignalEvent(event);
+}
+
+export async function addAnomaly(anomaly: Anomaly): Promise<void> {
+  await anomaliesRepo.insertAnomaly({
+    id: anomaly.id,
+    type: anomaly.type,
+    description: anomaly.details,
+    source: null,
+    severity: anomaly.severity,
+    resolved: anomaly.resolved ?? false,
+    detectedAt: anomaly.timestamp,
+    resolvedAt: null,
+  });
+}
+
+export async function updateSourceHealth(health: SourceHealth): Promise<void> {
+  await sourceHealthRepo.upsertSourceHealth(health);
+}
+
+export async function setFloodAlerts(payload: {
+  alerts: FloodAlert[];
+  seasonInactive?: boolean;
+  lastUpdated: string;
+  alertsSource?: "dhm" | "gdacs";
+}): Promise<void> {
+  await floodRepo.replaceFloodAlerts(payload.alerts);
+  floodSeasonInactive = payload.seasonInactive ?? false;
+  floodLastUpdated = payload.lastUpdated;
+  floodSource = payload.alertsSource ?? null;
+}
+
+export async function setCabinetEvents(events: CabinetEvent[]): Promise<void> {
+  await cabinetRepo.replaceCabinetEvents(events.slice(0, 20));
+}
+
+export async function setParliamentSession(session: ParliamentSession | null): Promise<void> {
+  if (!session) return;
+  await parliamentRepo.upsertParliamentSession(session);
+}
+
+export async function upsertWorldArticles(articles: GeopoliticsArticle[]): Promise<void> {
+  for (const a of articles) await worldArticlesRepo.upsertWorldArticle(a);
+}
+
+export async function createWatchlistItem(
+  input: Omit<WatchlistItem, "id" | "createdAt">
+): Promise<WatchlistItem> {
+  const now = new Date().toISOString();
+  const item: WatchlistItem = {
+    ...input,
+    id: nanoid10(),
+    createdAt: now,
+  };
+  await watchlistRepo.insertWatchlistItem(item);
+  return item;
+}
+
+export async function deleteWatchlistItem(id: string): Promise<boolean> {
+  return watchlistRepo.deleteWatchlistItem(id);
+}
+
+export async function toggleWatchlistItemActive(id: string): Promise<WatchlistItem | null> {
+  return watchlistRepo.toggleWatchlistItem(id);
+}
+
+export async function updateWatchlistItemLastTriggered(
+  id: string,
+  _lastTriggeredAt: string
+): Promise<void> {
+  await watchlistRepo.updateWatchlistTriggered(id, "ingest");
+}
+
+export async function replaceCrisisIncidents(incidents: CrisisIncident[]): Promise<void> {
+  await crisisRepo.replaceCrisisIncidents(incidents);
+}
+
+// ─── No-op for compatibility (no longer persisting to JSON) ───────────────────
+
+export async function loadPersistedState(): Promise<boolean> {
+  return false;
 }
