@@ -9,7 +9,7 @@
     "dev:worker": "HOST=0.0.0.0 bun run --filter worker dev",
     "scrape:ecn": "python3 apps/scrapling/run_ecn.py",
     "scrape:news": "python3 apps/scrapling/run_news.py",
-    "dev:all": "concurrently -n worker,api,web -c blue,green,yellow \"bun run dev:worker\" \"bun run dev:api\" \"bun run dev:web\"",
+    "dev:all": "bunx concurrently -n worker,api,web -c blue,green,yellow \"bun run dev:worker\" \"bun run dev:api\" \"bun run dev:web\"",
     "build": "bun run --filter '*' build",
     "test": "bun test",
     "lint": "bun run --filter '*' lint",
