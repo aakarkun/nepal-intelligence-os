@@ -164,6 +164,12 @@ export const SignalEventTypeSchema = z.enum([
   "anomaly",
   "note",
   "news",
+  "political",
+  "security",
+  "economic",
+  "disaster",
+  "diplomatic",
+  "health",
 ]);
 
 export const SignalSeveritySchema = z.enum([

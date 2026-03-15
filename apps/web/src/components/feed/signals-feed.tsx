@@ -10,6 +10,12 @@ import {
   Newspaper,
   Pin,
   MessageCircle,
+  Landmark,
+  Shield,
+  TrendingUp,
+  Mountain,
+  Globe,
+  Heart,
 } from "lucide-react";
 import Link from "next/link";
 import { fetchFeed, fetchSocialFeed } from "@/lib/api";
@@ -29,6 +35,12 @@ const typeConfig: Record<
   anomaly: { color: "#ef4444", icon: AlertTriangle, label: "Anomaly" },
   note: { color: "#f59e0b", icon: StickyNote, label: "Social" },
   news: { color: "#10b981", icon: Newspaper, label: "News" },
+  political: { color: "#6366f1", icon: Landmark, label: "Political" },
+  security: { color: "#dc2626", icon: Shield, label: "Security" },
+  economic: { color: "#059669", icon: TrendingUp, label: "Economic" },
+  disaster: { color: "#ea580c", icon: Mountain, label: "Disaster" },
+  diplomatic: { color: "#2563eb", icon: Globe, label: "Diplomatic" },
+  health: { color: "#be185d", icon: Heart, label: "Health" },
 };
 
 const severityVariant: Record<SignalSeverity, "default" | "stale" | "error"> = {
@@ -46,7 +58,19 @@ export function SignalsFeed(
     () =>
       allowedTypes && allowedTypes.length > 0
         ? allowedTypes
-        : (["official", "ingest", "anomaly", "note", "news"] as SignalEventType[]),
+        : ([
+            "official",
+            "ingest",
+            "anomaly",
+            "note",
+            "news",
+            "political",
+            "security",
+            "economic",
+            "disaster",
+            "diplomatic",
+            "health",
+          ] as SignalEventType[]),
     [allowedTypes]
   );
   const [typeFilters, setTypeFilters] = useState<Set<SignalEventType>>(
