@@ -300,6 +300,28 @@ export const FloodAlertsPayloadSchema = z.object({
   alertsSource: z.enum(["dhm", "gdacs"]).optional(),
 });
 
+// ─── Watchlist (alerts / Telegram) ───────────────────────────────────────────
+
+export const WatchlistItemTypeSchema = z.enum([
+  "keyword",
+  "constituency",
+  "district",
+  "price_threshold",
+  "crisis_severity",
+]);
+
+export const WatchlistItemSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  type: WatchlistItemTypeSchema,
+  value: z.string(),
+  threshold: z.number().optional(),
+  telegramChatId: z.string().optional(),
+  createdAt: z.string().datetime(),
+  lastTriggeredAt: z.string().datetime().optional(),
+  active: z.boolean(),
+});
+
 // ─── Economy Intelligence ───────────────────────────────────────────────────
 
 export const ForexRateSchema = z.object({
@@ -429,6 +451,8 @@ export type CrisisSummary = z.infer<typeof CrisisSummarySchema>;
 export type CrisisIncident = z.infer<typeof CrisisIncidentSchema>;
 export type FloodAlert = z.infer<typeof FloodAlertSchema>;
 export type FloodAlertsPayload = z.infer<typeof FloodAlertsPayloadSchema>;
+export type WatchlistItemType = z.infer<typeof WatchlistItemTypeSchema>;
+export type WatchlistItem = z.infer<typeof WatchlistItemSchema>;
 export type ForexRate = z.infer<typeof ForexRateSchema>;
 export type EconomySummary = z.infer<typeof EconomySummarySchema>;
 export type MarketAssetQuote = z.infer<typeof MarketAssetQuoteSchema>;

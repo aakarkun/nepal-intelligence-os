@@ -42,10 +42,11 @@ import {
   postWorldArticles,
 } from "./ingest-client";
 import { getCircuitBreaker } from "./lib/circuit-breaker";
+import { runWatchlistCheck } from "./lib/watchlist-checker";
 import type { SourceHealth } from "@repo/shared";
 import path from "node:path";
 
-const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH, ADMIN_SECRET } = env;
+const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH, ADMIN_SECRET, TELEGRAM_BOT_TOKEN } = env;
 
 /** NEPSE closed on Nepal public holidays (Dashain, Tihar, national days). Loaded at live scheduler start. */
 let nepalHolidays: Set<string> = new Set();
@@ -995,6 +996,9 @@ async function runLiveCycle(): Promise<void> {
     lastMarketAssetsFetchedAt: state.lastMarketAssetsFetchedAt,
   };
   await writeLiveWorkerState(nextState);
+  runWatchlistCheck(API_URL, TELEGRAM_BOT_TOKEN).catch((err) => {
+    console.warn("[worker] Watchlist check error:", err instanceof Error ? err.message : err);
+  });
 }
 
 async function startLiveScheduler(intervalMs: number): Promise<void> {

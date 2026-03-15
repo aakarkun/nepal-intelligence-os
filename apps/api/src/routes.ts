@@ -16,6 +16,8 @@ import {
   EconomySummarySchema,
   MarketAssetQuoteSchema,
   NepseSummarySchema,
+  WatchlistItemSchema,
+  WatchlistItemTypeSchema,
 } from "@repo/shared";
 import {
   getNationalSummary,
@@ -41,6 +43,11 @@ import {
   getMarketAssetQuotes,
   getNepseSummary,
   getElectionDatasets,
+  getWatchlist,
+  createWatchlistItem,
+  deleteWatchlistItem,
+  toggleWatchlistItemActive,
+  updateWatchlistItemLastTriggered,
   updateNationalSummary,
   updateConstituencyResult,
   addSignalEvent,
@@ -380,6 +387,52 @@ api.get("/economy/nepse", (c) => {
 
 api.get("/election-datasets", (c) => {
   return c.json(getElectionDatasets());
+});
+
+const WatchlistCreateSchema = z.object({
+  label: z.string().min(1),
+  type: WatchlistItemTypeSchema,
+  value: z.string().min(1),
+  threshold: z.number().optional(),
+  telegramChatId: z.string().optional(),
+  active: z.boolean().optional(),
+});
+
+api.get("/watchlist", (c) => {
+  return c.json(getWatchlist());
+});
+
+api.post("/watchlist", async (c) => {
+  const body = await c.req.json();
+  const parsed = WatchlistCreateSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  const item = createWatchlistItem({
+    ...parsed.data,
+    active: parsed.data.active ?? true,
+  });
+  return c.json(item, 201);
+});
+
+api.delete("/watchlist/:id", (c) => {
+  const id = c.req.param("id");
+  const deleted = deleteWatchlistItem(id);
+  return deleted ? c.json({ ok: true }) : c.json({ error: "Not found" }, 404);
+});
+
+api.patch("/watchlist/:id/toggle", (c) => {
+  const id = c.req.param("id");
+  const item = toggleWatchlistItemActive(id);
+  return item ? c.json(item) : c.json({ error: "Not found" }, 404);
+});
+
+// ─── Ingest: watchlist triggered (worker calls after sending alert) ──────────
+
+api.post("/ingest/watchlist/:id/triggered", (c) => {
+  const id = c.req.param("id");
+  updateWatchlistItemLastTriggered(id, new Date().toISOString());
+  return c.json({ ok: true });
 });
 
 // ─── Intel Briefing ─────────────────────────────────────────────────────────
