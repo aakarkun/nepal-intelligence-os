@@ -172,6 +172,12 @@ export const SignalSeveritySchema = z.enum([
   "critical",
 ]);
 
+export const SignalEventEntitiesSchema = z.object({
+  people: z.array(z.string()).optional(),
+  parties: z.array(z.string()).optional(),
+  districts: z.array(z.string()).optional(),
+});
+
 export const SignalEventSchema = z.object({
   id: z.string(),
   type: SignalEventTypeSchema,
@@ -183,6 +189,7 @@ export const SignalEventSchema = z.object({
   districtId: z.number().int().optional(),
   source: z.string().optional(),
   url: z.string().url().optional(),
+  entities: SignalEventEntitiesSchema.optional(),
 });
 
 export const AnomalyTypeSchema = z.enum([
@@ -441,6 +448,7 @@ export type PartyResult = z.infer<typeof PartyResultSchema>;
 export type NationalSummary = z.infer<typeof NationalSummarySchema>;
 export type SignalEventType = z.infer<typeof SignalEventTypeSchema>;
 export type SignalSeverity = z.infer<typeof SignalSeveritySchema>;
+export type SignalEventEntities = z.infer<typeof SignalEventEntitiesSchema>;
 export type SignalEvent = z.infer<typeof SignalEventSchema>;
 export type AnomalyType = z.infer<typeof AnomalyTypeSchema>;
 export type Anomaly = z.infer<typeof AnomalySchema>;

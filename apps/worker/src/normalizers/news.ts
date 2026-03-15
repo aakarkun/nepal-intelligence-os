@@ -1,5 +1,6 @@
 import type { SignalEvent, SignalSeverity } from "@repo/shared";
 import type { NewsRawItem } from "../sources/news";
+import { extractEntities } from "./entities";
 
 function simpleHash(str: string): string {
   let h = 0;
@@ -39,7 +40,8 @@ export function normalizeNewsToEvents(
     const timestamp = item.pubDate
       ? new Date(item.pubDate).toISOString()
       : now;
-    events.push({
+    const entities = extractEntities(`${title} ${body}`);
+    const event: SignalEvent = {
       id,
       type: "news",
       severity: inferSeverity(title, body),
@@ -48,7 +50,15 @@ export function normalizeNewsToEvents(
       timestamp,
       source: sourceName,
       url: item.link,
-    });
+    };
+    if (
+      entities.parties.length > 0 ||
+      entities.districts.length > 0 ||
+      entities.people.length > 0
+    ) {
+      event.entities = entities;
+    }
+    events.push(event);
   }
 
   return events;
