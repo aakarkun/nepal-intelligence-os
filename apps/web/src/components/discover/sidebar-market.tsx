@@ -37,7 +37,7 @@ export function SidebarMarket() {
 
   const usd = forex.find((f) => f.currencyCode === "USD");
   const inr = forex.find((f) => f.currencyCode === "INR");
-  const cny = forex.find((f) => f.currencyCode === "CNY");
+  const aud = forex.find((f) => f.currencyCode === "AUD");
   const btc = assets.find((a) => a.assetCode === "BTC" || a.assetCode?.toLowerCase() === "btc");
   const gold = assets.find((a) => a.assetCode === "XAU" || a.assetCode?.toLowerCase().includes("gold"));
 
@@ -45,7 +45,7 @@ export function SidebarMarket() {
     nepse != null ||
     usd != null ||
     inr != null ||
-    cny != null ||
+    aud != null ||
     btc != null ||
     gold != null;
 
@@ -92,10 +92,10 @@ export function SidebarMarket() {
             <span className="tabular-nums">{inr.buy?.toFixed(2) ?? "—"}</span>
           </div>
         )}
-        {cny != null && (
+        {aud != null && (
           <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">CNY/NPR</span>
-            <span className="tabular-nums">{cny.buy?.toFixed(2) ?? "—"}</span>
+            <span className="text-muted-foreground">AUD/NPR</span>
+            <span className="tabular-nums">{aud.buy?.toFixed(2) ?? "—"}</span>
           </div>
         )}
         {btc != null && (

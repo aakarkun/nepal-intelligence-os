@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "bunx next dev -H 0.0.0.0 -p 3000",
     "dev:mobile": "bunx next dev -H 0.0.0.0 -p 3000",
-    "build": "next build",
+    "build": "bunx next build",
     "start": "next start",
     "lint": "next lint"
   },

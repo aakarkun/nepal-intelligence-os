@@ -53,6 +53,9 @@ export function SidebarTrending({
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <h3 className="text-sm font-medium text-foreground">Trending</h3>
+      <p className="mt-0.5 text-[10px] text-muted-foreground">
+        Based on signals from the last 6 hours
+      </p>
       <div className="mt-2 flex flex-wrap gap-2">
         {trending.map(({ name, count: n }) => (
           <button
