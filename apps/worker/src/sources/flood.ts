@@ -3,6 +3,10 @@ import type { FloodAlert, FloodAlertsPayload } from "@repo/shared";
 
 const DHM_FETCH_TIMEOUT_MS = 10_000;
 const DHM_BULLETIN = "https://www.dhm.gov.np";
+/** Regional fallback when DHM returns 403; covers South Asia / Nepal-relevant events. */
+const GDACS_FL_API =
+  "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH";
+const GDACS_FETCH_TIMEOUT_MS = 10_000;
 
 function isMonsoonSeason(date: Date): boolean {
   const month = date.getUTCMonth();
@@ -37,14 +41,84 @@ function parseNumber(s: string | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/** GDACS flood events (FL) — regional fallback when DHM is 403/unavailable. */
+async function fetchGdacsFloodEvents(observedAt: string): Promise<FloodAlert[]> {
+  const from = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  const to = new Date().toISOString().slice(0, 10);
+  const url = `${GDACS_FL_API}?eventlist=FL&fromdate=${from}&todate=${to}`;
+  try {
+    const res = await fetchWithTimeout(url, { timeout: GDACS_FETCH_TIMEOUT_MS });
+    if (!res.ok) return [];
+    const data = (await res.json()) as {
+      features?: Array<{
+        properties?: {
+          eventname?: string;
+          eventid?: string;
+          fromdate?: string;
+          alertlevel?: string;
+          country?: string;
+        };
+        geometry?: { coordinates?: [number, number] };
+      }>;
+    };
+    const features = data?.features ?? [];
+    const alerts: FloodAlert[] = [];
+    for (const f of features.slice(0, 30)) {
+      const p = f.properties ?? {};
+      const name = p.eventname ?? p.eventid ?? "Flood event";
+      const level = (p.alertlevel ?? "").toLowerCase();
+      let status: FloodAlert["status"] = "warning";
+      if (level.includes("red") || level.includes("3")) status = "extreme_danger";
+      else if (level.includes("orange") || level.includes("2")) status = "danger";
+      const id = `gdacs-${(p.eventid ?? name).toString().replace(/\s+/g, "-")}`;
+      alerts.push({
+        id,
+        stationName: name,
+        river: p.country ?? "Regional",
+        district: "",
+        province: 1,
+        waterLevel: 0,
+        normalLevel: 0,
+        warningLevel: 1,
+        dangerLevel: 2,
+        status,
+        trend: "stable",
+        observedAt,
+        source: "GDACS",
+      });
+    }
+    return alerts;
+  } catch (e) {
+    console.warn("[flood] GDACS fallback failed:", e instanceof Error ? e.message : e);
+    return [];
+  }
+}
+
 /**
  * Fetch DHM Nepal hydrological bulletin and parse river station table.
- * On failure or no data, returns empty alerts; off-season (outside June–Sept) sets seasonInactive.
+ * When ENABLE_DHM_SCRAPE is false (default), skip DHM and use GDACS only — station-level
+ * data requires DHM data access approval (e.g. info@dhm.gov.np for journalism/research).
+ * On DHM 403 or empty when enabled, tries GDACS regional fallback.
+ * Off-season (outside June–Sept) sets seasonInactive.
  */
 export async function fetchFloodAlerts(): Promise<FloodAlertsPayload> {
   const now = new Date();
   const nowIso = now.toISOString();
   const monsoon = isMonsoonSeason(now);
+  const dhmEnabled =
+    process.env.ENABLE_DHM_SCRAPE === "true" ||
+    process.env.ENABLE_DHM_SCRAPE === "1";
+
+  if (!dhmEnabled) {
+    const fallback = await fetchGdacsFloodEvents(nowIso);
+    return {
+      alerts: fallback,
+      lastUpdated: nowIso,
+      alertsSource: "gdacs",
+    };
+  }
 
   try {
     const res = await fetchWithTimeout(DHM_BULLETIN, {
@@ -54,28 +128,21 @@ export async function fetchFloodAlerts(): Promise<FloodAlertsPayload> {
     const html = await res.text();
     const alerts = parseDhmBulletin(html, nowIso);
     if (alerts.length > 0) {
-      return {
-        alerts,
-        lastUpdated: nowIso,
-      };
+      return { alerts, lastUpdated: nowIso, alertsSource: "dhm" };
     }
     if (!monsoon) {
-      return {
-        alerts: [],
-        seasonInactive: true,
-        lastUpdated: nowIso,
-      };
+      return { alerts: [], seasonInactive: true, lastUpdated: nowIso };
     }
     return { alerts: [], lastUpdated: nowIso };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.warn("[flood] DHM fetch/parse failed:", message);
+    const fallback = await fetchGdacsFloodEvents(nowIso);
+    if (fallback.length > 0) {
+      return { alerts: fallback, lastUpdated: nowIso, alertsSource: "gdacs" };
+    }
     if (!monsoon) {
-      return {
-        alerts: [],
-        seasonInactive: true,
-        lastUpdated: nowIso,
-      };
+      return { alerts: [], seasonInactive: true, lastUpdated: nowIso };
     }
     return { alerts: [], lastUpdated: nowIso };
   }

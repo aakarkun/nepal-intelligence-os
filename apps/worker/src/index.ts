@@ -31,7 +31,7 @@ import {
   postMarketAssetQuotes,
   postNepseSummary,
 } from "./ingest-client";
-import { fetchNepseSummary } from "./sources/nepse";
+import { fetchNepseSummary, getNepalDayOfWeek, getNptDateString, isNepalMarketOpen } from "./sources/nepse";
 import { fetchFloodAlerts } from "./sources/flood";
 import { fetchCabinetEvents } from "./sources/rss-nepal";
 import { fetchParliamentSession } from "./sources/parliament";
@@ -43,8 +43,23 @@ import {
 } from "./ingest-client";
 import { getCircuitBreaker } from "./lib/circuit-breaker";
 import type { SourceHealth } from "@repo/shared";
+import path from "node:path";
 
 const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH, ADMIN_SECRET } = env;
+
+/** NEPSE closed on Nepal public holidays (Dashain, Tihar, national days). Loaded at live scheduler start. */
+let nepalHolidays: Set<string> = new Set();
+async function loadNepalHolidays(): Promise<void> {
+  try {
+    const configPath = path.join(import.meta.dir, "..", "config", "nepal-holidays.json");
+    const file = Bun.file(configPath);
+    if (!(await file.exists())) return;
+    const json = (await file.json()) as { dates?: string[] };
+    nepalHolidays = new Set(json.dates ?? []);
+  } catch (e) {
+    console.warn("[worker] Could not load nepal-holidays.json:", e instanceof Error ? e.message : e);
+  }
+}
 
 async function consumeResetIfRequested(sourceId: string): Promise<boolean> {
   if (!ADMIN_SECRET) return false;
@@ -69,8 +84,11 @@ const REDDIT_DELAY_BETWEEN_FEEDS_MS = env.REDDIT_DELAY_MS;
 let lastGdeltNewsRun: number | null = null;
 let lastGdeltSignalRun: number | null = null;
 
+const NEPSE_INTERVAL_MS = 5 * 60 * 1000; // 5 min during market hours (respectful scraping)
+
 type LiveWorkerState = {
   lastCycleCompletedAt?: string;
+  lastNepseRunAt?: number;
   lastNepseRunDate?: string;
   lastMarketAssetsFetchedAt?: string;
   lastMarketAssetQuotes?: Array<{
@@ -784,6 +802,8 @@ async function runLiveWorld(): Promise<void> {
 async function runLiveEconomy(state: LiveWorkerState): Promise<void> {
   const now = new Date().toISOString();
   const assetIntervalMs = env.MARKET_ASSET_MINUTES * 60 * 1000;
+  const coingeckoCb = getCircuitBreaker("economy:coingecko", 3);
+  if (await consumeResetIfRequested("economy:coingecko")) coingeckoCb.reset();
 
   try {
     const rates = await fetchForexRates();
@@ -795,9 +815,20 @@ async function runLiveEconomy(state: LiveWorkerState): Promise<void> {
       !lastMarketAssetsFetchedAt ||
       Number.isNaN(lastMarketAssetsFetchedAt) ||
       Date.now() - lastMarketAssetsFetchedAt >= assetIntervalMs;
+    const previousQuotes = state.lastMarketAssetQuotes ?? [];
     const marketAssetQuotes = shouldRefreshMarketAssets
-      ? await fetchMarketAssetQuotes(state.lastMarketAssetQuotes ?? [])
-      : (state.lastMarketAssetQuotes ?? []);
+      ? await fetchMarketAssetQuotes(previousQuotes, {
+          skipCrypto: coingeckoCb.isOpen(),
+          onCryptoFailure: () => coingeckoCb.recordFailure(),
+        })
+      : previousQuotes;
+    if (
+      shouldRefreshMarketAssets &&
+      !coingeckoCb.isOpen() &&
+      marketAssetQuotes.some((q) => q.class === "crypto")
+    ) {
+      coingeckoCb.recordSuccess();
+    }
 
     await postForexRates(API_URL, rates);
     await postEconomySummary(API_URL, summary);
@@ -813,6 +844,21 @@ async function runLiveEconomy(state: LiveWorkerState): Promise<void> {
       status: "live",
       updateCount: rates.length,
     });
+
+    if (coingeckoCb.isOpen()) {
+      const cbState = coingeckoCb.getState();
+      await postSourceHealth(API_URL, {
+        sourceId: "economy:coingecko",
+        sourceName: "CoinGecko (crypto)",
+        lastUpdate: now,
+        errorRate: 1,
+        status: "error",
+        updateCount: 0,
+        suspended: true,
+        suspendedAt: cbState.suspendedAt?.toISOString(),
+        failureCount: cbState.failures,
+      });
+    }
 
     await postSourceHealth(API_URL, {
       sourceId: "economy",
@@ -902,18 +948,32 @@ async function runLiveNepse(): Promise<void> {
   }
 }
 
-function shouldRunNepseToday(state: LiveWorkerState): boolean {
+function shouldRunNepse(state: LiveWorkerState): boolean {
   const now = new Date();
-  const utcHour = now.getUTCHours();
-  const utcMin = now.getUTCMinutes();
+  const nptDay = getNepalDayOfWeek(now);
+  // NEPSE closed Fri (5) / Sat (6) — do not run so we don't flag stale data as fresh
+  if (nptDay === 5 || nptDay === 6) return false;
+  // NEPSE closed on Nepal public holidays (Dashain, Tihar, national days)
+  if (nepalHolidays.has(getNptDateString(now))) return false;
+  const nowMs = Date.now();
   const today = now.toISOString().slice(0, 10);
-  if (state.lastNepseRunDate === today) return false;
-  return utcHour > 9 || (utcHour === 9 && utcMin >= 30);
+  const open = isNepalMarketOpen(now);
+  if (open) {
+    return (
+      state.lastNepseRunAt == null ||
+      nowMs - state.lastNepseRunAt >= NEPSE_INTERVAL_MS
+    );
+  }
+  // After market close: run once per day to get closing data (e.g. after 09:30 UTC)
+  const pastClose =
+    now.getUTCHours() > 9 ||
+    (now.getUTCHours() === 9 && now.getUTCMinutes() >= 30);
+  return pastClose && state.lastNepseRunDate !== today;
 }
 
 async function runLiveCycle(): Promise<void> {
   const state = await readLiveWorkerState();
-  const runNepse = shouldRunNepseToday(state);
+  const runNepse = shouldRunNepse(state);
   await Promise.allSettled([
     runLiveEcn(),
     runLiveNews(),
@@ -926,8 +986,10 @@ async function runLiveCycle(): Promise<void> {
     runLiveEconomy(state),
     ...(runNepse ? [runLiveNepse()] : []),
   ]);
+  const nowMs = Date.now();
   const nextState: LiveWorkerState = {
     lastCycleCompletedAt: new Date().toISOString(),
+    lastNepseRunAt: runNepse ? nowMs : state.lastNepseRunAt,
     lastNepseRunDate: runNepse ? new Date().toISOString().slice(0, 10) : state.lastNepseRunDate,
     lastMarketAssetQuotes: state.lastMarketAssetQuotes,
     lastMarketAssetsFetchedAt: state.lastMarketAssetsFetchedAt,
@@ -936,6 +998,7 @@ async function runLiveCycle(): Promise<void> {
 }
 
 async function startLiveScheduler(intervalMs: number): Promise<void> {
+  await loadNepalHolidays();
   const state = await readLiveWorkerState();
   const hasLiveDataset = await hasCurrentLiveElectionDataset();
   const lastCompletedAt = state.lastCycleCompletedAt

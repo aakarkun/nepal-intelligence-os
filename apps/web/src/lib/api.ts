@@ -143,6 +143,7 @@ export function fetchFloodAlerts(status?: string): Promise<{
   alerts: FloodAlert[];
   seasonInactive: boolean;
   lastUpdated: string | null;
+  alertsSource?: "dhm" | "gdacs";
 }> {
   const qs = status ? `?status=${encodeURIComponent(status)}` : "";
   return fetchJSON(`/v1/crisis/flood-alerts${qs}`);

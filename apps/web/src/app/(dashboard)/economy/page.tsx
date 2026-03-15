@@ -132,7 +132,7 @@ export default function EconomyPage() {
   );
 
   const orderedAssetQuotes = useMemo(() => {
-    const order = ["BTC", "XAU", "XAG"];
+    const order = ["BTC", "ETH", "XAU", "XAG"];
     const rank = (code: string) => {
       const index = order.indexOf(code);
       return index === -1 ? order.length + 1 : index;
@@ -153,14 +153,14 @@ export default function EconomyPage() {
   const economySources = sourceHealth.filter(
     (source) =>
       source.sourceId === "economy" ||
-      source.sourceId === "economy:forex" ||
+      source.sourceId.startsWith("economy:") ||
       source.sourceId.startsWith("news:")
   );
 
   const assetIcon = (code: string) => {
     if (code === "XAU") return Gem;
     if (code === "XAG") return Coins;
-    return Bitcoin;
+    return Bitcoin; // BTC, ETH
   };
 
   return (

@@ -131,6 +131,13 @@ Services:
 | `MARKET_ASSET_MINUTES` | How often to refresh Gold/Silver/BTC quotes in live mode (default: 360) | No |
 | `NEWS_FEEDS` | Optional; semicolon-separated Name&#124;URL pairs to extend/override news feeds | No |
 | `DEBUG_NEWS_TIMES` | Set to `true` to log feed item timestamps (debug) | No |
+| **Admin / circuit breaker** | | |
+| `ADMIN_SECRET` | Secret for circuit breaker reset (POST `/admin/sources/:id/reset`). **Required in both API and worker env** when they run as separate processes or containers — the API validates it on reset requests; the worker uses it to poll and consume pending resets. | No (required for admin reset) |
+| `ENABLE_DHM_SCRAPE` | Set to `true` to enable DHM flood bulletin scrape (default: false). Station-level data may require DHM data access approval. | No |
+
+## Deployment: API and worker
+
+When the API and worker run in separate processes or containers (e.g. Docker Compose, k8s), set **`ADMIN_SECRET` in both environments**. The API uses it to validate `POST /admin/sources/:id/reset`; the worker uses the same value in `X-Admin-Secret` when polling for pending resets. If only one side has it, circuit breaker resets from the dashboard will not take effect.
 
 ## Routes
 

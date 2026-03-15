@@ -289,13 +289,15 @@ export const FloodAlertSchema = z.object({
   status: FloodAlertStatusSchema,
   trend: FloodAlertTrendSchema.optional(),
   observedAt: z.string().datetime(),
-  source: z.literal("DHM"),
+  source: z.enum(["DHM", "GDACS"]),
 });
 
 export const FloodAlertsPayloadSchema = z.object({
   alerts: z.array(FloodAlertSchema),
   seasonInactive: z.boolean().optional(),
   lastUpdated: z.string().datetime(),
+  /** When "gdacs", UI should show disclaimer: station-level DHM data pending access. */
+  alertsSource: z.enum(["dhm", "gdacs"]).optional(),
 });
 
 // ─── Economy Intelligence ───────────────────────────────────────────────────

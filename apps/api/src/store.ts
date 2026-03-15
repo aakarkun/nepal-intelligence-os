@@ -57,6 +57,7 @@ let crisisIncidents: CrisisIncident[] = [];
 let floodAlerts: FloodAlert[] = [];
 let floodAlertsSeasonInactive = false;
 let floodAlertsLastUpdated: string | null = null;
+let floodAlertsSource: "dhm" | "gdacs" | null = null;
 let forexRates: ForexRate[] = [];
 let economySummary: EconomySummary | null = null;
 let marketAssetQuotes: MarketAssetQuote[] = [];
@@ -93,6 +94,7 @@ type PersistedApiState = {
   floodAlerts: FloodAlert[];
   floodAlertsSeasonInactive: boolean;
   floodAlertsLastUpdated: string | null;
+  floodAlertsSource: "dhm" | "gdacs" | null;
   cabinetEvents: CabinetEvent[];
   parliamentSession: ParliamentSession | null;
   worldArticles: GeopoliticsArticle[];
@@ -180,6 +182,7 @@ function serializeState(): PersistedApiState {
     floodAlerts,
     floodAlertsSeasonInactive,
     floodAlertsLastUpdated,
+    floodAlertsSource,
     cabinetEvents,
     parliamentSession,
     worldArticles: Array.from(worldArticles.values()),
@@ -279,6 +282,7 @@ export function getFloodAlerts(statusFilter?: string): {
     alerts: list,
     seasonInactive: floodAlertsSeasonInactive,
     lastUpdated: floodAlertsLastUpdated,
+    alertsSource: floodAlertsSource ?? undefined,
   };
 }
 
@@ -286,10 +290,12 @@ export function setFloodAlerts(payload: {
   alerts: FloodAlert[];
   seasonInactive?: boolean;
   lastUpdated: string;
+  alertsSource?: "dhm" | "gdacs";
 }): void {
   floodAlerts = payload.alerts;
   floodAlertsSeasonInactive = payload.seasonInactive ?? false;
   floodAlertsLastUpdated = payload.lastUpdated;
+  floodAlertsSource = payload.alertsSource ?? null;
   schedulePersist();
 }
 
@@ -401,6 +407,7 @@ export async function loadPersistedState(): Promise<boolean> {
     floodAlerts = raw.floodAlerts ?? [];
     floodAlertsSeasonInactive = raw.floodAlertsSeasonInactive ?? false;
     floodAlertsLastUpdated = raw.floodAlertsLastUpdated ?? null;
+    floodAlertsSource = raw.floodAlertsSource ?? null;
     cabinetEvents = raw.cabinetEvents ?? [];
     parliamentSession = raw.parliamentSession ?? null;
     worldArticles.clear();
