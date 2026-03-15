@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  LayoutGrid,
   LayoutDashboard,
   Map,
   TableProperties,
@@ -17,7 +18,8 @@ import {
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { href: "/", icon: LayoutDashboard, label: "Political Pulse" },
+  { href: "/", icon: LayoutGrid, label: "Discover" },
+  { href: "/political-pulse", icon: LayoutDashboard, label: "Political Pulse" },
   { href: "/map", icon: Map, label: "Tactical Map" },
   { href: "/constituencies", icon: TableProperties, label: "Constituencies" },
   { href: "/parliament", icon: Building2, label: "Parliament" },

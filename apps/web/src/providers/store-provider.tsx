@@ -2,6 +2,7 @@
 
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
+import type { Persistor } from "redux-persist";
 import { store, persistor } from "@/store";
 import { useState, useEffect, type ReactNode } from "react";
 
@@ -19,7 +20,7 @@ function PersistGateWithTimeout({
   persistor,
 }: {
   children: ReactNode;
-  persistor: { persist: () => Promise<void> };
+  persistor: Persistor;
 }) {
   const [timedOut, setTimedOut] = useState(false);
   useEffect(() => {

@@ -32,7 +32,8 @@ interface CommandPaletteProps {
 }
 
 const NAV_ITEMS = [
-  { label: "Political Pulse", path: "/", icon: LayoutDashboard },
+  { label: "Discover", path: "/", icon: LayoutDashboard },
+  { label: "Political Pulse", path: "/political-pulse", icon: LayoutDashboard },
   { label: "Tactical Map", path: "/map", icon: Map },
   { label: "Constituencies", path: "/constituencies", icon: TableProperties },
   { label: "Parliament", path: "/parliament", icon: Building2 },

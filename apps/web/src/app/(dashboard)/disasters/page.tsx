@@ -199,7 +199,7 @@ function DisastersContent() {
   });
   const { data: anomalies = [] } = useQuery({
     queryKey: ["anomalies", "crisis"],
-    queryFn: fetchAnomalies,
+    queryFn: () => fetchAnomalies("operational"),
     refetchInterval: 15_000,
   });
 

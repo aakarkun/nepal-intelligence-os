@@ -235,3 +235,39 @@ export async function fetchIntelBrief(
   }
   return res.json();
 }
+
+export type WatchlistItemType =
+  | "keyword"
+  | "constituency"
+  | "district"
+  | "price_threshold"
+  | "crisis_severity";
+
+export type WatchlistItem = {
+  id: string;
+  label: string;
+  type: WatchlistItemType;
+  value: string;
+  threshold?: number;
+  createdAt: string;
+  lastTriggeredAt?: string;
+  active: boolean;
+};
+
+export async function createWatchlistItem(body: {
+  label: string;
+  type: WatchlistItemType;
+  value: string;
+  active?: boolean;
+}): Promise<WatchlistItem> {
+  const res = await fetch(`${API_URL}/v1/watchlist`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+    throw new Error(err.detail ?? err.error ?? `API error: ${res.status}`);
+  }
+  return res.json();
+}

@@ -12,10 +12,11 @@ import { useFilterStore } from "@/stores/filter-store";
 import { setBriefingPanelOpen, toggleIntelRail } from "@/store/slices/uiSlice";
 
 const MODULES = [
-  { id: "election", label: "Election", href: "/", ready: true },
+  { id: "discover", label: "Discover", href: "/", ready: true },
   { id: "parliament", label: "Parliament", href: "/parliament", ready: true },
   { id: "economy", label: "Economy", href: "/economy", ready: true },
   { id: "crisis", label: "Crisis", href: "/disasters", ready: true },
+  { id: "world", label: "World", href: "/world", ready: true },
   { id: "media", label: "Media", href: "/news-room", ready: false },
 ] as const;
 
@@ -48,8 +49,12 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
   }, []);
 
   useEffect(() => {
-    if (pathname === "/" || pathname.startsWith("/map") || pathname.startsWith("/constituencies")) {
-      setActiveModule("election");
+    if (pathname === "/") {
+      setActiveModule("discover");
+      return;
+    }
+    if (pathname.startsWith("/political-pulse") || pathname.startsWith("/map") || pathname.startsWith("/constituencies")) {
+      setActiveModule("parliament");
       return;
     }
     if (pathname.startsWith("/parliament")) {
@@ -62,6 +67,10 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
     }
     if (pathname.startsWith("/disasters")) {
       setActiveModule("crisis");
+      return;
+    }
+    if (pathname.startsWith("/world")) {
+      setActiveModule("world");
       return;
     }
     if (pathname.startsWith("/news-room")) {
