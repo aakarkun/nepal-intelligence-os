@@ -1,15 +1,7 @@
 import type { SignalEvent, SignalSeverity, SignalEventType } from "@repo/shared";
 import type { NewsRawItem } from "../sources/news";
+import { stableId } from "../lib/stable-id";
 import { extractEntities } from "./entities";
-
-function simpleHash(str: string): string {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = (h << 5) - h + str.charCodeAt(i);
-    h |= 0;
-  }
-  return Math.abs(h).toString(36);
-}
 
 const CRITICAL_PATTERNS = /\b(emergency|crisis|alert|catastrophe|disaster|evacuat|magnitude\s*[6-9]\.?\d*|m\s*[6-9]\.?\d*)/i;
 const WARNING_PATTERNS = /\b(protest|strike|blockade|curfew|violence|clash|arson|bandh)/i;
@@ -67,7 +59,7 @@ export function normalizeNewsToEvents(
   for (const item of items) {
     const title = item.title ?? "Untitled";
     const body = item.description ?? item.title ?? "";
-    const id = `news-${simpleHash(title + (item.link ?? ""))}`;
+    const id = `news-${stableId(item.link ?? title)}`;
     const timestamp = item.pubDate
       ? new Date(item.pubDate).toISOString()
       : now;

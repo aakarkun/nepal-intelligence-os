@@ -1,19 +1,19 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { persistStore, persistReducer } from "redux-persist";
-import storage from "redux-persist/lib/storage";
 import { watchlistApi } from "./api/watchlistApi";
 import { uiSlice } from "./slices/uiSlice";
+import { persistStorage } from "./storage";
 
 const uiPersistConfig = {
   key: "nepal-intel-ui",
-  storage,
+  storage: persistStorage,
   whitelist: ["briefingPanelOpen", "intelRailOpen", "typeFilter"],
 };
 
 const watchlistApiPersistConfig = {
   key: "nepal-intel-watchlist-api",
-  storage,
+  storage: persistStorage,
   whitelist: ["queries"],
 };
 

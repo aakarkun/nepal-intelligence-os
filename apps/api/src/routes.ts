@@ -18,6 +18,7 @@ import {
   NepseSummarySchema,
   WatchlistItemSchema,
   WatchlistItemTypeSchema,
+  ReactionSchema,
 } from "@repo/shared";
 import {
   getNationalSummary,
@@ -48,6 +49,11 @@ import {
   deleteWatchlistItem,
   toggleWatchlistItemActive,
   updateWatchlistItemLastTriggered,
+  addReaction,
+  removeReaction,
+  getReactionStatus,
+  getReactionsBatch,
+  associateEmailWithFingerprint,
   updateNationalSummary,
   updateConstituencyResult,
   addSignalEvent,
@@ -443,6 +449,78 @@ api.post("/ingest/watchlist/:id/triggered", (c) => {
   const id = c.req.param("id");
   updateWatchlistItemLastTriggered(id, new Date().toISOString());
   return c.json({ ok: true });
+});
+
+// ─── Reactions (likes) ───────────────────────────────────────────────────────
+
+const ReactionCreateSchema = z.object({
+  itemId: z.string().min(1),
+  itemTitle: z.string().max(60),
+  reaction: z.literal("like"),
+  email: z.string().email().optional().nullable(),
+  fingerprint: z.string().min(1),
+});
+
+const ReactionDeleteSchema = z.object({
+  fingerprint: z.string().min(1),
+});
+
+const AssociateEmailSchema = z.object({
+  fingerprint: z.string().min(1),
+  email: z.string().email(),
+});
+
+api.post("/reactions", async (c) => {
+  const body = await c.req.json();
+  const parsed = ReactionCreateSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  const result = addReaction({
+    itemId: parsed.data.itemId,
+    itemTitle: parsed.data.itemTitle,
+    reaction: "like",
+    email: parsed.data.email ?? null,
+    fingerprint: parsed.data.fingerprint,
+  });
+  return c.json(result);
+});
+
+api.delete("/reactions/:itemId", async (c) => {
+  const itemId = c.req.param("itemId");
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = ReactionDeleteSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  const result = removeReaction(itemId, parsed.data.fingerprint);
+  return c.json(result);
+});
+
+// Must be before /reactions/:itemId or "batch" is matched as itemId
+api.get("/reactions/batch", (c) => {
+  const idsParam = c.req.query("ids");
+  const ids = idsParam ? idsParam.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const fp = c.req.query("fp");
+  const result = getReactionsBatch(ids, fp ?? undefined);
+  return c.json(result);
+});
+
+api.get("/reactions/:itemId", (c) => {
+  const itemId = c.req.param("itemId");
+  const fp = c.req.query("fp");
+  const result = getReactionStatus(itemId, fp ?? undefined);
+  return c.json(result);
+});
+
+api.patch("/reactions/associate-email", async (c) => {
+  const body = await c.req.json();
+  const parsed = AssociateEmailSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  const updated = associateEmailWithFingerprint(parsed.data.fingerprint, parsed.data.email);
+  return c.json({ updated });
 });
 
 // ─── Intel Briefing ─────────────────────────────────────────────────────────

@@ -318,6 +318,19 @@ export const FloodAlertsPayloadSchema = z.object({
   alertsSource: z.enum(["dhm", "gdacs"]).optional(),
 });
 
+// ─── Reactions (likes on feed items) ────────────────────────────────────────
+
+export const ReactionSchema = z.object({
+  id: z.string(),
+  itemId: z.string(),
+  itemTitle: z.string().max(60),
+  reaction: z.literal("like"),
+  email: z.string().email().nullable(),
+  fingerprint: z.string(),
+  createdAt: z.string().datetime(),
+});
+export type Reaction = z.infer<typeof ReactionSchema>;
+
 // ─── Watchlist (alerts / Telegram) ───────────────────────────────────────────
 
 export const WatchlistItemTypeSchema = z.enum([

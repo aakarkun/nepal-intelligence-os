@@ -5,6 +5,7 @@
  */
 
 import type { SignalEvent } from "@repo/shared";
+import { stableId } from "../lib/stable-id";
 
 const GDELT_BASE_URL =
   process.env.GDELT_BASE_URL ?? "https://api.gdeltproject.org/api/v2";
@@ -26,15 +27,6 @@ type GdeltArticle = {
 type GdeltResponse = {
   articles?: GdeltArticle[];
 };
-
-function simpleHash(str: string): string {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = (h << 5) - h + str.charCodeAt(i);
-    h |= 0;
-  }
-  return Math.abs(h).toString(36);
-}
 
 async function fetchGdeltEventsFromQuery(options: {
   query: string;
@@ -75,8 +67,8 @@ async function fetchGdeltEventsFromQuery(options: {
 
   const events: SignalEvent[] = [];
   for (const a of articles) {
-    const idSource = a.url ?? a.title ?? Math.random().toString(36);
-    const id = `gdelt-${type}-${simpleHash(idSource)}`;
+    const idSource = a.url ?? a.title ?? "";
+    const id = `gdelt-${type}-${stableId(idSource)}`;
     let timestamp = nowIso;
     if (a.seendate) {
       const d = new Date(a.seendate);

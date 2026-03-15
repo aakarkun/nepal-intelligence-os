@@ -271,3 +271,80 @@ export async function createWatchlistItem(body: {
   }
   return res.json();
 }
+
+export type ReactionStatus = { count: number; liked: boolean };
+
+export async function postReaction(body: {
+  itemId: string;
+  itemTitle: string;
+  reaction: "like";
+  email?: string | null;
+  fingerprint: string;
+}): Promise<{ liked: true; count: number }> {
+  const res = await fetch(`${API_URL}/v1/reactions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+    throw new Error(err.detail ?? err.error ?? `API error: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function deleteReaction(
+  itemId: string,
+  fingerprint: string
+): Promise<{ liked: false; count: number }> {
+  const res = await fetch(`${API_URL}/v1/reactions/${encodeURIComponent(itemId)}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fingerprint }),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+    throw new Error(err.detail ?? err.error ?? `API error: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getReactionStatus(
+  itemId: string,
+  fingerprint?: string
+): Promise<ReactionStatus> {
+  const url = new URL(`${API_URL}/v1/reactions/${encodeURIComponent(itemId)}`);
+  if (fingerprint) url.searchParams.set("fp", fingerprint);
+  const res = await fetch(url.toString());
+  if (!res.ok) return { count: 0, liked: false };
+  return res.json();
+}
+
+export async function getReactionsBatch(
+  ids: string[],
+  fingerprint?: string
+): Promise<Record<string, ReactionStatus>> {
+  if (ids.length === 0) return {};
+  const url = new URL(`${API_URL}/v1/reactions/batch`);
+  url.searchParams.set("ids", ids.slice(0, 50).join(","));
+  if (fingerprint) url.searchParams.set("fp", fingerprint);
+  const res = await fetch(url.toString());
+  if (!res.ok) return {};
+  return res.json();
+}
+
+export async function patchAssociateEmail(
+  fingerprint: string,
+  email: string
+): Promise<{ updated: number }> {
+  const res = await fetch(`${API_URL}/v1/reactions/associate-email`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fingerprint, email }),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+    throw new Error(err.detail ?? err.error ?? `API error: ${res.status}`);
+  }
+  return res.json();
+}

@@ -1,5 +1,6 @@
 import Parser from "rss-parser";
 import type { GeopoliticsArticle } from "@repo/shared";
+import { stableId } from "../lib/stable-id";
 
 const GDELT_TIMEOUT_MS = 10_000;
 const GDELT_BASE =
@@ -27,15 +28,6 @@ const QUERIES: { query: string; panel: GeopoliticsPanel }[] = [
     panel: "un",
   },
 ];
-
-function hashUrl(url: string): string {
-  let h = 0;
-  for (let i = 0; i < url.length; i++) {
-    h = (h << 5) - h + url.charCodeAt(i);
-    h |= 0;
-  }
-  return `gdelt-${(h >>> 0).toString(16)}`;
-}
 
 async function fetchWithTimeout(
   url: string,
@@ -77,7 +69,7 @@ export async function fetchWorldArticles(): Promise<GeopoliticsArticle[]> {
         const link = art.url?.trim();
         if (!link || seen.has(link)) continue;
         seen.add(link);
-        const id = hashUrl(link);
+        const id = `gdelt-${stableId(link)}`;
         const publishedAt = art.seendate
           ? new Date(art.seendate).toISOString()
           : fetchedAt;
@@ -112,7 +104,7 @@ export async function fetchWorldArticles(): Promise<GeopoliticsArticle[]> {
       const link = (item as { link?: string }).link?.trim();
       if (!link || seen.has(link)) continue;
       seen.add(link);
-      const id = hashUrl(link);
+      const id = `gdelt-${stableId(link)}`;
       const publishedAt =
         (item as { isoDate?: string }).isoDate ??
         (item as { pubDate?: string }).pubDate ??

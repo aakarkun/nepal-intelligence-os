@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDiscoverFeed, filterAndSortFeed, type DiscoverTab, type DiscoverTopicFilter } from "@/hooks/use-discover-feed";
 import { FeedItemCard } from "@/components/discover/feed-item-card";
 import { TopicSelector, getPreferredTopics } from "@/components/discover/topic-selector";
@@ -10,6 +11,10 @@ import { SidebarWeather } from "@/components/discover/sidebar-weather";
 import { SidebarMarket } from "@/components/discover/sidebar-market";
 import { SidebarAlerts } from "@/components/discover/sidebar-alerts";
 import { SidebarTrending } from "@/components/discover/sidebar-trending";
+import { EmailPromptModal } from "@/components/discover/email-prompt-modal";
+import { getReactionsBatch } from "@/lib/api";
+import { getFingerprint } from "@/lib/fingerprint";
+import type { ReactionStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const TOPICS: { id: DiscoverTopicFilter; label: string }[] = [
@@ -21,6 +26,16 @@ const TOPICS: { id: DiscoverTopicFilter; label: string }[] = [
   { id: "health", label: "Health" },
   { id: "world", label: "World" },
 ];
+
+const TOPIC_COLORS: Record<DiscoverTopicFilter, string> = {
+  political: "#60a5fa",
+  economic: "#34d399",
+  disaster: "#fb923c",
+  diplomatic: "#a78bfa",
+  security: "#f87171",
+  health: "#f472b6",
+  world: "#a78bfa",
+};
 
 function DiscoverSkeleton() {
   return (
@@ -78,13 +93,16 @@ export default function DiscoverPage() {
   const [topicsOpen, setTopicsOpen] = useState(false);
   const [preferredTypes, setPreferredTypes] = useState<ReturnType<typeof getPreferredTopics>>([]);
   const [trendingKeyword, setTrendingKeyword] = useState<string | null>(null);
+  const [reactionsMap, setReactionsMap] = useState<Record<string, ReactionStatus>>({});
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
 
   useEffect(() => {
     setPreferredTypes(getPreferredTopics());
   }, []);
 
   const displayItems = useMemo(() => {
-    let list = filterAndSortFeed(items, tab, topicFilter, preferredTypes);
+    const effectiveTab = topicFilter != null ? "topics" : tab;
+    let list = filterAndSortFeed(items, effectiveTab, topicFilter, preferredTypes);
     if (trendingKeyword?.trim()) {
       const k = trendingKeyword.trim().toLowerCase();
       list = list.filter(
@@ -95,6 +113,22 @@ export default function DiscoverPage() {
     }
     return list.slice(0, 30);
   }, [items, tab, topicFilter, preferredTypes, trendingKeyword]);
+
+  const displayItemIds = useMemo(() => displayItems.map((i) => i.id), [displayItems]);
+  const displayItemIdsKey = displayItemIds.join(",");
+
+  const refetchReactions = useCallback(() => {
+    if (displayItemIds.length === 0) return;
+    const fp = getFingerprint();
+    getReactionsBatch(displayItemIds, fp).then(setReactionsMap).catch(() => {});
+  }, [displayItemIdsKey]);
+
+  // Fetch reaction counts/liked state whenever we have visible item ids (e.g. after feed loads on reload)
+  useEffect(() => {
+    if (displayItemIds.length === 0) return;
+    const fp = getFingerprint();
+    getReactionsBatch(displayItemIds, fp).then(setReactionsMap).catch(() => {});
+  }, [displayItemIdsKey, loading]);
 
   const heroItem = displayItems.find((i) => i.severity === "critical") ?? displayItems[0];
   const gridItems = displayItems.filter((i) => i.id !== heroItem?.id).slice(0, 30);
@@ -113,7 +147,7 @@ export default function DiscoverPage() {
             onClick={() => setTab("for-you")}
             className={cn(
               "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-              tab === "for-you"
+              tab === "for-you" && !topicFilter
                 ? "bg-nepal-red/15 text-nepal-red"
                 : "text-muted-foreground hover:text-foreground"
             )}
@@ -122,7 +156,10 @@ export default function DiscoverPage() {
           </button>
           <button
             type="button"
-            onClick={() => setTab("top")}
+            onClick={() => {
+              setTab("top");
+              setTopicFilter(null);
+            }}
             className={cn(
               "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               tab === "top"
@@ -132,48 +169,72 @@ export default function DiscoverPage() {
           >
             Top
           </button>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setTopicsOpen((o) => !o)}
-              className={cn(
-                "flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                tab === "topics"
-                  ? "bg-nepal-red/15 text-nepal-red"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Topics <ChevronDown className="h-3.5 w-3.5" />
-            </button>
-            {topicsOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  aria-hidden
-                  onClick={() => setTopicsOpen(false)}
-                />
-                <div className="absolute left-0 top-full z-50 mt-1 min-w-[10rem] rounded-md border border-border bg-card py-1 shadow-md">
-                  {TOPICS.map(({ id, label }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => {
-                        setTab("topics");
-                        setTopicFilter(id);
-                        setTopicsOpen(false);
-                      }}
-                      className={cn(
-                        "w-full px-3 py-2 text-left text-sm",
-                        topicFilter === id ? "bg-nepal-red/10 text-nepal-red" : "hover:bg-muted"
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+          <Popover open={topicsOpen} onOpenChange={setTopicsOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  "flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  (tab === "topics" || topicFilter != null)
+                    ? "bg-nepal-red/15 text-nepal-red"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                style={
+                  topicFilter != null && TOPIC_COLORS[topicFilter]
+                    ? { borderLeft: `3px solid ${TOPIC_COLORS[topicFilter]}` }
+                    : undefined
+                }
+              >
+                {topicFilter != null
+                  ? TOPICS.find((t) => t.id === topicFilter)?.label ?? "Topics"
+                  : "Topics"}{" "}
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-0" align="start" sideOffset={4}>
+              <div className="py-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTab("for-you");
+                    setTopicFilter(null);
+                    setTopicsOpen(false);
+                  }}
+                  className={cn(
+                    "w-full px-3 py-2 text-left text-sm",
+                    !topicFilter ? "bg-nepal-red/10 text-nepal-red" : "hover:bg-muted"
+                  )}
+                >
+                  All
+                </button>
+                {TOPICS.map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setTab("topics");
+                      setTopicFilter(id);
+                      setTopicsOpen(false);
+                    }}
+                    className={cn(
+                      "w-full px-3 py-2 text-left text-sm",
+                      topicFilter === id ? "" : "hover:bg-muted"
+                    )}
+                    style={
+                      topicFilter === id && TOPIC_COLORS[id]
+                        ? {
+                            backgroundColor: `${TOPIC_COLORS[id]}20`,
+                            borderLeft: `3px solid ${TOPIC_COLORS[id]}`,
+                          }
+                        : undefined
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {newCountSinceView > 0 && (
@@ -190,9 +251,11 @@ export default function DiscoverPage() {
           <DiscoverSkeleton />
         ) : displayItems.length === 0 ? (
           <div className="mt-8 flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-4 py-12 text-center">
-            {tab === "topics" && topicFilter ? (
+            {topicFilter != null ? (
               <>
-                <p className="font-medium text-foreground">No items in this topic</p>
+                <p className="font-medium text-foreground">
+                  No {TOPICS.find((t) => t.id === topicFilter)?.label?.toLowerCase() ?? "topic"} stories right now
+                </p>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Try another topic or switch to For You.
                 </p>
@@ -211,16 +274,31 @@ export default function DiscoverPage() {
         ) : (
           <div className="mt-4 space-y-4">
             {heroItem && (
-              <FeedItemCard item={heroItem} variant="hero" />
+              <FeedItemCard
+                item={heroItem}
+                variant="hero"
+                reactionInitial={reactionsMap[heroItem.id]}
+                onEmailPrompt={() => setEmailModalOpen(true)}
+                onReactionChange={refetchReactions}
+              />
             )}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {gridItems.map((item) => (
-                <FeedItemCard key={item.id} item={item} variant="grid" />
+                <FeedItemCard
+                  key={item.id}
+                  item={item}
+                  variant="grid"
+                  reactionInitial={reactionsMap[item.id]}
+                  onEmailPrompt={() => setEmailModalOpen(true)}
+                  onReactionChange={refetchReactions}
+                />
               ))}
             </div>
           </div>
         )}
       </div>
+
+      <EmailPromptModal open={emailModalOpen} onOpenChange={setEmailModalOpen} />
 
       {/* Right sidebar: widgets (hidden below lg) */}
       <aside className="hidden w-[320px] flex-shrink-0 space-y-4 lg:block">

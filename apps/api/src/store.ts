@@ -17,6 +17,7 @@ import type {
   ParliamentSession,
   GeopoliticsArticle,
   WatchlistItem,
+  Reaction,
 } from "@repo/shared";
 
 // ─── In-Memory Stores ────────────────────────────────────────────────────────
@@ -67,6 +68,7 @@ let cabinetEvents: CabinetEvent[] = [];
 let parliamentSession: ParliamentSession | null = null;
 const worldArticles = new Map<string, GeopoliticsArticle>();
 let watchlistItems: WatchlistItem[] = [];
+let reactions: Reaction[] = [];
 const PERSISTED_STATE_PATH =
   process.env.API_STATE_PATH ??
   path.resolve(import.meta.dir, "../.live-api-state.json");
@@ -88,6 +90,7 @@ type PersistedApiState = {
   anomalies: Anomaly[];
   sourceHealth: SourceHealth[];
   earthquakeIncidents: EarthquakeIncident[];
+  crisisIncidents: CrisisIncident[];
   crisisSummary: CrisisSummary | null;
   forexRates: ForexRate[];
   economySummary: EconomySummary | null;
@@ -101,6 +104,7 @@ type PersistedApiState = {
   parliamentSession: ParliamentSession | null;
   worldArticles: GeopoliticsArticle[];
   watchlistItems: WatchlistItem[];
+  reactions: Reaction[];
 };
 
 function slugify(value: string): string {
@@ -177,6 +181,7 @@ function serializeState(): PersistedApiState {
     anomalies: [...anomalies],
     sourceHealth: Array.from(sourceHealth.values()),
     earthquakeIncidents,
+    crisisIncidents: [...crisisIncidents],
     crisisSummary,
     forexRates,
     economySummary,
@@ -190,6 +195,7 @@ function serializeState(): PersistedApiState {
     parliamentSession,
     worldArticles: Array.from(worldArticles.values()),
     watchlistItems: [...watchlistItems],
+    reactions: [...reactions],
   };
 }
 
@@ -483,6 +489,91 @@ export function updateWatchlistItemLastTriggered(
   }
 }
 
+// ─── Reactions ──────────────────────────────────────────────────────────────
+
+export function addReaction(input: {
+  itemId: string;
+  itemTitle: string;
+  reaction: "like";
+  email: string | null;
+  fingerprint: string;
+}): { liked: true; count: number } {
+  const existing = reactions.find(
+    (r) => r.itemId === input.itemId && r.fingerprint === input.fingerprint
+  );
+  if (existing) {
+    const count = reactions.filter((r) => r.itemId === input.itemId).length;
+    return { liked: true, count };
+  }
+  const reaction: Reaction = {
+    id: nanoid10(),
+    itemId: input.itemId,
+    itemTitle: input.itemTitle.slice(0, 60),
+    reaction: "like",
+    email: input.email ?? null,
+    fingerprint: input.fingerprint,
+    createdAt: new Date().toISOString(),
+  };
+  reactions.push(reaction);
+  schedulePersist();
+  void persistState(); // persist immediately so reload doesn't lose likes
+  const count = reactions.filter((r) => r.itemId === input.itemId).length;
+  return { liked: true, count };
+}
+
+export function removeReaction(itemId: string, fingerprint: string): { liked: false; count: number } {
+  reactions = reactions.filter(
+    (r) => !(r.itemId === itemId && r.fingerprint === fingerprint)
+  );
+  schedulePersist();
+  void persistState(); // persist immediately so reload doesn't lose likes
+  const count = reactions.filter((r) => r.itemId === itemId).length;
+  return { liked: false, count };
+}
+
+export function getReactionStatus(
+  itemId: string,
+  fingerprint: string | undefined
+): { count: number; liked: boolean } {
+  const count = reactions.filter((r) => r.itemId === itemId).length;
+  const liked =
+    fingerprint != null &&
+    reactions.some((r) => r.itemId === itemId && r.fingerprint === fingerprint);
+  return { count, liked };
+}
+
+const BATCH_IDS_MAX = 50;
+
+export function getReactionsBatch(
+  ids: string[],
+  fingerprint: string | undefined
+): Record<string, { count: number; liked: boolean }> {
+  const limited = ids.slice(0, BATCH_IDS_MAX);
+  const result: Record<string, { count: number; liked: boolean }> = {};
+  for (const id of limited) {
+    result[id] = getReactionStatus(id, fingerprint);
+  }
+  return result;
+}
+
+export function associateEmailWithFingerprint(
+  fingerprint: string,
+  email: string
+): number {
+  let updated = 0;
+  for (const r of reactions) {
+    if (r.fingerprint === fingerprint && r.email == null) {
+      r.email = email;
+      updated++;
+    }
+  }
+  if (updated > 0) {
+    schedulePersist();
+    void persistState();
+  }
+  return updated;
+}
+
 export async function loadPersistedState(): Promise<boolean> {
   try {
     const liveFile = Bun.file(PERSISTED_STATE_PATH);
@@ -520,6 +611,7 @@ export async function loadPersistedState(): Promise<boolean> {
     }
 
     earthquakeIncidents = raw.earthquakeIncidents ?? [];
+    crisisIncidents = raw.crisisIncidents ?? [];
     crisisSummary = raw.crisisSummary ?? null;
     forexRates = raw.forexRates ?? [];
     economySummary = raw.economySummary ?? null;
@@ -536,6 +628,7 @@ export async function loadPersistedState(): Promise<boolean> {
       worldArticles.set(a.id, a);
     }
     watchlistItems = raw.watchlistItems ?? [];
+    reactions = raw.reactions ?? [];
     return true;
   } catch (err) {
     console.warn(
@@ -597,6 +690,7 @@ export function updateCrisisSummary(summary: CrisisSummary): void {
 
 export function replaceCrisisIncidents(incidents: CrisisIncident[]): void {
   crisisIncidents = incidents;
+  schedulePersist();
 }
 
 export function replaceForexRates(rates: ForexRate[]): void {

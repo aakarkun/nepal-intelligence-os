@@ -13,6 +13,7 @@ import {
   Mountain,
   Globe,
   Heart,
+  Loader2,
   MoreHorizontal,
   Share2,
   Pin,
@@ -21,6 +22,7 @@ import {
 import { cn, timeAgo } from "@/lib/utils";
 import type { SignalEventType } from "@repo/shared";
 import type { FeedItem } from "@/hooks/use-discover-feed";
+import { useReaction } from "@/hooks/use-reaction";
 import { createWatchlistItem } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
@@ -43,6 +45,53 @@ const typeConfig: Record<
 
 function getTypeConfig(type: string): (typeof typeConfig)[SignalEventType] {
   return typeConfig[type as SignalEventType] ?? typeConfig.news;
+}
+
+function LikeButton({
+  liked,
+  count,
+  loading,
+  onToggle,
+  size,
+}: {
+  liked: boolean;
+  count: number;
+  loading: boolean;
+  onToggle: () => void;
+  size: "sm" | "xs";
+}) {
+  const [animating, setAnimating] = useState(false);
+  const iconSize = size === "sm" ? "h-4 w-4" : "h-3.5 w-3.5";
+  const textSize = size === "sm" ? "text-xs" : "text-[10px]";
+
+  const handleClick = () => {
+    if (loading) return;
+    if (!liked) setAnimating(true);
+    onToggle();
+    if (!liked) setTimeout(() => setAnimating(false), 150);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={loading}
+      className="inline-flex items-center gap-1 rounded p-1 transition-transform duration-150 hover:bg-muted/50 disabled:opacity-50"
+      style={{ transform: animating ? "scale(1.3)" : "scale(1)" }}
+      aria-label={liked ? "Unlike" : "Like"}
+    >
+      {loading ? (
+        <Loader2 className={cn(iconSize, "animate-spin text-muted-foreground")} />
+      ) : (
+        <Heart
+          className={cn(iconSize, liked ? "fill-nepal-red text-nepal-red" : "text-muted-foreground")}
+        />
+      )}
+      <span className={cn(textSize, "tabular-nums", liked ? "text-foreground" : "text-muted-foreground")}>
+        {count}
+      </span>
+    </button>
+  );
 }
 
 function MoreMenu({
@@ -121,47 +170,15 @@ function MoreMenu({
   );
 }
 
-const LIKED_KEY = "nepal-intel-discover-liked";
-
-function getLikedSet(): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = localStorage.getItem(LIKED_KEY);
-    if (!raw) return new Set();
-    return new Set(JSON.parse(raw) as string[]);
-  } catch {
-    return new Set();
-  }
-}
-
-function toggleLiked(id: string): void {
-  try {
-    const set = getLikedSet();
-    if (set.has(id)) set.delete(id);
-    else set.add(id);
-    localStorage.setItem(LIKED_KEY, JSON.stringify([...set]));
-  } catch {
-    // ignore
-  }
-}
-
 interface FeedItemCardBaseProps {
   item: FeedItem;
   variant: "hero" | "grid";
   onShare?: (item: FeedItem) => void;
   onWatch?: (item: FeedItem) => void;
-}
-
-function useLiked(itemId: string) {
-  const [liked, setLiked] = useState(false);
-  useEffect(() => {
-    setLiked(getLikedSet().has(itemId));
-  }, [itemId]);
-  const toggle = useCallback(() => {
-    toggleLiked(itemId);
-    setLiked((prev) => !prev);
-  }, [itemId]);
-  return [liked, toggle] as const;
+  reactionInitial?: { count: number; liked: boolean };
+  onEmailPrompt?: () => void;
+  /** Called after like/unlike so parent can refetch batch (keeps likes in sync after reload). */
+  onReactionChange?: () => void;
 }
 
 export function FeedItemCard({
@@ -169,9 +186,22 @@ export function FeedItemCard({
   variant,
   onShare,
   onWatch,
+  reactionInitial,
+  onEmailPrompt,
+  onReactionChange,
 }: FeedItemCardBaseProps) {
   const config = getTypeConfig(item.type);
-  const [liked, toggleLike] = useLiked(item.id);
+  const { count, liked, loading, toggle, setFromBatch } = useReaction(item.id, item.title, {
+    initial: reactionInitial,
+    onEmailPrompt,
+    onReactionChange,
+  });
+
+  // Sync from batch when it arrives (e.g. after reload) so likes/count persist
+  useEffect(() => {
+    if (reactionInitial == null) return;
+    setFromBatch(reactionInitial);
+  }, [reactionInitial, setFromBatch]);
 
   const handleShare = useCallback(() => {
     if (onShare) onShare(item);
@@ -242,18 +272,14 @@ export function FeedItemCard({
                 {item.sourceCount} source{item.sourceCount !== 1 ? "s" : ""}
               </span>
             )}
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => toggleLike()}
-                aria-label={liked ? "Unlike" : "Like"}
-              >
-                <Heart
-                  className={cn("h-4 w-4", liked ? "fill-nepal-red text-nepal-red" : "text-muted-foreground")}
-                />
-              </Button>
+            <div className="flex items-center gap-1.5">
+              <LikeButton
+                liked={liked}
+                count={count}
+                loading={loading}
+                onToggle={toggle}
+                size="sm"
+              />
               <MoreMenu
                 onShare={handleShare}
                 onWatch={handleWatch}
@@ -321,17 +347,13 @@ export function FeedItemCard({
           </span>
         )}
         <div className="mt-1 flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => toggleLike()}
-            aria-label={liked ? "Unlike" : "Like"}
-          >
-            <Heart
-              className={cn("h-3.5 w-3.5", liked ? "fill-nepal-red text-nepal-red" : "text-muted-foreground")}
-            />
-          </Button>
+          <LikeButton
+            liked={liked}
+            count={count}
+            loading={loading}
+            onToggle={toggle}
+            size="xs"
+          />
           <MoreMenu
             onShare={handleShare}
             onWatch={handleWatch}
