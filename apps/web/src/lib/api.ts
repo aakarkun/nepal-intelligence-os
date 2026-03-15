@@ -185,3 +185,32 @@ export function fetchNepseSummary(): Promise<NepseSummary | null> {
 export function fetchElectionDatasets(): Promise<ElectionDataset[]> {
   return fetchJSON("/v1/election-datasets");
 }
+
+export type IntelBriefType = "daily" | "economic" | "crisis" | "custom";
+
+export type IntelBriefRequest = {
+  type: IntelBriefType;
+  query?: string;
+};
+
+export type IntelBriefResponse = {
+  type: string;
+  brief: string;
+  generatedAt: string;
+  dataPoints: number;
+};
+
+export async function fetchIntelBrief(
+  request: IntelBriefRequest
+): Promise<IntelBriefResponse> {
+  const res = await fetch(`${API_URL}/v1/intel/brief`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+    throw new Error(err.detail ?? err.error ?? `API error: ${res.status}`);
+  }
+  return res.json();
+}

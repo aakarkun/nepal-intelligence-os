@@ -8,6 +8,7 @@ import { NavRail } from "./nav-rail";
 import { IntelRail } from "./intel-rail";
 import { Ticker } from "./ticker";
 import { CommandPalette } from "@/components/command-palette";
+import { IntelPanel } from "@/components/intel/intel-panel";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const intelRailOpen = useFilterStore((s) => s.intelRailOpen);
@@ -43,6 +44,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <IntelRail />
       <Ticker />
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
+      <IntelPanel />
     </>
   );
 }

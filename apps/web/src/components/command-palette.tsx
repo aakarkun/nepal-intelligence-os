@@ -144,12 +144,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                 Toggle Diff Mode
               </Command.Item>
               <Command.Item
-                value="Toggle Intel Rail"
+                value="Toggle right panel"
                 onSelect={() => action(toggleIntelRail)}
                 className="flex items-center gap-3 px-3 py-2 rounded-md text-sm cursor-pointer data-[selected=true]:bg-muted"
               >
                 <PanelRight className="h-4 w-4 text-muted-foreground" />
-                Toggle Intel Rail
+                Toggle right panel
               </Command.Item>
               <Command.Item
                 value="Clear anomalies"

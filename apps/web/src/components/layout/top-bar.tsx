@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Command, PanelRight } from "lucide-react";
+import { Command, PanelRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNepalTime } from "@/lib/utils";
 import { useRealtimeStore } from "@/stores/realtime-store";
@@ -33,6 +33,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
   const connectionStatus = useRealtimeStore((s) => s.connectionStatus);
   const setActiveModule = useFilterStore((s) => s.setActiveModule);
   const toggleIntelRail = useFilterStore((s) => s.toggleIntelRail);
+  const setBriefingPanelOpen = useFilterStore((s) => s.setBriefingPanelOpen);
 
   useEffect(() => {
     function tick() {
@@ -112,15 +113,25 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
         })}
       </nav>
 
-      {/* Right — Intel toggle, Command, Status, Clock */}
+      {/* Right — Briefing, Panel toggle, Command, Status, Clock */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Intel rail toggle */}
+        {/* AI Briefing (Sparkles) — opens briefing modal */}
+        <button
+          onClick={() => setBriefingPanelOpen(true)}
+          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+          title="Generate briefing"
+        >
+          <Sparkles className="h-3 w-3" />
+          <span className="hidden xs:inline sm:inline">Briefing</span>
+        </button>
+        {/* Panel rail toggle — show/hide right sidebar */}
         <button
           onClick={toggleIntelRail}
           className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+          title="Toggle right panel"
         >
           <PanelRight className="h-3 w-3" />
-          <span className="hidden xs:inline sm:inline">Intel</span>
+          <span className="hidden xs:inline sm:inline">Panel</span>
         </button>
         {/* ⌘K trigger (icon-only on xs) */}
         <button

@@ -8,6 +8,7 @@ interface FilterState {
   timeRange: { start: string | null; end: string | null };
   diffMode: boolean;
   intelRailOpen: boolean;
+  briefingPanelOpen: boolean;
 
   setActiveModule: (module: string) => void;
   setSelectedProvince: (id: number | null) => void;
@@ -16,6 +17,7 @@ interface FilterState {
   setTimeRange: (range: { start: string | null; end: string | null }) => void;
   toggleDiffMode: () => void;
   toggleIntelRail: () => void;
+  setBriefingPanelOpen: (open: boolean) => void;
   resetFilters: () => void;
 }
 
@@ -27,6 +29,7 @@ export const useFilterStore = create<FilterState>((set) => ({
   timeRange: { start: null, end: null },
   diffMode: false,
   intelRailOpen: true,
+  briefingPanelOpen: false,
 
   setActiveModule: (module) => set({ activeModule: module }),
   setSelectedProvince: (id) => set({ selectedProvince: id }),
@@ -35,6 +38,7 @@ export const useFilterStore = create<FilterState>((set) => ({
   setTimeRange: (range) => set({ timeRange: range }),
   toggleDiffMode: () => set((s) => ({ diffMode: !s.diffMode })),
   toggleIntelRail: () => set((s) => ({ intelRailOpen: !s.intelRailOpen })),
+  setBriefingPanelOpen: (open) => set({ briefingPanelOpen: open }),
   resetFilters: () =>
     set({
       selectedProvince: null,

@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { z } from "zod";
 import {
   ConstituencyResultSchema,
   NationalSummarySchema,
@@ -35,7 +36,6 @@ import {
   setParliamentSession,
   getWorldArticles,
   upsertWorldArticles,
-  getSourceHealth,
   getForexRates,
   getEconomySummary,
   getMarketAssetQuotes,
@@ -57,6 +57,17 @@ import {
 } from "./store";
 import { broadcast } from "./sse";
 import { detectAnomalies } from "./anomaly";
+import {
+  buildContextAndPrompt,
+  callAnthropic,
+  type BriefResponse,
+} from "./intel-brief";
+import { getCircuitBreaker } from "./lib/circuit-breaker";
+
+const IntelBriefRequestSchema = z.object({
+  type: z.enum(["daily", "economic", "crisis", "custom"]),
+  query: z.string().optional(),
+});
 
 const pendingResets = new Set<string>();
 
@@ -369,6 +380,53 @@ api.get("/economy/nepse", (c) => {
 
 api.get("/election-datasets", (c) => {
   return c.json(getElectionDatasets());
+});
+
+// ─── Intel Briefing ─────────────────────────────────────────────────────────
+
+api.post("/intel/brief", async (c) => {
+  if (!process.env.ANTHROPIC_API_KEY?.trim()) {
+    return c.json({ error: "Intel service not configured" }, 503);
+  }
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON" }, 400);
+  }
+  const parsed = IntelBriefRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  const { type, query } = parsed.data;
+  const cb = getCircuitBreaker("anthropic", 3);
+  if (cb.isOpen()) {
+    return c.json(
+      { error: "Briefing service temporarily unavailable", detail: "Too many failures" },
+      503
+    );
+  }
+  try {
+    const { userMessage, dataPoints } = buildContextAndPrompt(type, query);
+    const brief = await callAnthropic(userMessage);
+    cb.recordSuccess();
+    const response: BriefResponse = {
+      type,
+      brief,
+      generatedAt: new Date().toISOString(),
+      dataPoints,
+    };
+    return c.json(response);
+  } catch (err) {
+    cb.recordFailure();
+    const message = err instanceof Error ? err.message : String(err);
+    const isConfig = message.includes("not configured");
+    if (isConfig) return c.json({ error: "Intel service not configured" }, 503);
+    return c.json(
+      { error: "Briefing generation failed", detail: message },
+      502
+    );
+  }
 });
 
 // ─── POST Ingest Routes ─────────────────────────────────────────────────────
