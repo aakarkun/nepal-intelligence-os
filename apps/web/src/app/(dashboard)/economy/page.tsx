@@ -263,7 +263,7 @@ export default function EconomyPage() {
           <div className="flex flex-wrap items-center gap-2">
             <LineChart className="h-4 w-4 text-muted-foreground" />
             <CardTitle className="font-display text-base">NEPSE</CardTitle>
-            {nepse?.sourceName && (
+            {nepse?.index != null && nepse.index > 0 && nepse.sourceName && (
               <span className="text-xs text-muted-foreground">{nepse.sourceName}</span>
             )}
             {nepse?.marketStatus && (

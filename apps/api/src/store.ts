@@ -35,6 +35,8 @@ import * as floodRepo from "./db/repos/flood-alerts.js";
 import * as sourceHealthRepo from "./db/repos/source-health.js";
 import * as anomaliesRepo from "./db/repos/anomalies.js";
 import * as crisisRepo from "./db/repos/crisis-incidents.js";
+import * as constituencyRepo from "./db/repos/constituency-results.js";
+import * as nationalSummariesRepo from "./db/repos/national-summaries.js";
 
 // ─── In-memory (no table yet) ────────────────────────────────────────────────
 
@@ -356,7 +358,7 @@ export async function associateEmailWithFingerprint(
 
 // ─── Writers (sync: in-memory) ───────────────────────────────────────────────
 
-export function updateNationalSummary(summary: NationalSummary): void {
+export async function updateNationalSummary(summary: NationalSummary): Promise<void> {
   const dataset = ensureElectionDataset(
     summary.sourceId,
     summary.sourceName,
@@ -364,9 +366,10 @@ export function updateNationalSummary(summary: NationalSummary): void {
   );
   dataset.nationalSummary = summary;
   currentElectionDatasetId = dataset.meta.id;
+  await nationalSummariesRepo.upsertNationalSummary(dataset.meta.id, summary);
 }
 
-export function updateConstituencyResult(result: ConstituencyResult): void {
+export async function updateConstituencyResult(result: ConstituencyResult): Promise<void> {
   const dataset = ensureElectionDataset(
     result.sourceId,
     result.sourceName,
@@ -374,6 +377,23 @@ export function updateConstituencyResult(result: ConstituencyResult): void {
   );
   dataset.constituencyResults.set(result.constituencyId, result);
   currentElectionDatasetId = dataset.meta.id;
+  const leading = result.candidates?.length
+    ? result.candidates.reduce((a, b) => (a.votes >= b.votes ? a : b))
+    : null;
+  await constituencyRepo.upsertConstituencyResult({
+    id: `${dataset.meta.id}::${result.constituencyId}`,
+    name: result.constituencyName,
+    district: result.districtName ?? null,
+    province: result.provinceId ?? null,
+    leadingCandidate: leading?.candidateName ?? null,
+    party: leading?.partyName ?? null,
+    margin: null,
+    totalVotes: result.totalVotes ?? null,
+    percentReported: null,
+    status: result.status ?? null,
+    dataset: dataset.meta.id,
+    updatedAt: result.lastUpdate,
+  });
 }
 
 export function replaceEarthquakeIncidents(incidents: EarthquakeIncident[]): void {
@@ -408,6 +428,64 @@ export function resetElectionData(datasetId?: string): void {
   }
   electionDatasets.delete(datasetId);
   if (currentElectionDatasetId === datasetId) currentElectionDatasetId = null;
+}
+
+/** Load election datasets and constituency results from DB into in-memory store (e.g. after API restart). */
+export async function hydrateElectionFromDb(): Promise<void> {
+  const [summaryMetaList, allConstituencyRows] = await Promise.all([
+    nationalSummariesRepo.listNationalSummaryDatasetIds(),
+    constituencyRepo.getConstituencyResults({}),
+  ]);
+  if (summaryMetaList.length === 0 && allConstituencyRows.length === 0) return;
+
+  for (const { datasetId, updatedAt } of summaryMetaList) {
+    const summaryPayload = await nationalSummariesRepo.getNationalSummary(datasetId);
+    if (!summaryPayload) continue;
+    const meta = buildDatasetMeta(
+      summaryPayload.sourceId,
+      summaryPayload.sourceName,
+      summaryPayload.timestamp ?? updatedAt
+    );
+    const dataset: ElectionDataset = {
+      meta: { ...meta, id: datasetId },
+      nationalSummary: summaryPayload,
+      constituencyResults: new Map<string, ConstituencyResult>(),
+    };
+    const rowsForDataset = allConstituencyRows.filter((r) => r.dataset === datasetId);
+    for (const row of rowsForDataset) {
+      const constituencyId = row.id.includes("::") ? row.id.split("::").slice(1).join("::") : row.id;
+      const cr: ConstituencyResult = {
+        constituencyId,
+        constituencyName: row.name,
+        districtName: row.district ?? undefined,
+        provinceId: row.province ?? 0,
+        status: (row.status as ConstituencyResult["status"]) ?? "counting",
+        totalVotes: row.totalVotes ?? 0,
+        lastUpdate: row.updatedAt,
+        candidates:
+          row.leadingCandidate && row.party
+            ? [
+                {
+                  candidateId: "",
+                  candidateName: row.leadingCandidate,
+                  partyId: "",
+                  partyName: row.party,
+                  partyColor: "",
+                  votes: 0,
+                },
+              ]
+            : [],
+        sourceId: undefined,
+        sourceName: undefined,
+        sourceFetchedAt: row.updatedAt,
+      };
+      dataset.constituencyResults.set(constituencyId, cr);
+    }
+    electionDatasets.set(datasetId, dataset);
+  }
+  if (summaryMetaList.length > 0) {
+    currentElectionDatasetId = summaryMetaList[0].datasetId;
+  }
 }
 
 // ─── Writers (async: to DB) ──────────────────────────────────────────────────

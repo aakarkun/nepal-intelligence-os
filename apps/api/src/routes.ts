@@ -624,7 +624,7 @@ api.post("/ingest/snapshot", async (c) => {
     broadcast({ type: "anomaly", data: anomaly });
   }
 
-  updateConstituencyResult(newResult);
+  await updateConstituencyResult(newResult);
   broadcast({ type: "snapshot", data: newResult });
 
   return c.json({ ok: true, anomalies: anomalies.length });
@@ -638,7 +638,7 @@ api.post("/ingest/summary", async (c) => {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
 
-  updateNationalSummary(parsed.data);
+  await updateNationalSummary(parsed.data);
   broadcast({ type: "summary", data: parsed.data });
 
   return c.json({ ok: true });

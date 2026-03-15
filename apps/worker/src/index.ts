@@ -184,6 +184,7 @@ async function writeLiveWorkerState(state: LiveWorkerState): Promise<void> {
 }
 
 async function hasCurrentLiveElectionDataset(): Promise<boolean> {
+  if (!env.SCRAPE_ELECTION) return true;
   if (!env.ENABLE_SCRAPLING_ECN) return false;
 
   try {
@@ -969,18 +970,30 @@ async function runLiveNepse(): Promise<void> {
   }
   try {
     const summary = await fetchNepseSummary();
-    await postNepseSummary(API_URL, summary);
-    const signalEvent = nepseToSignalEvent(summary);
-    await postEvent(API_URL, signalEvent);
+    const isFallback = summary.index === 0;
+    if (!isFallback) {
+      await postNepseSummary(API_URL, summary);
+      const signalEvent = nepseToSignalEvent(summary);
+      await postEvent(API_URL, signalEvent);
+      await postSourceHealth(API_URL, {
+        sourceId: "economy:nepse",
+        sourceName: summary.sourceName,
+        lastUpdate: now,
+        errorRate: 0,
+        status: "live",
+        updateCount: 1,
+      });
+    } else {
+      await postSourceHealth(API_URL, {
+        sourceId: "economy:nepse",
+        sourceName: "NEPSE",
+        lastUpdate: now,
+        errorRate: 0,
+        status: "error",
+        updateCount: 0,
+      });
+    }
     cb.recordSuccess();
-    await postSourceHealth(API_URL, {
-      sourceId: "economy:nepse",
-      sourceName: summary.sourceName,
-      lastUpdate: now,
-      errorRate: 0,
-      status: "live",
-      updateCount: 1,
-    });
   } catch (err) {
     cb.recordFailure();
     const state = cb.getState();
@@ -1027,7 +1040,7 @@ async function runLiveCycle(): Promise<void> {
   const state = await readLiveWorkerState();
   const runNepse = shouldRunNepse(state);
   await Promise.allSettled([
-    runLiveEcn(),
+    ...(env.SCRAPE_ELECTION ? [runLiveEcn()] : []),
     runLiveNews(),
     runLiveSocial(),
     runLiveCrisis(),
@@ -1100,13 +1113,19 @@ console.log(`  Mode    : ${MODE}`);
 if (MODE === "replay") {
   console.log(`  Speed   : ${REPLAY_SPEED}x`);
 } else {
-  console.log(
-    `  ECN     : ${
-      env.ENABLE_SCRAPLING_ECN ? "Scrapling/Ekantipur" : "Legacy HTTP parser"
-    }`
-  );
-  if (env.ENABLE_SCRAPLING_ECN) {
-    console.log(`  Delay   : ${env.SCRAPLING_REQUEST_DELAY_MS}ms/request`);
+  if (env.SCRAPE_ELECTION) {
+    console.log(
+      `  ECN     : ${
+        env.ENABLE_SCRAPLING_ECN ? "Scrapling/Ekantipur" : "Legacy HTTP parser"
+      }`
+    );
+    if (env.ENABLE_SCRAPLING_ECN) {
+      console.log(`  Delay   : ${env.SCRAPLING_REQUEST_DELAY_MS}ms/request`);
+    }
+  } else {
+    console.log(
+      "  ECN     : disabled (election finalized). Set SCRAPE_ELECTION=true to re-enable."
+    );
   }
 }
 console.log("──────────────────────────────────────────");

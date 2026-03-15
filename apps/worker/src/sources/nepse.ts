@@ -249,7 +249,7 @@ export async function fetchNepseSummary(): Promise<NepseSummary> {
 
   return {
     sourceId: "nepse",
-    sourceName: "NEPSE (unavailable)",
+    sourceName: "NEPSE",
     timestamp: scrapedAt,
     index: 0,
     change: null,

@@ -7,6 +7,21 @@ Once Docker is installed, you can run the API, Worker, and Postgres with one com
 
 ---
 
+## Environment variables
+
+- **One root `.env`** (optional): Copy from `.env.example` at repo root. Used for **local dev** (when you run `bun run dev:api` / `dev:worker` / `dev:web` from root, the runner loads root `.env`) and for **Docker** (Compose reads root `.env` for variable substitution and passes only what each service needs).
+- **Per-app `.env`**: Each app has its own `.env.example` listing only that app’s variables. Use per-app `.env` when running a single app from its directory (e.g. `cd apps/api && bun run dev`). In Docker, **env is set by Compose** (see below); no per-app `.env` is required inside containers.
+
+| App    | Needs                                                                 | In Docker (set by Compose) |
+|--------|-----------------------------------------------------------------------|----------------------------|
+| **API**   | `API_PORT`, `DATABASE_URL`, optional `WORKER_SECRET`, `ADMIN_SECRET`, `ANTHROPIC_API_KEY` | All set in `docker-compose.yml`; optional ones from root `.env` |
+| **Worker** | `API_URL`, optional `WORKER_SECRET`, `ADMIN_SECRET`, `MODE`, plus feeds/cron/etc. | Same; optional from root `.env` |
+| **Web**   | `NEXT_PUBLIC_*` only (no DB). Run locally; not in Compose.             | N/A |
+
+To pass secrets into Docker (e.g. `WORKER_SECRET`, `ADMIN_SECRET`, `ANTHROPIC_API_KEY`), create a `.env` at repo root from `.env.example` and set the values. Compose will substitute them into the `api` and `worker` services. No root `.env` is required for a minimal run (DB + API + Worker work with defaults).
+
+---
+
 ## 1. Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) (Desktop or Engine)
@@ -28,7 +43,7 @@ This will:
 2. Build and start **API** (port 3001); migrations run on startup
 3. Build and start **Worker** (polls feeds and posts to API)
 
-First run can take a few minutes while images build.
+First run can take a few minutes while images build. The worker image includes **fixtures** (for bootstrap/replay) and **Python + Scrapling** (for live ECN). If you pulled changes that touch `apps/worker` or `apps/scrapling`, rebuild with `docker compose up --build` (or `docker compose build --no-cache worker` then `docker compose up -d`).
 
 ---
 
@@ -57,22 +72,18 @@ Then open **http://localhost:3000** — Discover, Feed, Map, etc. will use the A
 
 ---
 
-## 5. Optional: Worker secret
+## 5. Optional: Worker secret and other vars
 
-To protect the worker-state endpoints, set the same secret for API and Worker:
+To protect the worker-state endpoints or set admin/Anthropic keys, use a root `.env` (copy from `.env.example`):
 
 ```bash
-# .env in repo root (or export before docker compose up)
+# .env in repo root
 WORKER_SECRET=your-secret-here
+# ADMIN_SECRET=...
+# ANTHROPIC_API_KEY=...
 ```
 
-Then pass it into Compose:
-
-```bash
-WORKER_SECRET=your-secret-here docker compose up --build
-```
-
-If you don’t set `WORKER_SECRET`, the endpoints still work (no auth).
+Compose reads root `.env` for substitution, so `WORKER_SECRET=your-secret-here docker compose up --build` also works. If you don’t set `WORKER_SECRET`, the endpoints still work (no auth).
 
 ---
 

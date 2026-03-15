@@ -8,6 +8,13 @@
       "when": 1773566014400,
       "tag": "0000_blue_zeigeist",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1742130000000,
+      "tag": "0001_national_summaries",
+      "breakpoints": true
     }
   ]
 }

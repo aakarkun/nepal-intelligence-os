@@ -15,8 +15,9 @@ dist/
 out/
 .turbo/
 
-# Environment
+# Environment (root and per-app; .env.example is committed)
 .env
+**/.env
 .env.local
 .env.*.local
 

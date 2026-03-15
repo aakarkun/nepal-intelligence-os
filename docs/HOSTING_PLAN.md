@@ -150,8 +150,17 @@ No Postgres container needed when using Neon; one Neon DB is shared by the API.
 
 ---
 
-## 8. Summary
+## 8. Before deploying to production (checklist)
+
+- [ ] Set **WORKER_SECRET** (same value in API and Worker) so only your worker can call GET/PATCH `/v1/worker-state`.
+- [ ] Optionally set **ADMIN_SECRET** (API + Worker) for admin-only endpoints.
+- [ ] Use a hosted Postgres (e.g. Neon) and set **DATABASE_URL** on the API; run migrations once.
+
+---
+
+## 9. Summary
 
 - **One Postgres (local or Neon)** is enough; only the **API** uses it.
 - **One Docker container per process** (API, Worker, and optionally Web) is better than stuffing all three into a single container.
 - **Neon** works with any hosting: local, Docker, or PaaS. Set `DATABASE_URL` on the API and run migrations once; the rest of the stack is unchanged.
+- **When deploying to web:** set WORKER_SECRET (and optionally ADMIN_SECRET) so worker-state and admin endpoints aren’t open.

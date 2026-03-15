@@ -5,6 +5,7 @@ import { createSSEResponse, startHeartbeat } from "./sse";
 import { seedFromFixturesIfEmpty } from "./seed";
 import { runMigrations } from "./db/migrate.js";
 import { closeDb } from "./db/client.js";
+import { hydrateElectionFromDb } from "./store.js";
 
 const app = new Hono();
 
@@ -25,6 +26,7 @@ const port = Number(process.env.API_PORT) || 3001;
 await runMigrations();
 console.log("[api] migrations complete");
 
+await hydrateElectionFromDb();
 await seedFromFixturesIfEmpty();
 
 process.on("SIGTERM", async () => {

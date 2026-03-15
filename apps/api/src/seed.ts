@@ -1,16 +1,15 @@
 import path from "node:path";
 import type { NationalSummary } from "@repo/shared";
 import { ConstituencyResultSchema, NationalSummarySchema } from "@repo/shared";
-import {
-  getConstituencyResults,
-  updateNationalSummary,
-  updateConstituencyResult,
-} from "./store";
+import { updateNationalSummary, updateConstituencyResult } from "./store";
 
 const FIXTURES_DIR = path.resolve(import.meta.dir, "../../worker/fixtures");
 
 export async function seedFromFixturesIfEmpty(): Promise<void> {
-  if (getConstituencyResults().length > 0) return;
+  const existing = await import("./db/repos/constituency-results.js").then((m) =>
+    m.getConstituencyResults({})
+  );
+  if (existing.length > 0) return;
 
   try {
     const [constituenciesRaw, summariesRaw] = await Promise.all([
@@ -25,7 +24,7 @@ export async function seedFromFixturesIfEmpty(): Promise<void> {
     for (const item of constituencyList) {
       const parsed = ConstituencyResultSchema.safeParse(item);
       if (parsed.success) {
-        updateConstituencyResult(parsed.data);
+        await updateConstituencyResult(parsed.data);
         seeded++;
       }
     }
@@ -46,7 +45,7 @@ export async function seedFromFixturesIfEmpty(): Promise<void> {
         (a, b) =>
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       )[0];
-      updateNationalSummary(latest);
+      await updateNationalSummary(latest);
       console.log(
         "[nepal-intelligence-os] Seeded national summary from fixtures"
       );

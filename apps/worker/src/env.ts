@@ -19,6 +19,8 @@ export const env = {
   ENABLE_GDELT: process.env.ENABLE_GDELT === "true",
   ENABLE_REDDIT: process.env.ENABLE_REDDIT === "true",
   ENABLE_SCRAPLING_ECN: process.env.ENABLE_SCRAPLING_ECN !== "false",
+  /** When false (default), election scrape is disabled — data is finalized. Set to "true" to re-enable scraping. */
+  SCRAPE_ELECTION: process.env.SCRAPE_ELECTION === "true",
   ECN_BASE_URL:
     process.env.ECN_BASE_URL ?? "https://election.ekantipur.com/?lng=eng",
   SCRAPLING_ECN_SCRIPT_PATH:

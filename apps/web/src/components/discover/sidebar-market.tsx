@@ -41,8 +41,9 @@ export function SidebarMarket() {
   const btc = assets.find((a) => a.assetCode === "BTC" || a.assetCode?.toLowerCase() === "btc");
   const gold = assets.find((a) => a.assetCode === "XAU" || a.assetCode?.toLowerCase().includes("gold"));
 
+  const hasRealNepse = nepse != null && nepse.index > 0;
   const hasAny =
-    nepse != null ||
+    hasRealNepse ||
     usd != null ||
     inr != null ||
     aud != null ||
@@ -58,20 +59,20 @@ export function SidebarMarket() {
     <div className="rounded-lg border border-border bg-card p-4">
       <h3 className="text-sm font-medium text-foreground">Market Pulse</h3>
       <div className="mt-2 space-y-2 text-sm">
-        {nepse != null && (
+        {hasRealNepse && (
           <div className="flex justify-between gap-2">
             <span className="text-muted-foreground">NEPSE</span>
             <span className="tabular-nums">
-              {nepse.index.toLocaleString()}
-              {nepse.changePercent != null && (
+              {nepse!.index.toLocaleString()}
+              {nepse!.changePercent != null && (
                 <span
                   className={
-                    (nepse.changePercent ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"
+                    (nepse!.changePercent ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"
                   }
                 >
                   {" "}
-                  {(nepse.changePercent ?? 0) >= 0 ? "+" : ""}
-                  {(nepse.changePercent ?? 0).toFixed(2)}%
+                  {(nepse!.changePercent ?? 0) >= 0 ? "+" : ""}
+                  {(nepse!.changePercent ?? 0).toFixed(2)}%
                 </span>
               )}
               {!open && (

@@ -6,6 +6,8 @@ Use **local PostgreSQL** for development and verification. You can add Neon (or 
 
 ## Local PostgreSQL setup (pick one)
 
+**Recommendation:** Use **Option B (Docker)** so you don’t install Postgres on the host, and it matches the stack you run with `docker compose up`. You can also start only the DB from Compose: `docker compose up -d db`, then use `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/nepal_intel` for local API/worker.
+
 ### Option A — Homebrew (macOS)
 
 ```bash
@@ -104,3 +106,12 @@ For local dev, **local PostgreSQL is enough** (Homebrew or Docker above). When y
 3. Add `DATABASE_URL` to production `.env`.
 4. Run `bun run db:migrate` once against that URL.
 5. Confirm all 17 tables in Neon’s table viewer.
+
+---
+
+## When deploying to web (TODO)
+
+Before going live, set these in production so the worker and admin endpoints aren’t open:
+
+- **WORKER_SECRET** — Set the same value in API and Worker env. Protects GET/PATCH `/v1/worker-state`.
+- **ADMIN_SECRET** — Optional; protects admin actions (e.g. circuit breaker reset). Set in both API and Worker if you use them.

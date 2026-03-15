@@ -259,6 +259,12 @@ export const constituencyResults = pgTable(
   ]
 );
 
+export const nationalSummaries = pgTable("national_summaries", {
+  datasetId: text("dataset_id").primaryKey(),
+  payload: jsonb("payload").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
 export const sourceHealth = pgTable("source_health", {
   sourceId: text("source_id").primaryKey(),
   label: text("label").notNull(),
