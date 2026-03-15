@@ -7,7 +7,9 @@ import { Command, PanelRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNepalTime } from "@/lib/utils";
 import { useRealtimeStore } from "@/stores/realtime-store";
+import { useDispatch } from "react-redux";
 import { useFilterStore } from "@/stores/filter-store";
+import { setBriefingPanelOpen, toggleIntelRail } from "@/store/slices/uiSlice";
 
 const MODULES = [
   { id: "election", label: "Election", href: "/", ready: true },
@@ -32,8 +34,9 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
   const pathname = usePathname();
   const connectionStatus = useRealtimeStore((s) => s.connectionStatus);
   const setActiveModule = useFilterStore((s) => s.setActiveModule);
-  const toggleIntelRail = useFilterStore((s) => s.toggleIntelRail);
-  const setBriefingPanelOpen = useFilterStore((s) => s.setBriefingPanelOpen);
+  const dispatch = useDispatch();
+  const openBriefing = () => dispatch(setBriefingPanelOpen(true));
+  const togglePanel = () => dispatch(toggleIntelRail());
 
   useEffect(() => {
     function tick() {
@@ -117,7 +120,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
       <div className="flex items-center gap-2 sm:gap-3">
         {/* AI Briefing (Sparkles) — opens briefing modal */}
         <button
-          onClick={() => setBriefingPanelOpen(true)}
+          onClick={openBriefing}
           className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
           title="Generate briefing"
         >
@@ -126,7 +129,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
         </button>
         {/* Panel rail toggle — show/hide right sidebar */}
         <button
-          onClick={toggleIntelRail}
+          onClick={togglePanel}
           className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
           title="Toggle right panel"
         >

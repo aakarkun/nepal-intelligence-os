@@ -21,7 +21,9 @@ import {
 } from "lucide-react";
 import { fetchConstituencies } from "@/lib/api";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
+import { useDispatch } from "react-redux";
 import { useFilterStore } from "@/stores/filter-store";
+import { toggleIntelRail } from "@/store/slices/uiSlice";
 import { useRealtimeStore } from "@/stores/realtime-store";
 
 interface CommandPaletteProps {
@@ -46,7 +48,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
   const { selectedDatasetId } = useElectionDatasetStore();
   const toggleDiffMode = useFilterStore((s) => s.toggleDiffMode);
-  const toggleIntelRail = useFilterStore((s) => s.toggleIntelRail);
+  const dispatch = useDispatch();
+  const togglePanel = () => dispatch(toggleIntelRail());
   const clearAnomalies = useRealtimeStore((s) => s.clearAnomalies);
 
   const { data: constituencies } = useQuery({
@@ -145,7 +148,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               </Command.Item>
               <Command.Item
                 value="Toggle right panel"
-                onSelect={() => action(toggleIntelRail)}
+                onSelect={() => action(togglePanel)}
                 className="flex items-center gap-3 px-3 py-2 rounded-md text-sm cursor-pointer data-[selected=true]:bg-muted"
               >
                 <PanelRight className="h-4 w-4 text-muted-foreground" />

@@ -3,7 +3,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { X, Loader2, Copy, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useFilterStore } from "@/stores/filter-store";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "@/store";
+import { setBriefingPanelOpen } from "@/store/slices/uiSlice";
 import { fetchIntelBrief, type IntelBriefType, type IntelBriefResponse } from "@/lib/api";
 import { formatNepalTime } from "@/lib/utils";
 
@@ -15,8 +17,9 @@ const BRIEF_TYPES: { id: IntelBriefType; label: string }[] = [
 ];
 
 export function IntelPanel() {
-  const open = useFilterStore((s) => s.briefingPanelOpen);
-  const setOpen = useFilterStore((s) => s.setBriefingPanelOpen);
+  const open = useSelector((s: RootState) => s.ui.briefingPanelOpen);
+  const dispatch = useDispatch();
+  const setOpen = (value: boolean) => dispatch(setBriefingPanelOpen(value));
   const [briefType, setBriefType] = useState<IntelBriefType>("daily");
   const [customQuery, setCustomQuery] = useState("");
   const [loading, setLoading] = useState(false);

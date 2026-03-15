@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Syne, JetBrains_Mono } from "next/font/google";
+import { StoreProvider } from "@/providers/store-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { SSEProvider } from "@/providers/sse-provider";
 import "./globals.css";
@@ -33,9 +34,11 @@ export default function RootLayout({
       <body
         className={`${syne.variable} ${jetbrainsMono.variable} font-mono antialiased`}
       >
-        <QueryProvider>
-          <SSEProvider>{children}</SSEProvider>
-        </QueryProvider>
+        <StoreProvider>
+          <QueryProvider>
+            <SSEProvider>{children}</SSEProvider>
+          </QueryProvider>
+        </StoreProvider>
       </body>
     </html>
   );
