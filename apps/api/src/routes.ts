@@ -484,6 +484,7 @@ api.post("/ingest/crisis/flood-alerts", async (c) => {
     alerts: parsed.data.alerts,
     seasonInactive: parsed.data.seasonInactive,
     lastUpdated: parsed.data.lastUpdated,
+    alertsSource: parsed.data.alertsSource,
   });
   return c.json({ ok: true, count: parsed.data.alerts.length });
 });

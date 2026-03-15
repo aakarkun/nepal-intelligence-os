@@ -102,6 +102,24 @@ describe("FloodAlertSchema", () => {
     };
     expect(FloodAlertSchema.parse(withoutTrend)).toEqual(withoutTrend);
   });
+
+  test("accepts source GDACS (regional fallback)", () => {
+    const gdacs = {
+      id: "gdacs-123",
+      stationName: "Flood event",
+      river: "Regional",
+      district: "",
+      province: 1,
+      waterLevel: 0,
+      normalLevel: 0,
+      warningLevel: 1,
+      dangerLevel: 2,
+      status: "warning" as const,
+      observedAt: new Date().toISOString(),
+      source: "GDACS" as const,
+    };
+    expect(FloodAlertSchema.parse(gdacs)).toEqual(gdacs);
+  });
 });
 
 describe("GeopoliticsArticleSchema", () => {

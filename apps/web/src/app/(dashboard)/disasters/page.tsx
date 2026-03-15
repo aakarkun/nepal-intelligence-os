@@ -594,6 +594,11 @@ function DisastersContent() {
                 <CloudRain className="h-4 w-4 text-muted-foreground" />
                 <h2 className="font-display text-base font-semibold">Flood & Landslide</h2>
               </div>
+              {floodData?.alertsSource === "gdacs" && (
+                <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+                  Showing GDACS regional data. Station-level DHM data pending access approval.
+                </div>
+              )}
               {floodData?.seasonInactive && (
                 <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
                   Monsoon monitoring active June–Sept. Showing last recorded bulletin.
@@ -675,7 +680,7 @@ function DisastersContent() {
               )}
               {!floodData && (
                 <p className="text-sm text-muted-foreground">
-                  No flood station data yet. DHM bulletin is checked every 3 hours.
+                  No flood station data yet. DHM bulletin or GDACS regional fallback is checked every 3 hours.
                 </p>
               )}
             </CardContent>

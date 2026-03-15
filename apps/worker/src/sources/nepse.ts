@@ -1,6 +1,12 @@
 import { parseHTML } from "linkedom";
 import type { NepseSummary, NepseMarketStatus } from "@repo/shared";
 
+/**
+ * NEPSE has no official public API. We scrape Merolagani (fallback Sharesansar).
+ * Alternative: nepse-alpha (Python) https://github.com/basic-blogs/nepse-alpha
+ * reverse-engineers NEPSE's internal API — consider it for production.
+ * Scraping: rate-limit to every 5 min during market hours, use a proper User-Agent.
+ */
 const NEPSE_FETCH_TIMEOUT_MS = 10_000;
 const MEROLAGANI_SUMMARY = "https://merolagani.com/MarketSummary.aspx";
 const SHARESANSAR_INDEX = "https://www.sharesansar.com/nepse-index";
@@ -12,17 +18,34 @@ function parseNumber(s: string | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function isNepalMarketOpen(date: Date): boolean {
+const NPT_OFFSET_MINS = 5 * 60 + 45;
+
+/** NPT date as YYYY-MM-DD (for holiday check). */
+export function getNptDateString(date: Date): string {
+  const nptOffsetMs = (5 * 60 + 45) * 60 * 1000;
+  return new Date(date.getTime() + nptOffsetMs).toISOString().slice(0, 10);
+}
+
+/** NPT day of week (0 = Sunday … 6 = Saturday). Market runs Sun–Thu; closed Fri/Sat. */
+export function getNepalDayOfWeek(date: Date): number {
+  const utcTimeMins = date.getUTCHours() * 60 + date.getUTCMinutes();
+  const nptTimeMins = utcTimeMins + NPT_OFFSET_MINS;
+  const utcDay = date.getUTCDay();
+  const nptDay = nptTimeMins >= 24 * 60 ? (utcDay + 1) % 7 : utcDay;
+  return nptDay;
+}
+
+/** 11 AM – 3 PM NPT, Sun–Thu. Closed Friday/Saturday (Nepal weekend). */
+export function isNepalMarketOpen(date: Date): boolean {
   const utcHours = date.getUTCHours();
   const utcMinutes = date.getUTCMinutes();
   const utcDay = date.getUTCDay();
   const utcTimeMins = utcHours * 60 + utcMinutes;
-  const nptOffsetMins = 5 * 60 + 45;
-  const nptTimeMins = utcTimeMins + nptOffsetMins;
+  const nptTimeMins = utcTimeMins + NPT_OFFSET_MINS;
   const nptHours = Math.floor(nptTimeMins / 60) % 24;
   const nptDay = nptTimeMins >= 24 * 60 ? (utcDay + 1) % 7 : utcDay;
-  const isWeekday = nptDay >= 0 && nptDay <= 4;
-  return isWeekday && nptHours >= 11 && nptHours < 15;
+  const isMarketDay = nptDay >= 0 && nptDay <= 4; // Sun–Thu
+  return isMarketDay && nptHours >= 11 && nptHours < 15;
 }
 
 async function fetchWithTimeout(

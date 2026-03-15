@@ -185,49 +185,46 @@ export function summarizeForexRates(
   };
 }
 
-const ASSET_DEFS = [
+const METAL_DEFS = [
   { assetCode: "XAU", assetName: "Gold", class: "metal" as const },
   { assetCode: "XAG", assetName: "Silver", class: "metal" as const },
-  { assetCode: "BTC", assetName: "Bitcoin", class: "crypto" as const },
 ];
 
-export async function fetchMarketAssetQuotes(
-  previousQuotes: MarketAssetQuote[] = []
-): Promise<MarketAssetQuote[]> {
-  const previousByCode = new Map(previousQuotes.map((quote) => [quote.assetCode, quote]));
+const COINGECKO_IDS: Record<string, string> = {
+  BTC: "bitcoin",
+  ETH: "ethereum",
+};
 
-  const quotes = await Promise.all(
-    ASSET_DEFS.map(async (asset) => {
+type CoinGeckoResponse = Record<string, { usd?: number }>;
+
+async function fetchMetalsFromGoldApi(
+  previousByCode: Map<string, MarketAssetQuote>
+): Promise<MarketAssetQuote[]> {
+  return Promise.all(
+    METAL_DEFS.map(async (asset) => {
       const res = await fetch(`https://api.gold-api.com/price/${asset.assetCode}`, {
         headers: { Accept: "application/json" },
       });
-
-      if (!res.ok) {
-        throw new Error(`Gold API ${asset.assetCode} request failed: ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`Gold API ${asset.assetCode}: ${res.status}`);
       const payload = (await res.json()) as GoldApiResponse;
       if (typeof payload.price !== "number" || !Number.isFinite(payload.price)) {
         throw new Error(`Gold API ${asset.assetCode} returned no usable price`);
       }
-
       const previous = previousByCode.get(asset.assetCode);
       const change =
         previous?.price === undefined
           ? null
           : Number((payload.price - previous.price).toFixed(2));
       const changePercent =
-        change === null || previous.price === 0
+        change === null || previous?.price === 0
           ? null
-          : Number(((change / previous.price) * 100).toFixed(3));
-
+          : Number(((change / previous!.price) * 100).toFixed(3));
       let trend: MarketAssetQuote["trend"] = "new";
       if (change !== null) {
         if (change > 0) trend = "up";
         else if (change < 0) trend = "down";
         else trend = "flat";
       }
-
       return {
         assetCode: asset.assetCode,
         assetName: payload.name ?? asset.assetName,
@@ -246,6 +243,80 @@ export async function fetchMarketAssetQuotes(
       } satisfies MarketAssetQuote;
     })
   );
+}
 
-  return quotes.sort((a, b) => a.assetCode.localeCompare(b.assetCode));
+/** CoinGecko free tier: no API key, ~60s updates. */
+async function fetchCryptoFromCoinGecko(
+  previousByCode: Map<string, MarketAssetQuote>
+): Promise<MarketAssetQuote[]> {
+  const ids = Object.keys(COINGECKO_IDS).join(",");
+  const res = await fetch(
+    `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`,
+    { headers: { Accept: "application/json" } }
+  );
+  if (!res.ok) throw new Error(`CoinGecko request failed: ${res.status}`);
+  const data = (await res.json()) as CoinGeckoResponse;
+  const now = new Date().toISOString();
+  const quotes: MarketAssetQuote[] = [];
+  const names: Record<string, string> = { BTC: "Bitcoin", ETH: "Ethereum" };
+  for (const [code, id] of Object.entries(COINGECKO_IDS)) {
+    const usd = data[id]?.usd;
+    if (typeof usd !== "number" || !Number.isFinite(usd)) continue;
+    const previous = previousByCode.get(code);
+    const change =
+      previous?.price === undefined
+        ? null
+        : Number((usd - previous.price).toFixed(2));
+    const changePercent =
+      change === null || previous?.price === 0
+        ? null
+        : Number(((change / previous!.price) * 100).toFixed(3));
+    let trend: MarketAssetQuote["trend"] = "new";
+    if (change !== null) {
+      if (change > 0) trend = "up";
+      else if (change < 0) trend = "down";
+      else trend = "flat";
+    }
+    quotes.push({
+      assetCode: code,
+      assetName: names[code] ?? code,
+      class: "crypto",
+      currency: "USD",
+      price: usd,
+      previousPrice: previous?.price ?? null,
+      change,
+      changePercent,
+      trend,
+      timestamp: now,
+    });
+  }
+  return quotes;
+}
+
+export type FetchMarketAssetQuotesOptions = {
+  /** When true, skip CoinGecko (e.g. circuit open); use previous crypto from previousQuotes. */
+  skipCrypto?: boolean;
+  /** Called when CoinGecko request fails so caller can record circuit breaker failure. */
+  onCryptoFailure?: () => void;
+};
+
+export async function fetchMarketAssetQuotes(
+  previousQuotes: MarketAssetQuote[] = [],
+  options: FetchMarketAssetQuotesOptions = {}
+): Promise<MarketAssetQuote[]> {
+  const { skipCrypto = false, onCryptoFailure } = options;
+  const previousByCode = new Map(previousQuotes.map((q) => [q.assetCode, q]));
+  const metals = await fetchMetalsFromGoldApi(previousByCode);
+  let crypto: MarketAssetQuote[];
+  if (skipCrypto) {
+    crypto = previousQuotes.filter((q) => q.class === "crypto");
+  } else {
+    try {
+      crypto = await fetchCryptoFromCoinGecko(previousByCode);
+    } catch {
+      onCryptoFailure?.();
+      crypto = previousQuotes.filter((q) => q.class === "crypto");
+    }
+  }
+  return [...metals, ...crypto].sort((a, b) => a.assetCode.localeCompare(b.assetCode));
 }
