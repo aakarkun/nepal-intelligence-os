@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@repo/shared": "workspace:*",
-    "hono": "^4.6"
+    "hono": "^4.6",
+    "zod": "^3.23"
   },
   "devDependencies": {
     "@types/bun": "latest",

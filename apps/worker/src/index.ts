@@ -62,20 +62,6 @@ async function loadNepalHolidays(): Promise<void> {
   }
 }
 
-/** NEPSE closed on Nepal public holidays (Dashain, Tihar, national days). Loaded at live scheduler start. */
-let nepalHolidays: Set<string> = new Set();
-async function loadNepalHolidays(): Promise<void> {
-  try {
-    const configPath = path.join(import.meta.dir, "..", "config", "nepal-holidays.json");
-    const file = Bun.file(configPath);
-    if (!(await file.exists())) return;
-    const json = (await file.json()) as { dates?: string[] };
-    nepalHolidays = new Set(json.dates ?? []);
-  } catch (e) {
-    console.warn("[worker] Could not load nepal-holidays.json:", e instanceof Error ? e.message : e);
-  }
-}
-
 async function consumeResetIfRequested(sourceId: string): Promise<boolean> {
   if (!ADMIN_SECRET) return false;
   try {
