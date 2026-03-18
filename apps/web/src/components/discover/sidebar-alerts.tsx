@@ -73,7 +73,7 @@ export function SidebarAlerts() {
   const hasCritical = display.some((a) => a.severity === "danger" || a.severity === "extreme_danger");
 
   return (
-    <div className="rounded-lg border border-[rgba(255,255,255,0.08)] bg-card p-4">
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
       <div className="flex items-center gap-2">
         <h3 className="text-sm font-medium text-foreground">Active Alerts</h3>
         {hasCritical && (

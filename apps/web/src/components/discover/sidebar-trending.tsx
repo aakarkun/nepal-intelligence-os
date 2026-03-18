@@ -51,7 +51,7 @@ export function SidebarTrending({
   if (trending.length < MIN_ENTITIES) return null;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
       <h3 className="text-sm font-medium text-foreground">Trending</h3>
       <p className="mt-0.5 text-[10px] text-muted-foreground">
         Based on signals from the last 6 hours

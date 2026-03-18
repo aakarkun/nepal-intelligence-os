@@ -247,7 +247,7 @@ export function FeedItemCard({
     return (
       <article
         className={cn(
-          "flex flex-col gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:gap-6 sm:p-5"
+          "flex flex-col gap-4 rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm sm:flex-row sm:gap-6 sm:p-5"
         )}
       >
         <div className="min-w-0 flex-1 space-y-2">
@@ -311,7 +311,7 @@ export function FeedItemCard({
   }
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card">
+    <article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-sm">
       <div className="relative h-32 w-full flex-shrink-0">
         {item.imageUrl ? (
           <img

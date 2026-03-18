@@ -43,7 +43,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className={`${syne.variable} ${jetbrainsMono.variable} font-mono antialiased`}
+        className={`${syne.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         <StoreProvider>
           <QueryProvider>

@@ -80,7 +80,7 @@ export function TopicSelector({ onSave, onDismiss }: TopicSelectorProps) {
   if (dismissed) return null;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div>
           <h3 className="font-medium text-foreground">Customise your feed</h3>

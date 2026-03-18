@@ -56,7 +56,7 @@ export function SidebarMarket() {
   const updatedAt = nepse?.timestamp ?? usd?.publishedOn ?? usd?.date ?? assets[0]?.timestamp;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
       <h3 className="text-sm font-medium text-foreground">Market Pulse</h3>
       <div className="mt-2 space-y-2 text-sm">
         {hasRealNepse && (

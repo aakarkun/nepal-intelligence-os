@@ -25,7 +25,7 @@ export function MapTooltip({ visible, x, y, data }: MapTooltipProps) {
     <div
       className={cn(
         "pointer-events-none absolute z-50",
-        "bg-card border border-border rounded-sm px-3 py-2 text-xs shadow-lg",
+        "bg-card border border-border rounded-md px-3 py-2 text-xs shadow-sm",
         "transition-opacity duration-100",
         visible ? "opacity-100" : "opacity-0"
       )}

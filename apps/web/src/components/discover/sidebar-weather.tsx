@@ -99,7 +99,7 @@ export function SidebarWeather() {
   const low = daily.temperature_2m_min[0];
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
       <h3 className="text-sm font-medium text-foreground">Weather</h3>
       <p className="mt-1 text-xs text-muted-foreground">Kathmandu</p>
       <div className="mt-2 flex items-center gap-2">

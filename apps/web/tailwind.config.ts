@@ -57,6 +57,7 @@ const config: Config = {
       },
       fontFamily: {
         display: ["Syne", "sans-serif"],
+        sans: ["var(--font-sans)", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
       borderRadius: {
