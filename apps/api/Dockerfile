@@ -10,6 +10,8 @@ RUN bun install
 
 COPY packages/shared packages/shared
 COPY apps/api apps/api
+# Needed for API startup seeding (election fixtures)
+COPY apps/worker/fixtures apps/worker/fixtures
 
 EXPOSE 3001
 CMD ["bun", "run", "apps/api/src/index.ts"]

@@ -9,7 +9,7 @@ import type { NepseSummary, NepseMarketStatus, SignalEvent } from "@repo/shared"
  */
 const NEPSE_FETCH_TIMEOUT_MS = 10_000;
 const MEROLAGANI_SUMMARY = "https://merolagani.com/MarketSummary.aspx";
-const SHARESANSAR_INDEX = "https://www.sharesansar.com/nepse-index";
+const SHARESANSAR_DATEWISE = "https://www.sharesansar.com/datewise-indices";
 
 function parseNumber(s: string | null | undefined): number | null {
   if (s == null || s === "") return null;
@@ -174,44 +174,42 @@ function parseMerolagani(html: string, scrapedAt: string): NepseSummary | null {
   };
 }
 
-function parseSharesansar(html: string, scrapedAt: string): NepseSummary | null {
+function parseSharesansarDatewise(html: string, scrapedAt: string): NepseSummary | null {
   const { document } = parseHTML(html);
-  let index: number | null = null;
-  let change: number | null = null;
-  let changePercent: number | null = null;
-  let totalTurnover: number | null = null;
-  const gainers: Array<{ symbol: string; price: number; changePercent: number }> = [];
-  const losers: Array<{ symbol: string; price: number; changePercent: number }> = [];
-
-  const body = document.body?.innerHTML ?? "";
-  const numMatch = body.match(/NEPSE[\s\S]*?(\d{4}\.?\d*)/i);
-  if (numMatch) {
-    index = parseNumber(numMatch[1]);
-  }
-  if (index === null) {
-    const allNums = body.match(/\b(2\d{3}\.?\d*)\b/g);
-    if (allNums?.length) index = parseNumber(allNums[0]);
-  }
-  if (index === null || index === 0) return null;
-
-  const marketStatus: NepseMarketStatus = isNepalMarketOpen(
-    new Date(scrapedAt)
-  )
+  const marketStatus: NepseMarketStatus = isNepalMarketOpen(new Date(scrapedAt))
     ? "open"
     : "closed";
 
-  return {
-    sourceId: "nepse",
-    sourceName: "Sharesansar",
-    timestamp: scrapedAt,
-    index,
-    change,
-    changePercent,
-    totalTurnover: totalTurnover ?? undefined,
-    marketStatus,
-    topGainers: gainers.length > 0 ? gainers.slice(0, 5) : undefined,
-    topLosers: losers.length > 0 ? losers.slice(0, 5) : undefined,
-  };
+  const tables = document.querySelectorAll("table");
+  for (const table of tables) {
+    const rows = table.querySelectorAll("tr");
+    for (const row of rows) {
+      const cells = row.querySelectorAll("td, th");
+      if (cells.length < 4) continue;
+      const cellTexts = Array.from(cells).map((c) => (c.textContent ?? "").trim());
+      const label = (cellTexts[0] ?? "").toLowerCase();
+      if (!label.includes("nepse") || !label.includes("index")) continue;
+
+      const index = parseNumber(cellTexts[1]);
+      const change = parseNumber(cellTexts[2]);
+      const changePercent = parseNumber(cellTexts[3]);
+      const totalTurnover = parseNumber(cellTexts[4] ?? null);
+
+      if (index === null || index === 0) continue;
+      return {
+        sourceId: "nepse",
+        sourceName: "ShareSansar",
+        timestamp: scrapedAt,
+        index,
+        change,
+        changePercent,
+        totalTurnover: totalTurnover ?? undefined,
+        marketStatus,
+      };
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -220,6 +218,20 @@ function parseSharesansar(html: string, scrapedAt: string): NepseSummary | null 
  */
 export async function fetchNepseSummary(): Promise<NepseSummary> {
   const scrapedAt = new Date().toISOString();
+
+  // Prefer ShareSansar "datewise indices" table (stable and explicit fields).
+  try {
+    const res = await fetchWithTimeout(SHARESANSAR_DATEWISE, {
+      timeout: NEPSE_FETCH_TIMEOUT_MS,
+    });
+    if (!res.ok) throw new Error(`ShareSansar ${res.status}`);
+    const html = await res.text();
+    const parsed = parseSharesansarDatewise(html, scrapedAt);
+    if (parsed) return parsed;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[nepse] ShareSansar fetch/parse failed:", message);
+  }
 
   try {
     const res = await fetchWithTimeout(MEROLAGANI_SUMMARY, {
@@ -232,19 +244,6 @@ export async function fetchNepseSummary(): Promise<NepseSummary> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.warn("[nepse] Merolagani fetch/parse failed:", message);
-  }
-
-  try {
-    const res = await fetchWithTimeout(SHARESANSAR_INDEX, {
-      timeout: NEPSE_FETCH_TIMEOUT_MS,
-    });
-    if (!res.ok) throw new Error(`Sharesansar ${res.status}`);
-    const html = await res.text();
-    const parsed = parseSharesansar(html, scrapedAt);
-    if (parsed) return parsed;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.warn("[nepse] Sharesansar fetch/parse failed:", message);
   }
 
   return {

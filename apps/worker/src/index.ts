@@ -867,9 +867,12 @@ async function runLiveEconomy(state: LiveWorkerState): Promise<void> {
       Number.isNaN(lastMarketAssetsFetchedAt) ||
       Date.now() - lastMarketAssetsFetchedAt >= assetIntervalMs;
     const previousQuotes = state.lastMarketAssetQuotes ?? [];
+    const hasCachedCrypto = previousQuotes.some((q) => q.class === "crypto");
     const marketAssetQuotes = shouldRefreshMarketAssets
       ? await fetchMarketAssetQuotes(previousQuotes, {
-          skipCrypto: coingeckoCb.isOpen(),
+          // Don't skip CoinGecko if we don't have any cached crypto yet; otherwise the UI never
+          // shows BTC/ETH after a single burst of failures.
+          skipCrypto: coingeckoCb.isOpen() && hasCachedCrypto,
           onCryptoFailure: () => coingeckoCb.recordFailure(),
         })
       : previousQuotes;

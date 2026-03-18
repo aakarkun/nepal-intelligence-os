@@ -37,6 +37,7 @@ import * as anomaliesRepo from "./db/repos/anomalies.js";
 import * as crisisRepo from "./db/repos/crisis-incidents.js";
 import * as constituencyRepo from "./db/repos/constituency-results.js";
 import * as nationalSummariesRepo from "./db/repos/national-summaries.js";
+import * as snapshotsRepo from "./db/repos/snapshots.js";
 
 // ─── In-memory (no table yet) ────────────────────────────────────────────────
 
@@ -68,6 +69,47 @@ function emptySummary(): NationalSummary {
 
 function slugify(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+const PARTY_BRAND_COLORS: Record<string, string> = {
+  rsp: "#1a97d5",
+  nc: "#3f653b",
+  "ncp-uml": "#ee1c25",
+  "ncp-mc": "#ef4444",
+  rppp: "#f97316",
+  jspn: "#ef4444",
+  nwpp: "#6b7280",
+  ind: "#888888",
+  others: "#666666",
+};
+
+function resolveParty(partyName?: string | null): { partyId: string; partyColor: string } {
+  const name = (partyName ?? "").toLowerCase();
+  if (!name) return { partyId: "others", partyColor: PARTY_BRAND_COLORS.others };
+
+  if (name.includes("rastriya swatantra") || name.includes("swatantra")) {
+    return { partyId: "rsp", partyColor: PARTY_BRAND_COLORS.rsp };
+  }
+  if (name.includes("congress")) {
+    return { partyId: "nc", partyColor: PARTY_BRAND_COLORS.nc };
+  }
+  if (name.includes("uml")) {
+    return { partyId: "ncp-uml", partyColor: PARTY_BRAND_COLORS["ncp-uml"] };
+  }
+  if (name.includes("maoist") || name.includes("communist")) {
+    return { partyId: "ncp-mc", partyColor: PARTY_BRAND_COLORS["ncp-mc"] };
+  }
+  if (name.includes("prajatantra")) {
+    return { partyId: "rppp", partyColor: PARTY_BRAND_COLORS.rppp };
+  }
+  if (name.includes("samajbadi")) {
+    return { partyId: "jspn", partyColor: PARTY_BRAND_COLORS.jspn };
+  }
+  if (name.includes("independent")) {
+    return { partyId: "ind", partyColor: PARTY_BRAND_COLORS.ind };
+  }
+
+  return { partyId: slugify(partyName ?? "others"), partyColor: PARTY_BRAND_COLORS.others };
 }
 
 function buildDatasetMeta(
@@ -128,6 +170,79 @@ function getDataset(datasetId?: string | null): ElectionDataset | undefined {
 
 function nanoid10(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 10);
+}
+
+const SNAPSHOT_SLUGS = {
+  floodMeta: "cache:floodMeta",
+  forexRates: "cache:forexRates",
+  economySummary: "cache:economySummary",
+  marketAssetQuotes: "cache:marketAssetQuotes",
+  nepseSummary: "cache:nepseSummary",
+  crisisSummary: "cache:crisisSummary",
+  earthquakeIncidents: "cache:earthquakeIncidents",
+} as const;
+
+function persistCacheSnapshot(opts: {
+  slug: string;
+  type: string;
+  title: string;
+  data: unknown;
+  ttlDays?: number;
+}): void {
+  const now = new Date();
+  const ttlDays = opts.ttlDays ?? 30;
+  const createdAt = now.toISOString();
+  const expiresAt = new Date(now.getTime() + ttlDays * 24 * 60 * 60 * 1000).toISOString();
+  void snapshotsRepo
+    .insertSnapshot({
+      slug: opts.slug,
+      type: opts.type,
+      title: opts.title,
+      data: opts.data ?? null,
+      createdAt,
+      expiresAt,
+    })
+    .catch(() => {
+      // Best-effort cache persistence; ingestion should not fail if snapshot write fails.
+    });
+}
+
+export async function hydrateOperationalCacheFromDb(): Promise<void> {
+  const [
+    floodMetaSnap,
+    forexSnap,
+    economySnap,
+    marketSnap,
+    nepseSnap,
+    crisisSnap,
+    quakeSnap,
+  ] = await Promise.all([
+    snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.floodMeta),
+    snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.forexRates),
+    snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.economySummary),
+    snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.marketAssetQuotes),
+    snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.nepseSummary),
+    snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.crisisSummary),
+    snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.earthquakeIncidents),
+  ]);
+
+  if (floodMetaSnap?.data && typeof floodMetaSnap.data === "object") {
+    const d = floodMetaSnap.data as Partial<{
+      seasonInactive: boolean;
+      lastUpdated: string | null;
+      source: "dhm" | "gdacs" | null;
+    }>;
+    if (typeof d.seasonInactive === "boolean") floodSeasonInactive = d.seasonInactive;
+    if (typeof d.lastUpdated === "string" || d.lastUpdated === null) floodLastUpdated = d.lastUpdated ?? null;
+    if (d.source === "dhm" || d.source === "gdacs" || d.source === null) floodSource = d.source ?? null;
+  }
+
+  if (Array.isArray(forexSnap?.data)) forexRates = forexSnap.data as ForexRate[];
+  if (economySnap?.data && typeof economySnap.data === "object") economySummary = economySnap.data as EconomySummary;
+  if (Array.isArray(marketSnap?.data)) marketAssetQuotes = marketSnap.data as MarketAssetQuote[];
+  if (nepseSnap?.data && typeof nepseSnap.data === "object") nepseSummary = nepseSnap.data as NepseSummary;
+  if (crisisSnap?.data && typeof crisisSnap.data === "object") crisisSummary = crisisSnap.data as CrisisSummary;
+  if (Array.isArray(quakeSnap?.data)) earthquakeIncidents = quakeSnap.data as EarthquakeIncident[];
 }
 
 // ─── Readers (sync: in-memory) ───────────────────────────────────────────────
@@ -398,26 +513,68 @@ export async function updateConstituencyResult(result: ConstituencyResult): Prom
 
 export function replaceEarthquakeIncidents(incidents: EarthquakeIncident[]): void {
   earthquakeIncidents = incidents;
+  persistCacheSnapshot({
+    slug: SNAPSHOT_SLUGS.earthquakeIncidents,
+    type: "operational_cache",
+    title: "Earthquake incidents cache",
+    data: incidents,
+    ttlDays: 14,
+  });
 }
 
 export function updateCrisisSummary(summary: CrisisSummary | null): void {
   crisisSummary = summary;
+  persistCacheSnapshot({
+    slug: SNAPSHOT_SLUGS.crisisSummary,
+    type: "operational_cache",
+    title: "Crisis summary cache",
+    data: summary,
+    ttlDays: 14,
+  });
 }
 
 export function replaceForexRates(rates: ForexRate[]): void {
   forexRates = rates;
+  persistCacheSnapshot({
+    slug: SNAPSHOT_SLUGS.forexRates,
+    type: "operational_cache",
+    title: "Forex rates cache",
+    data: rates,
+    ttlDays: 14,
+  });
 }
 
 export function updateEconomySummary(summary: EconomySummary | null): void {
   economySummary = summary;
+  persistCacheSnapshot({
+    slug: SNAPSHOT_SLUGS.economySummary,
+    type: "operational_cache",
+    title: "Economy summary cache",
+    data: summary,
+    ttlDays: 14,
+  });
 }
 
 export function replaceMarketAssetQuotes(quotes: MarketAssetQuote[]): void {
   marketAssetQuotes = quotes;
+  persistCacheSnapshot({
+    slug: SNAPSHOT_SLUGS.marketAssetQuotes,
+    type: "operational_cache",
+    title: "Market asset quotes cache",
+    data: quotes,
+    ttlDays: 14,
+  });
 }
 
 export function updateNepseSummary(summary: NepseSummary | null): void {
   nepseSummary = summary;
+  persistCacheSnapshot({
+    slug: SNAPSHOT_SLUGS.nepseSummary,
+    type: "operational_cache",
+    title: "NEPSE summary cache",
+    data: summary,
+    ttlDays: 14,
+  });
 }
 
 export function resetElectionData(datasetId?: string): void {
@@ -454,6 +611,7 @@ export async function hydrateElectionFromDb(): Promise<void> {
     const rowsForDataset = allConstituencyRows.filter((r) => r.dataset === datasetId);
     for (const row of rowsForDataset) {
       const constituencyId = row.id.includes("::") ? row.id.split("::").slice(1).join("::") : row.id;
+      const resolved = resolveParty(row.party);
       const cr: ConstituencyResult = {
         constituencyId,
         constituencyName: row.name,
@@ -468,9 +626,9 @@ export async function hydrateElectionFromDb(): Promise<void> {
                 {
                   candidateId: "",
                   candidateName: row.leadingCandidate,
-                  partyId: "",
+                  partyId: resolved.partyId,
                   partyName: row.party,
-                  partyColor: "",
+                  partyColor: resolved.partyColor,
                   votes: 0,
                 },
               ]
@@ -521,6 +679,17 @@ export async function setFloodAlerts(payload: {
   floodSeasonInactive = payload.seasonInactive ?? false;
   floodLastUpdated = payload.lastUpdated;
   floodSource = payload.alertsSource ?? null;
+  persistCacheSnapshot({
+    slug: SNAPSHOT_SLUGS.floodMeta,
+    type: "operational_cache",
+    title: "Flood meta cache",
+    data: {
+      seasonInactive: floodSeasonInactive,
+      lastUpdated: floodLastUpdated,
+      source: floodSource,
+    },
+    ttlDays: 30,
+  });
 }
 
 export async function setCabinetEvents(events: CabinetEvent[]): Promise<void> {

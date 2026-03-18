@@ -249,7 +249,7 @@ async function fetchMetalsFromGoldApi(
 async function fetchCryptoFromCoinGecko(
   previousByCode: Map<string, MarketAssetQuote>
 ): Promise<MarketAssetQuote[]> {
-  const ids = Object.keys(COINGECKO_IDS).join(",");
+  const ids = Object.values(COINGECKO_IDS).join(",");
   const res = await fetch(
     `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`,
     { headers: { Accept: "application/json" } }

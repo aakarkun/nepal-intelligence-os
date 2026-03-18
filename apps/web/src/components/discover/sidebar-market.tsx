@@ -101,7 +101,7 @@ export function SidebarMarket() {
         )}
         {btc != null && (
           <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">BTC</span>
+            <span className="text-muted-foreground">BTC/USD</span>
             <span className="tabular-nums">
               ${btc.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
               {btc.changePercent != null && (
