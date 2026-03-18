@@ -32,14 +32,8 @@ export function timeAgo(timestamp: string): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-// Formats the original source timestamp (e.g. RSS pubDate) using the browser's
-// local timezone, so it reflects the time as published by the source rather
-// than forcing Nepal-time conversion.
 export function formatSourceDateTime(timestamp: string): string {
   const d = new Date(timestamp);
-  // Show as source-local (Nepal) time so it matches what
-  // users see on the publisher's page, even if the browser
-  // itself is in a different timezone.
   return d.toLocaleString("en-NP", {
     timeZone: "Asia/Kathmandu",
     dateStyle: "medium",
