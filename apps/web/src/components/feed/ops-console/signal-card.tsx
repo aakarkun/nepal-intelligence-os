@@ -44,9 +44,16 @@ export function SignalCard({
   }, [event]);
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
       className={cn(
         "group relative w-full rounded-md border text-left transition-colors",
         "hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border",
@@ -150,6 +157,6 @@ export function SignalCard({
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }

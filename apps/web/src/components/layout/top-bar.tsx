@@ -10,6 +10,7 @@ import { useRealtimeStore } from "@/stores/realtime-store";
 import { useDispatch } from "react-redux";
 import { useFilterStore } from "@/stores/filter-store";
 import { setBriefingPanelOpen, toggleIntelRail } from "@/store/slices/uiSlice";
+import { useLanguage } from "@/providers/language-provider";
 
 const MODULES = [
   { id: "discover", label: "Discover", href: "/", ready: true },
@@ -38,6 +39,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
   const dispatch = useDispatch();
   const openBriefing = () => dispatch(setBriefingPanelOpen(true));
   const togglePanel = () => dispatch(toggleIntelRail());
+   const { language, toggleLanguage } = useLanguage();
 
   useEffect(() => {
     function tick() {
@@ -125,8 +127,19 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
         })}
       </nav>
 
-      {/* Right — Briefing, Panel toggle, Command, Status, Clock */}
+      {/* Right — Language, Briefing, Panel toggle, Command, Status, Clock */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {/* Language toggle */}
+        <button
+          type="button"
+          onClick={toggleLanguage}
+          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+          title="Toggle news language"
+        >
+          <span className="font-mono text-[10px] uppercase">
+            {language === "en" ? "EN" : "NP"}
+          </span>
+        </button>
         {/* AI Briefing (Sparkles) — opens briefing modal */}
         <button
           onClick={openBriefing}

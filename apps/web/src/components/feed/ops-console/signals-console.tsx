@@ -9,6 +9,8 @@ import { useRealtimeStore } from "@/stores/realtime-store";
 import { cn } from "@/lib/utils";
 import { SignalCard } from "./signal-card";
 import { SignalDetail } from "./signal-detail";
+import { useLanguage } from "@/providers/language-provider";
+import { shouldShowByLanguage } from "@/lib/language-filter";
 import {
   loadMode,
   loadPinnedIds,
@@ -33,6 +35,7 @@ function uniqueMergeById(events: SignalEvent[]): SignalEvent[] {
 
 export function SignalsConsole({ allowedTypes }: SignalsConsoleProps) {
   const sseEvents = useRealtimeStore((s) => s.recentEvents);
+  const { language } = useLanguage();
   const listRef = useRef<HTMLDivElement | null>(null);
   const [tab, setTab] = useState<ConsoleTab>("attention");
   const [mode, setMode] = useState<SignalsConsoleMode>("live");
@@ -101,6 +104,15 @@ export function SignalsConsole({ allowedTypes }: SignalsConsoleProps) {
     return merged.filter((e) => {
       if (type !== "all" && e.type !== type) return false;
       if (severity !== "all" && e.severity !== severity) return false;
+      if (
+        !shouldShowByLanguage(language, [
+          e.title,
+          e.body ?? undefined,
+          e.source ?? undefined,
+        ])
+      ) {
+        return false;
+      }
       if (query) {
         const haystack = `${e.title} ${e.body ?? ""} ${e.source ?? ""}`.toLowerCase();
         if (!haystack.includes(query)) return false;
@@ -109,7 +121,7 @@ export function SignalsConsole({ allowedTypes }: SignalsConsoleProps) {
       if (tab === "attention") return !reviewedIds.has(e.id);
       return true;
     });
-  }, [merged, q, tab, type, severity, pinnedIds, reviewedIds]);
+  }, [merged, q, tab, type, severity, pinnedIds, reviewedIds, language]);
 
   const selected = useMemo(() => {
     if (selectedId) return filtered.find((e) => e.id === selectedId) ?? null;

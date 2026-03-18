@@ -7,6 +7,8 @@ import { fetchFeed } from "@/lib/api";
 import { SourceRail } from "@/components/news-room/source-rail";
 import { HeadlinesList } from "@/components/news-room/headlines-list";
 import { BriefingStack } from "@/components/news-room/briefing-stack";
+import { useLanguage } from "@/providers/language-provider";
+import { shouldShowByLanguage } from "@/lib/language-filter";
 
 export default function NewsRoomPage() {
   const allowedTypes: SignalEventType[] = [
@@ -19,6 +21,8 @@ export default function NewsRoomPage() {
     "health",
   ];
 
+  const { language } = useLanguage();
+
   const { data: feedData } = useQuery({
     queryKey: ["news-room", "feed"],
     queryFn: () => fetchFeed(160, 0),
@@ -29,8 +33,11 @@ export default function NewsRoomPage() {
     const list = feedData?.events ?? [];
     return list
       .filter((e) => allowedTypes.includes(e.type))
+      .filter((e) =>
+        shouldShowByLanguage(language, [e.title, e.body ?? undefined, e.source ?? undefined])
+      )
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  }, [feedData, allowedTypes]);
+  }, [feedData, allowedTypes, language]);
 
   const sources = useMemo(() => {
     const set = new Set<string>();

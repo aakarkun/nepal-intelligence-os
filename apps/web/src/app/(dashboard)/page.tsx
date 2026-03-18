@@ -16,6 +16,8 @@ import { getReactionsBatch } from "@/lib/api";
 import { getFingerprint } from "@/lib/fingerprint";
 import type { ReactionStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/providers/language-provider";
+import { shouldShowByLanguage } from "@/lib/language-filter";
 
 const TOPICS: { id: DiscoverTopicFilter; label: string }[] = [
   { id: "political", label: "Politics" },
@@ -88,6 +90,7 @@ function DiscoverSkeleton() {
 
 export default function DiscoverPage() {
   const { items, loading, newCountSinceView, refreshAndScrollTop } = useDiscoverFeed();
+  const { language } = useLanguage();
   const [tab, setTab] = useState<DiscoverTab>("for-you");
   const [topicFilter, setTopicFilter] = useState<DiscoverTopicFilter | null>(null);
   const [topicsOpen, setTopicsOpen] = useState(false);
@@ -102,7 +105,15 @@ export default function DiscoverPage() {
 
   const displayItems = useMemo(() => {
     const effectiveTab = topicFilter != null ? "topics" : tab;
-    let list = filterAndSortFeed(items, effectiveTab, topicFilter, preferredTypes);
+    const languageFilteredItems = items.filter((i) =>
+      shouldShowByLanguage(language, [i.title, i.summary, i.source])
+    );
+    let list = filterAndSortFeed(
+      languageFilteredItems,
+      effectiveTab,
+      topicFilter,
+      preferredTypes
+    );
     if (trendingKeyword?.trim()) {
       const k = trendingKeyword.trim().toLowerCase();
       list = list.filter(
@@ -112,7 +123,7 @@ export default function DiscoverPage() {
       );
     }
     return list.slice(0, 30);
-  }, [items, tab, topicFilter, preferredTypes, trendingKeyword]);
+  }, [items, tab, topicFilter, preferredTypes, trendingKeyword, language]);
 
   const displayItemIds = useMemo(() => displayItems.map((i) => i.id), [displayItems]);
   const displayItemIdsKey = displayItemIds.join(",");

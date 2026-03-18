@@ -3,6 +3,7 @@ import { Syne, JetBrains_Mono } from "next/font/google";
 import { StoreProvider } from "@/providers/store-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { SSEProvider } from "@/providers/sse-provider";
+import { LanguageProvider } from "@/providers/language-provider";
 import "./globals.css";
 
 const syne = Syne({
@@ -36,7 +37,9 @@ export default function RootLayout({
       >
         <StoreProvider>
           <QueryProvider>
-            <SSEProvider>{children}</SSEProvider>
+            <SSEProvider>
+              <LanguageProvider>{children}</LanguageProvider>
+            </SSEProvider>
           </QueryProvider>
         </StoreProvider>
       </body>
