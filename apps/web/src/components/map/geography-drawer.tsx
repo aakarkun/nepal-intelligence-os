@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import Link from "next/link";
@@ -11,6 +11,8 @@ import { cn, formatNumber, timeAgo } from "@/lib/utils";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GeographyNewsPanel } from "@/components/map/geography-news-panel";
 
 type GeographySelection =
   | { type: "district"; districtName: string }
@@ -48,6 +50,7 @@ export function GeographyDrawer({
 }: GeographyDrawerProps) {
   const intelRailOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
   const { selectedDatasetId } = useElectionDatasetStore();
+  const [activeTab, setActiveTab] = useState<"election" | "news">("election");
 
   const districtQuery = useQuery({
     queryKey: ["district-detail", selection?.type === "district" ? selection.districtName : null, selectedDatasetId],
@@ -122,190 +125,206 @@ export function GeographyDrawer({
               </button>
             </div>
 
-            {selection.type === "district" && (
-              <>
-                {districtQuery.isLoading && (
-                  <p className="text-sm text-muted-foreground py-8 text-center">
-                    Loading district results…
-                  </p>
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => setActiveTab(v as "election" | "news")}
+            >
+              <TabsList className="w-full justify-start">
+                <TabsTrigger value="election">Election</TabsTrigger>
+                <TabsTrigger value="news">News</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="election" className="mt-4">
+                {selection.type === "district" && (
+                  <>
+                    {districtQuery.isLoading && (
+                      <p className="text-sm text-muted-foreground py-8 text-center">
+                        Loading district results…
+                      </p>
+                    )}
+
+                    {districtQuery.data && (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="rounded-md border border-border p-2">
+                            <div className="text-muted-foreground">Votes</div>
+                            <div className="mt-1 font-semibold">
+                              {formatNumber(districtQuery.data.totalVotes)}
+                            </div>
+                          </div>
+                          <div className="rounded-md border border-border p-2">
+                            <div className="text-muted-foreground">Final</div>
+                            <div className="mt-1 font-semibold">
+                              {districtQuery.data.counted}/{districtQuery.data.constituencies}
+                            </div>
+                          </div>
+                          <div className="rounded-md border border-border p-2">
+                            <div className="text-muted-foreground">Province</div>
+                            <div className="mt-1 font-semibold">
+                              {districtQuery.data.provinceId}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          {districtQuery.data.results.map((c) => {
+                            const leader = getLeader(c);
+                            const margin = getMargin(c);
+                            return (
+                              <Link
+                                key={c.constituencyId}
+                                href={`/constituencies/${c.constituencyId}`}
+                                className="block p-3 border border-border rounded-md hover:bg-muted transition-colors"
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-sm font-medium">
+                                    {c.constituencyName}
+                                  </span>
+                                  <Badge variant={statusVariant[c.status] ?? "default"}>
+                                    {c.status}
+                                  </Badge>
+                                </div>
+                                {leader && (
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <span
+                                      className="h-2 w-2 rounded-full"
+                                      style={{ backgroundColor: leader.partyColor }}
+                                    />
+                                    <span>
+                                      {leader.candidateName} ({leader.partyName})
+                                    </span>
+                                    <span className="ml-auto">
+                                      {formatNumber(leader.votes)}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
+                                  <span>Margin: {formatNumber(margin)}</span>
+                                  <span>{timeAgo(c.lastUpdate)}</span>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
-                {districtQuery.data && (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="rounded-md border border-border p-2">
-                        <div className="text-muted-foreground">Votes</div>
-                        <div className="mt-1 font-semibold">
-                          {formatNumber(districtQuery.data.totalVotes)}
-                        </div>
-                      </div>
-                      <div className="rounded-md border border-border p-2">
-                        <div className="text-muted-foreground">Final</div>
-                        <div className="mt-1 font-semibold">
-                          {districtQuery.data.counted}/{districtQuery.data.constituencies}
-                        </div>
-                      </div>
-                      <div className="rounded-md border border-border p-2">
-                        <div className="text-muted-foreground">Province</div>
-                        <div className="mt-1 font-semibold">
-                          {districtQuery.data.provinceId}
-                        </div>
-                      </div>
-                    </div>
+                {selection.type === "province" && (
+                  <>
+                    {provinceQuery.isLoading && (
+                      <p className="text-sm text-muted-foreground py-8 text-center">
+                        Loading province results…
+                      </p>
+                    )}
 
-                    <div className="space-y-2">
-                      {districtQuery.data.results.map((c) => {
-                        const leader = getLeader(c);
-                        const margin = getMargin(c);
-                        return (
-                          <Link
-                            key={c.constituencyId}
-                            href={`/constituencies/${c.constituencyId}`}
-                            className="block p-3 border border-border rounded-md hover:bg-muted transition-colors"
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">
-                                {c.constituencyName}
-                              </span>
-                              <Badge variant={statusVariant[c.status] ?? "default"}>
-                                {c.status}
-                              </Badge>
+                    {provinceQuery.data && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="rounded-md border border-border p-2">
+                            <div className="text-muted-foreground">Votes</div>
+                            <div className="mt-1 font-semibold">
+                              {formatNumber(provinceQuery.data.totalVotes)}
                             </div>
-                            {leader && (
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span
-                                  className="h-2 w-2 rounded-full"
-                                  style={{ backgroundColor: leader.partyColor }}
-                                />
-                                <span>
-                                  {leader.candidateName} ({leader.partyName})
-                                </span>
-                                <span className="ml-auto">
-                                  {formatNumber(leader.votes)}
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
-                              <span>Margin: {formatNumber(margin)}</span>
-                              <span>{timeAgo(c.lastUpdate)}</span>
+                          </div>
+                          <div className="rounded-md border border-border p-2">
+                            <div className="text-muted-foreground">Final</div>
+                            <div className="mt-1 font-semibold">
+                              {provinceQuery.data.counted}/{provinceQuery.data.constituencies}
                             </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {selection.type === "province" && (
-              <>
-                {provinceQuery.isLoading && (
-                  <p className="text-sm text-muted-foreground py-8 text-center">
-                    Loading province results…
-                  </p>
-                )}
-
-                {provinceQuery.data && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="rounded-md border border-border p-2">
-                        <div className="text-muted-foreground">Votes</div>
-                        <div className="mt-1 font-semibold">
-                          {formatNumber(provinceQuery.data.totalVotes)}
-                        </div>
-                      </div>
-                      <div className="rounded-md border border-border p-2">
-                        <div className="text-muted-foreground">Final</div>
-                        <div className="mt-1 font-semibold">
-                          {provinceQuery.data.counted}/{provinceQuery.data.constituencies}
-                        </div>
-                      </div>
-                      <div className="rounded-md border border-border p-2">
-                        <div className="text-muted-foreground">Districts</div>
-                        <div className="mt-1 font-semibold">
-                          {provinceQuery.data.districts.length}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Districts
-                      </h3>
-                      <div className="mt-2 space-y-2">
-                        {provinceQuery.data.districts.map((district) => (
-                          <button
-                            key={district.districtName}
-                            type="button"
-                            onClick={() => onSelectDistrict(district.districtName)}
-                            className="flex w-full items-center justify-between rounded-md border border-border px-3 py-2 text-left hover:bg-muted transition-colors"
-                          >
-                            <div>
-                              <div className="text-sm font-medium">
-                                {district.districtName}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {district.counted}/{district.constituencies} final · {formatNumber(district.totalVotes)} votes
-                              </div>
+                          </div>
+                          <div className="rounded-md border border-border p-2">
+                            <div className="text-muted-foreground">Districts</div>
+                            <div className="mt-1 font-semibold">
+                              {provinceQuery.data.districts.length}
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              Open
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                          </div>
+                        </div>
 
-                    <div>
-                      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Constituencies
-                      </h3>
-                      <div className="mt-2 space-y-2">
-                        {provinceQuery.data.results.map((c) => {
-                          const leader = getLeader(c);
-                          return (
-                            <Link
-                              key={c.constituencyId}
-                              href={`/constituencies/${c.constituencyId}`}
-                              className="block rounded-md border border-border px-3 py-2 hover:bg-muted transition-colors"
-                            >
-                              <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Districts
+                          </h3>
+                          <div className="mt-2 space-y-2">
+                            {provinceQuery.data.districts.map((district) => (
+                              <button
+                                key={district.districtName}
+                                type="button"
+                                onClick={() => onSelectDistrict(district.districtName)}
+                                className="flex w-full items-center justify-between rounded-md border border-border px-3 py-2 text-left hover:bg-muted transition-colors"
+                              >
                                 <div>
                                   <div className="text-sm font-medium">
-                                    {c.constituencyName}
+                                    {district.districtName}
                                   </div>
                                   <div className="text-xs text-muted-foreground">
-                                    {c.districtName}
+                                    {district.counted}/{district.constituencies} final · {formatNumber(district.totalVotes)} votes
                                   </div>
                                 </div>
-                                <Badge variant={statusVariant[c.status] ?? "default"}>
-                                  {c.status}
-                                </Badge>
-                              </div>
-                              {leader && (
-                                <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                                  <span
-                                    className="h-2 w-2 rounded-full"
-                                    style={{ backgroundColor: leader.partyColor }}
-                                  />
-                                  <span className="truncate">
-                                    {leader.candidateName} ({leader.partyName})
-                                  </span>
-                                  <span className="ml-auto">
-                                    {formatNumber(leader.votes)}
-                                  </span>
+                                <div className="text-xs text-muted-foreground">
+                                  Open
                                 </div>
-                              )}
-                            </Link>
-                          );
-                        })}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Constituencies
+                          </h3>
+                          <div className="mt-2 space-y-2">
+                            {provinceQuery.data.results.map((c) => {
+                              const leader = getLeader(c);
+                              return (
+                                <Link
+                                  key={c.constituencyId}
+                                  href={`/constituencies/${c.constituencyId}`}
+                                  className="block rounded-md border border-border px-3 py-2 hover:bg-muted transition-colors"
+                                >
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                      <div className="text-sm font-medium">
+                                        {c.constituencyName}
+                                      </div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {c.districtName}
+                                      </div>
+                                    </div>
+                                    <Badge variant={statusVariant[c.status] ?? "default"}>
+                                      {c.status}
+                                    </Badge>
+                                  </div>
+                                  {leader && (
+                                    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                                      <span
+                                        className="h-2 w-2 rounded-full"
+                                        style={{ backgroundColor: leader.partyColor }}
+                                      />
+                                      <span className="truncate">
+                                        {leader.candidateName} ({leader.partyName})
+                                      </span>
+                                      <span className="ml-auto">
+                                        {formatNumber(leader.votes)}
+                                      </span>
+                                    </div>
+                                  )}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
-              </>
-            )}
+              </TabsContent>
+
+              <TabsContent value="news" className="mt-4">
+                <GeographyNewsPanel selection={selection} />
+              </TabsContent>
+            </Tabs>
           </div>
         )}
       </div>
