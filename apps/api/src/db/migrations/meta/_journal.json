@@ -15,6 +15,13 @@
       "when": 1742130000000,
       "tag": "0001_national_summaries",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773837752302,
+      "tag": "0002_national_summaries_fix",
+      "breakpoints": true
     }
   ]
 }
