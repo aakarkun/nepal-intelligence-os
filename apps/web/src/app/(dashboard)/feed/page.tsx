@@ -1,4 +1,4 @@
-import { SignalsFeed } from "@/components/feed/signals-feed";
+import { SignalsConsole } from "@/components/feed/ops-console/signals-console";
 import type { SignalEventType } from "@repo/shared";
 
 /**
@@ -35,7 +35,7 @@ export default function FeedPage() {
           social, and high-attention news. Invest wisely; full news in News Room.
         </p>
       </div>
-      <SignalsFeed allowedTypes={FEED_ALLOWED_TYPES} />
+      <SignalsConsole allowedTypes={FEED_ALLOWED_TYPES} />
     </div>
   );
 }
