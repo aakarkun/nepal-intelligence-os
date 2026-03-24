@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
+    "db:up": "docker compose up -d db",
     "dev": "bun run dev:all",
     "dev:web": "HOST=0.0.0.0 bun run --cwd apps/web dev",
     "dev:api": "HOST=0.0.0.0 bun run --filter api dev",

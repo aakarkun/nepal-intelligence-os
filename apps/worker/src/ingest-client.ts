@@ -14,6 +14,7 @@ import type {
   EconomySummary,
   MarketAssetQuote,
   NepseSummary,
+  MarketPortalSnapshot,
 } from "@repo/shared";
 
 const ENDPOINTS = {
@@ -28,6 +29,7 @@ const ENDPOINTS = {
   economySummary: "/v1/ingest/economy/summary",
   economyAssets: "/v1/ingest/economy/assets",
   economyNepse: "/v1/ingest/economy/nepse",
+  economyMarketPortal: "/v1/ingest/economy/market-portal",
   crisisFloodAlerts: "/v1/ingest/crisis/flood-alerts",
   politicsCabinetEvents: "/v1/ingest/politics/cabinet-events",
   politicsParliamentSession: "/v1/ingest/politics/parliament-session",
@@ -40,12 +42,18 @@ async function post(
   payload: unknown
 ): Promise<boolean> {
   const url = `${apiUrl.replace(/\/$/, "")}${endpoint}`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const secret = process.env.WORKER_SECRET;
+  if (secret) headers["X-Worker-Secret"] = secret;
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(payload),
   });
-  return res.ok;
+  if (res.ok) return true;
+  const text = await res.text().catch(() => "");
+  console.warn(`[ingest] POST ${endpoint} failed: ${res.status} ${text.slice(0, 400)}`);
+  return false;
 }
 
 export async function postSummary(
@@ -123,6 +131,13 @@ export async function postNepseSummary(
   summary: NepseSummary
 ): Promise<boolean> {
   return post(apiUrl, ENDPOINTS.economyNepse, summary);
+}
+
+export async function postMarketPortalSnapshot(
+  apiUrl: string,
+  snapshot: MarketPortalSnapshot
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.economyMarketPortal, snapshot);
 }
 
 export async function postFloodAlerts(

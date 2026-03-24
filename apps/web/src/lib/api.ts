@@ -16,6 +16,7 @@ import type {
   EconomySummary,
   MarketAssetQuote,
   NepseSummary,
+  MarketPortalSnapshot,
 } from "@repo/shared";
 
 export type ElectionDataset = {
@@ -201,6 +202,10 @@ export function fetchMarketAssetQuotes(): Promise<MarketAssetQuote[]> {
 
 export function fetchNepseSummary(): Promise<NepseSummary | null> {
   return fetchJSON<NepseSummary | null>("/v1/economy/nepse");
+}
+
+export function fetchMarketPortalSnapshot(): Promise<MarketPortalSnapshot | null> {
+  return fetchJSON<MarketPortalSnapshot | null>("/v1/economy/market-portal");
 }
 
 export type NepseSnapshotHistoryRow = {

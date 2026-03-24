@@ -2,7 +2,7 @@
  * Store: re-exports from PostgreSQL repos (src/db/repos) with same signatures
  * for route compatibility. In-memory state only for data without a table yet
  * (election datasets, national summary, constituency results, forex, economy,
- * market assets, nepse summary, crisis summary, earthquake incidents, flood metadata).
+ * market assets, nepse summary, market portal snapshot, crisis summary, earthquake incidents, flood metadata).
  */
 
 import type {
@@ -19,6 +19,7 @@ import type {
   EconomySummary,
   MarketAssetQuote,
   NepseSummary,
+  MarketPortalSnapshot,
   CabinetEvent,
   ParliamentSession,
   GeopoliticsArticle,
@@ -140,6 +141,7 @@ let forexRates: ForexRate[] = [];
 let economySummary: EconomySummary | null = null;
 let marketAssetQuotes: MarketAssetQuote[] = [];
 let nepseSummary: NepseSummary | null = null;
+let marketPortalSnapshot: MarketPortalSnapshot | null = null;
 let crisisSummary: CrisisSummary | null = null;
 let earthquakeIncidents: EarthquakeIncident[] = [];
 
@@ -179,6 +181,7 @@ const SNAPSHOT_SLUGS = {
   economySummary: "cache:economySummary",
   marketAssetQuotes: "cache:marketAssetQuotes",
   nepseSummary: "cache:nepseSummary",
+  marketPortalSnapshot: "cache:marketPortalSnapshot",
   crisisSummary: "cache:crisisSummary",
   earthquakeIncidents: "cache:earthquakeIncidents",
 } as const;
@@ -215,6 +218,7 @@ export async function hydrateOperationalCacheFromDb(): Promise<void> {
     economySnap,
     marketSnap,
     nepseSnap,
+    marketPortalSnap,
     crisisSnap,
     quakeSnap,
   ] = await Promise.all([
@@ -223,6 +227,7 @@ export async function hydrateOperationalCacheFromDb(): Promise<void> {
     snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.economySummary),
     snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.marketAssetQuotes),
     snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.nepseSummary),
+    snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.marketPortalSnapshot),
     snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.crisisSummary),
     snapshotsRepo.getSnapshot(SNAPSHOT_SLUGS.earthquakeIncidents),
   ]);
@@ -242,6 +247,9 @@ export async function hydrateOperationalCacheFromDb(): Promise<void> {
   if (economySnap?.data && typeof economySnap.data === "object") economySummary = economySnap.data as EconomySummary;
   if (Array.isArray(marketSnap?.data)) marketAssetQuotes = marketSnap.data as MarketAssetQuote[];
   if (nepseSnap?.data && typeof nepseSnap.data === "object") nepseSummary = nepseSnap.data as NepseSummary;
+  if (marketPortalSnap?.data && typeof marketPortalSnap.data === "object") {
+    marketPortalSnapshot = marketPortalSnap.data as MarketPortalSnapshot;
+  }
   if (crisisSnap?.data && typeof crisisSnap.data === "object") crisisSummary = crisisSnap.data as CrisisSummary;
   if (Array.isArray(quakeSnap?.data)) earthquakeIncidents = quakeSnap.data as EarthquakeIncident[];
 }
@@ -277,6 +285,10 @@ export function getMarketAssetQuotes(): MarketAssetQuote[] {
 
 export function getNepseSummary(): NepseSummary | null {
   return nepseSummary;
+}
+
+export function getMarketPortalSnapshot(): MarketPortalSnapshot | null {
+  return marketPortalSnapshot;
 }
 
 export function getElectionDatasets(): ElectionDatasetMeta[] {
@@ -574,6 +586,17 @@ export function updateNepseSummary(summary: NepseSummary | null): void {
     type: "operational_cache",
     title: "NEPSE summary cache",
     data: summary,
+    ttlDays: 14,
+  });
+}
+
+export function updateMarketPortalSnapshot(snapshot: MarketPortalSnapshot | null): void {
+  marketPortalSnapshot = snapshot;
+  persistCacheSnapshot({
+    slug: SNAPSHOT_SLUGS.marketPortalSnapshot,
+    type: "operational_cache",
+    title: "Market portal snapshot",
+    data: snapshot,
     ttlDays: 14,
   });
 }

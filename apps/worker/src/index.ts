@@ -30,17 +30,14 @@ import {
   postEconomySummary,
   postMarketAssetQuotes,
   postNepseSummary,
+  postMarketPortalSnapshot,
 } from "./ingest-client";
 import { fetchNepseSummary, getNepalDayOfWeek, getNptDateString, isNepalMarketOpen, nepseToSignalEvent } from "./sources/nepse";
+import { fetchMarketPortalSnapshot } from "./sources/market-portal";
 import { fetchFloodAlerts } from "./sources/flood";
-import { fetchCabinetEvents } from "./sources/rss-nepal";
 import { fetchParliamentSession } from "./sources/parliament";
 import { fetchWorldArticles } from "./sources/gdelt-world";
-import {
-  postCabinetEvents,
-  postParliamentSession,
-  postWorldArticles,
-} from "./ingest-client";
+import { postParliamentSession, postWorldArticles } from "./ingest-client";
 import { getCircuitBreaker } from "./lib/circuit-breaker";
 import { runWatchlistCheck } from "./lib/watchlist-checker";
 import type { SourceHealth } from "@repo/shared";
@@ -708,19 +705,6 @@ async function runLiveFlood(): Promise<void> {
   }
 }
 
-async function runLiveCabinet(): Promise<void> {
-  try {
-    const events = await fetchCabinetEvents();
-    if (events.length > 0) {
-      await postCabinetEvents(API_URL, events);
-      console.log(`[live] Cabinet events ingest: ${events.length} items`);
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.warn("[live] Cabinet events ingest failed:", message);
-  }
-}
-
 const PARLIAMENT_DAILY_MS = 24 * 60 * 60 * 1000;
 let lastParliamentRunAt: number | null = null;
 const WORLD_INTERVAL_MS = 30 * 60 * 1000;
@@ -890,6 +874,19 @@ async function runLiveEconomy(state: LiveWorkerState): Promise<void> {
       await postMarketAssetQuotes(API_URL, marketAssetQuotes);
     }
 
+    try {
+      const portal = await fetchMarketPortalSnapshot();
+      const posted = await postMarketPortalSnapshot(API_URL, portal);
+      if (!posted) {
+        console.warn(
+          "[live] Market portal: snapshot fetched but API POST failed — check API_URL, running API, and logs above. Economy portal cards stay empty until ingest succeeds."
+        );
+      }
+    } catch (portalErr) {
+      const msg = portalErr instanceof Error ? portalErr.message : String(portalErr);
+      console.warn("[live] Market portal ingest failed:", msg);
+    }
+
     await postSourceHealth(API_URL, {
       sourceId: "economy:forex",
       sourceName: "Nepal Rastra Bank Forex",
@@ -1048,7 +1045,6 @@ async function runLiveCycle(): Promise<void> {
     runLiveSocial(),
     runLiveCrisis(),
     runLiveFlood(),
-    runLiveCabinet(),
     runLiveParliament(),
     runLiveWorld(),
     runLiveEconomy(state),

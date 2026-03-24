@@ -422,6 +422,10 @@ export const NepseSummarySchema = z.object({
   sourceId: z.string(),
   sourceName: z.string(),
   timestamp: z.string().datetime(),
+  /** Trading session date from the source (YYYY-MM-DD), when available. */
+  dataAsOf: z.string().optional(),
+  /** End of session / as-of instant (ISO-8601 with offset), for freshness comparison. */
+  sessionEnd: z.string().optional(),
   index: z.number().min(0),
   change: z.number().nullable(),
   changePercent: z.number().nullable(),
@@ -434,6 +438,63 @@ export const NepseSummarySchema = z.object({
   topGainers: z.array(NepseMoverSchema).max(5).optional(),
   topLosers: z.array(NepseMoverSchema).max(5).optional(),
 });
+
+/** Aggregated market portal board (worker-scraped from public portal HTML). */
+export const MarketPortalSubIndexRowSchema = z.object({
+  name: z.string(),
+  open: z.number(),
+  high: z.number(),
+  low: z.number(),
+  close: z.number(),
+  turnover: z.number(),
+  pointChange: z.number(),
+  changePercent: z.number(),
+  week52High: z.number(),
+  week52Low: z.number(),
+});
+
+export const MarketPortalMainIndexRowSchema = z.object({
+  name: z.string(),
+  close: z.number(),
+  pointChange: z.number().nullable(),
+});
+
+export const MarketPortalForexRowSchema = z.object({
+  currencyCode: z.string(),
+  buy: z.number(),
+  sell: z.number(),
+});
+
+export const MarketPortalMetalRowSchema = z.object({
+  name: z.string(),
+  price: z.number(),
+  changeRs: z.number(),
+});
+
+export const MarketPortalOilRowSchema = z.object({
+  name: z.string(),
+  priceText: z.string(),
+});
+
+export const MarketPortalSnapshotSchema = z.object({
+  sourceId: z.string(),
+  sourceName: z.string(),
+  timestamp: z.string(),
+  subIndicesAsOf: z.string().optional(),
+  subIndices: z.array(MarketPortalSubIndexRowSchema),
+  mainIndicesAsOf: z.string().optional(),
+  mainIndices: z.array(MarketPortalMainIndexRowSchema),
+  mainIndicesTurnoverNpr: z.number().optional(),
+  nepseConfidence: z.number().nullable().optional(),
+  nepseConfidenceChange: z.number().nullable().optional(),
+  forexAsOf: z.string().optional(),
+  forex: z.array(MarketPortalForexRowSchema),
+  metalsAsOf: z.string().optional(),
+  metals: z.array(MarketPortalMetalRowSchema),
+  oilAsOf: z.string().optional(),
+  oil: z.array(MarketPortalOilRowSchema),
+});
+export type MarketPortalSnapshot = z.infer<typeof MarketPortalSnapshotSchema>;
 
 // ─── SSE Messages ────────────────────────────────────────────────────────────
 

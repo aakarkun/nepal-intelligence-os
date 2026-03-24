@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
+    "push:market-portal": "bun run scripts/push-market-portal.ts",
     "build": "echo 'No build step — Bun runs TS directly'",
     "test": "bun test"
   },

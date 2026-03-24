@@ -61,10 +61,55 @@ export function RailPanelHeader({
         </span>
       </div>
       {right ? (
-        <div className="flex shrink-0 items-center gap-2.5">{right}</div>
+        <div className="flex min-w-0 shrink-0 items-center justify-end gap-2.5">{right}</div>
       ) : null}
     </div>
   );
+}
+
+/** Compact “As of · date” for rail card headers (right column, same row as title). */
+export function RailPanelAsOf({ date }: { date?: string | null }) {
+  const formatted = formatPortalAsOfLabel(date);
+  return (
+    <span className="max-w-[min(100%,11rem)] text-right font-mono text-[10px] leading-none tabular-nums">
+      {formatted ? (
+        <>
+          <span className="uppercase tracking-[0.12em] text-[#666]">As of</span>{" "}
+          <span className="text-[#a1a1aa]">{formatted}</span>
+        </>
+      ) : (
+        <span className="text-[#555]">—</span>
+      )}
+    </span>
+  );
+}
+
+function formatPortalAsOfLabel(raw: string | null | undefined): string | null {
+  if (raw == null || String(raw).trim() === "") return null;
+  const s = String(raw).trim();
+  const ymd = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (ymd) {
+    const y = Number(ymd[1]);
+    const mo = Number(ymd[2]) - 1;
+    const d = Number(ymd[3]);
+    const dt = new Date(y, mo, d);
+    if (!Number.isNaN(dt.getTime())) {
+      return dt.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    }
+  }
+  const dt = new Date(s);
+  if (!Number.isNaN(dt.getTime())) {
+    return dt.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  }
+  return s;
 }
 
 function railRowClass(i: number, len: number) {

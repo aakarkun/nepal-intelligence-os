@@ -28,8 +28,26 @@ export function timeAgo(timestamp: string): string {
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
+  const remMin = minutes % 60;
+  if (hours < 24) {
+    if (remMin > 0) return `${hours}h ${remMin}m ago`;
+    return `${hours}h ago`;
+  }
+  const days = Math.floor(hours / 24);
+  const remH = hours % 24;
+  if (remH > 0) return `${days}d ${remH}h ago`;
+  return `${days}d ago`;
+}
+
+/**
+ * Like `timeAgo`, but treats bare `YYYY-MM-DD` as noon Nepal time so “ago” matches NRB calendar dates.
+ */
+export function timeAgoFlexible(input: string): string {
+  const s = input.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return timeAgo(`${s}T12:00:00+05:45`);
+  }
+  return timeAgo(s);
 }
 
 // Formats the original source timestamp (e.g. RSS pubDate) using the browser's

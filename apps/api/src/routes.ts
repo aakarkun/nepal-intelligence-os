@@ -16,6 +16,7 @@ import {
   EconomySummarySchema,
   MarketAssetQuoteSchema,
   NepseSummarySchema,
+  MarketPortalSnapshotSchema,
   WatchlistItemSchema,
   WatchlistItemTypeSchema,
   ReactionSchema,
@@ -43,6 +44,7 @@ import {
   getEconomySummary,
   getMarketAssetQuotes,
   getNepseSummary,
+  getMarketPortalSnapshot,
   getElectionDatasets,
   getWatchlist,
   createWatchlistItem,
@@ -66,6 +68,7 @@ import {
   updateEconomySummary,
   replaceMarketAssetQuotes,
   updateNepseSummary,
+  updateMarketPortalSnapshot,
   appendNepseSnapshot,
   getNepseSnapshotHistory,
   resetElectionData,
@@ -436,6 +439,10 @@ api.get("/economy/assets", (c) => {
 
 api.get("/economy/nepse", (c) => {
   return c.json(getNepseSummary() ?? null);
+});
+
+api.get("/economy/market-portal", (c) => {
+  return c.json(getMarketPortalSnapshot() ?? null);
 });
 
 api.get("/economy/nepse/history", async (c) => {
@@ -813,6 +820,18 @@ api.post("/ingest/economy/nepse", async (c) => {
 
   updateNepseSummary(parsed.data);
   await appendNepseSnapshot(parsed.data);
+  return c.json({ ok: true });
+});
+
+api.post("/ingest/economy/market-portal", async (c) => {
+  const body = await c.req.json();
+  const parsed = MarketPortalSnapshotSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+
+  updateMarketPortalSnapshot(parsed.data);
   return c.json({ ok: true });
 });
 

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "api": "bun --watch src/index.ts",
     "dev": "bun --watch src/index.ts",
     "dev:mobile": "API_PORT=3001 bun --watch src/index.ts",
     "start": "bun src/index.ts",

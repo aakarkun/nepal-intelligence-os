@@ -2,13 +2,20 @@ import { parseHTML } from "linkedom";
 import type { NepseSummary, NepseMarketStatus, SignalEvent } from "@repo/shared";
 
 /**
- * NEPSE has no official public API. We scrape Merolagani (fallback Sharesansar).
- * Alternative: nepse-alpha (Python) https://github.com/basic-blogs/nepse-alpha
- * reverse-engineers NEPSE's internal API — consider it for production.
- * Scraping: rate-limit to every 5 min during market hours, use a proper User-Agent.
+ * NEPSE has no official public API. **ShareSansar** is our primary trusted surface for market
+ * figures for now (datewise indices table). We also fetch Merolagani Indices.aspx in parallel
+ * and pick the fresher session (tie-break: turnover, then Merolagani).
+ *
+ * Future (same publisher, not wired yet): sharesansar.com homepage exposes richer blocks —
+ * sub-indices OHLC, turnover, point, % change, 52w high/low, main indices, forex, gold/silver,
+ * oil — suitable to scrape or extend into dedicated modules when product needs them.
+ *
+ * Alternative backends: unofficial clients for newweb.nepalstock.com (e.g. basic-bgnr/NepseUnofficialApi).
+ * Scraping: rate-limit during market hours, use a proper User-Agent.
  */
 const NEPSE_FETCH_TIMEOUT_MS = 10_000;
-const MEROLAGANI_SUMMARY = "https://merolagani.com/MarketSummary.aspx";
+/** Static HTML datewise index table (Market Summary page has no index in static HTML). */
+const MEROLAGANI_INDICES = "https://merolagani.com/Indices.aspx";
 const SHARESANSAR_DATEWISE = "https://www.sharesansar.com/datewise-indices";
 
 function parseNumber(s: string | null | undefined): number | null {
@@ -61,6 +68,95 @@ export function isNepalMarketOpen(date: Date): boolean {
   return isMarketDay && nptHours >= 11 && nptHours < 15;
 }
 
+/** YYYY-MM-DD from ShareSansar datewise page (datepicker / "As of" heading). */
+function parseSharesansarPageDate(html: string): string | null {
+  const fromInput = html.match(/id="date"[^>]*value="(\d{4}-\d{2}-\d{2})"/i);
+  if (fromInput?.[1]) return fromInput[1];
+  const fromHeading = html.match(/As of\s*:\s*<[^>]+>\s*(\d{4}-\d{2}-\d{2})/i);
+  return fromHeading?.[1] ?? null;
+}
+
+/** Session end instant for ShareSansar: live scrape during market, else assumed cash close. */
+function sharesansarSessionEnd(dataAsOf: string | null, scrapedAt: string): string | undefined {
+  if (!dataAsOf) return undefined;
+  if (isNepalMarketOpen(new Date(scrapedAt))) return scrapedAt;
+  return `${dataAsOf}T15:00:00+05:45`;
+}
+
+/** Same session-end rule for Merolagani Indices (row date only, no clock on page). */
+function merolaganiIndicesSessionEnd(dataAsOf: string, scrapedAt: string): string {
+  if (isNepalMarketOpen(new Date(scrapedAt))) return scrapedAt;
+  return `${dataAsOf}T15:00:00+05:45`;
+}
+
+/** `2026/03/24` → `2026-03-24` */
+function adSlashDateToIso(dateAd: string): string | null {
+  const m = dateAd.trim().match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if (!m) return null;
+  return `${m[1]}-${m[2]}-${m[3]}`;
+}
+
+/**
+ * Indices.aspx has no turnover; copy same-day liquidity stats from ShareSansar so
+ * Merolagani can win on source preference instead of losing on missing turnover.
+ */
+function enrichMerolaganiFromShareSansar(
+  ml: NepseSummary | null,
+  ss: NepseSummary | null
+): NepseSummary | null {
+  if (!ml || !ss) return ml;
+  if (!ml.dataAsOf || ml.dataAsOf !== ss.dataAsOf) return ml;
+  if (ml.totalTurnover != null && ml.totalTurnover > 0) return ml;
+  return {
+    ...ml,
+    totalTurnover: ss.totalTurnover,
+    tradedShares: ml.tradedShares ?? ss.tradedShares,
+    advancingIssues: ml.advancingIssues ?? ss.advancingIssues,
+    decliningIssues: ml.decliningIssues ?? ss.decliningIssues,
+    unchangedIssues: ml.unchangedIssues ?? ss.unchangedIssues,
+  };
+}
+
+/** Prefer Merolagani when session and turnover tie (both aligned with ShareSansar). */
+function sourcePreferenceRank(s: NepseSummary): number {
+  return s.sourceName === "Merolagani" ? 1 : 0;
+}
+
+function pickLatestNepseSummary(
+  candidates: NepseSummary[],
+  scrapedAt: string
+): NepseSummary | null {
+  const valid = candidates.filter((c) => c.index > 0);
+  if (valid.length === 0) return null;
+  if (valid.length === 1) return valid[0];
+
+  const marketOpen = isNepalMarketOpen(new Date(scrapedAt));
+  const scrapedMs = Date.parse(scrapedAt);
+
+  function sortKey(s: NepseSummary): [number, number, number] {
+    const turnover = s.totalTurnover ?? 0;
+    const pref = sourcePreferenceRank(s);
+    if (marketOpen) {
+      return [scrapedMs, turnover, pref];
+    }
+    let sessionMs = 0;
+    if (s.sessionEnd) sessionMs = Date.parse(s.sessionEnd);
+    else if (s.dataAsOf) sessionMs = Date.parse(`${s.dataAsOf}T15:00:00+05:45`);
+    else sessionMs = Date.parse(s.timestamp);
+    return [sessionMs, turnover, pref];
+  }
+
+  valid.sort((a, b) => {
+    const [ma, ta, pa] = sortKey(a);
+    const [mb, tb, pb] = sortKey(b);
+    if (mb !== ma) return mb - ma;
+    if (tb !== ta) return tb - ta;
+    return pb - pa;
+  });
+
+  return valid[0] ?? null;
+}
+
 async function fetchWithTimeout(
   url: string,
   options: RequestInit & { timeout?: number } = {}
@@ -84,97 +180,38 @@ async function fetchWithTimeout(
   }
 }
 
-function parseMerolagani(html: string, scrapedAt: string): NepseSummary | null {
+/**
+ * Merolagani datewise NEPSE index (first row = latest). No turnover on this page.
+ * Expects default view: NEPSE Index in the dropdown (server-rendered first page).
+ */
+function parseMerolaganiIndices(html: string, scrapedAt: string): NepseSummary | null {
   const { document } = parseHTML(html);
-  const pageText = (document.body?.textContent ?? "").replace(/\s+/g, " ").trim();
-  let index: number | null = null;
-  let change: number | null = null;
-  let changePercent: number | null = null;
-  let totalTurnover: number | null = null;
-  const tradedShares = extractMetric(pageText, ["Traded Shares", "Total Shares"], false);
-  const advancingIssues = extractMetric(pageText, ["Advance", "ADV"], true);
-  const decliningIssues = extractMetric(pageText, ["Decline", "DEC"], true);
-  const unchangedIssues = extractMetric(pageText, ["Unchanged", "UNCH"], true);
-  const gainers: Array<{ symbol: string; price: number; changePercent: number }> = [];
-  const losers: Array<{ symbol: string; price: number; changePercent: number }> = [];
+  const container =
+    document.querySelector("#ctl00_ContentPlaceHolder1_divData") ?? document.body;
+  const table =
+    container.querySelector("table.table-bordered.table-striped.sortable") ??
+    container.querySelector("table.table-bordered.table-striped") ??
+    container.querySelector("table.sortable") ??
+    container.querySelector("table.table");
+  if (!table) return null;
+  const firstRow = table.querySelector("tbody tr");
+  if (!firstRow) return null;
+  const cells = firstRow.querySelectorAll("td");
+  if (cells.length < 5) return null;
 
-  const tables = document.querySelectorAll("table");
-  for (const table of tables) {
-    const text = table.textContent ?? "";
-    const rows = table.querySelectorAll("tr");
+  const dateAd = (cells[1]?.textContent ?? "").trim();
+  const dataAsOf = adSlashDateToIso(dateAd);
+  if (!dataAsOf) return null;
 
-    for (const row of rows) {
-      const cells = row.querySelectorAll("td, th");
-      const cellTexts = Array.from(cells).map((c) => (c.textContent ?? "").trim());
-
-      if (
-        text.includes("NEPSE") ||
-        text.includes("Index") ||
-        cellTexts.some((t) => t.includes("NEPSE") || t.includes("Index"))
-      ) {
-        for (let i = 0; i < cellTexts.length; i++) {
-          const num = parseNumber(cellTexts[i]);
-          if (num !== null && num > 100 && num < 100_000) {
-            if (index === null) index = num;
-            else if (change === null && Math.abs(num) < 1000) change = num;
-            else if (changePercent === null && Math.abs(num) < 100) changePercent = num;
-          }
-        }
-      }
-
-      if (
-        text.includes("Turnover") ||
-        cellTexts.some((t) => t.toLowerCase().includes("turnover"))
-      ) {
-        for (const t of cellTexts) {
-          const n = parseNumber(t);
-          if (n !== null && n > 1_000_000) {
-            totalTurnover = n;
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  const allTables = document.querySelectorAll("table");
-  for (const table of allTables) {
-    const header = (table.querySelector("thead") ?? table).textContent ?? "";
-    const isGainers = header.toLowerCase().includes("gainer");
-    const isLosers = header.toLowerCase().includes("loser");
-    if (!isGainers && !isLosers) continue;
-
-    const rows = table.querySelectorAll("tbody tr, tr");
-    const target = isGainers ? gainers : losers;
-    if (target.length >= 5) continue;
-
-    for (const row of rows) {
-      if (target.length >= 5) break;
-      const cells = row.querySelectorAll("td");
-      if (cells.length < 2) continue;
-      const symbolCell = cells[0]?.textContent?.trim() ?? "";
-      const symbol = symbolCell.replace(/\s+/g, " ").trim().slice(0, 20);
-      if (!symbol || symbol.length < 2) continue;
-      let price: number | null = null;
-      let pct: number | null = null;
-      for (let i = 1; i < cells.length; i++) {
-        const val = parseNumber(cells[i]?.textContent);
-        if (val !== null) {
-          if (val >= 1 && val < 1e6 && (price === null || val > price)) price = val;
-          if (Math.abs(val) <= 100 && pct === null) pct = val;
-        }
-      }
-      if (symbol && price !== null && pct !== null) {
-        target.push({ symbol, price, changePercent: pct });
-      }
-    }
-  }
+  const index = parseNumber(cells[2]?.textContent);
+  const change = parseNumber(cells[3]?.textContent);
+  const pctRaw = (cells[4]?.textContent ?? "").replace(/%/g, "").trim();
+  const changePercent = parseNumber(pctRaw);
 
   if (index === null || index === 0) return null;
 
-  const marketStatus: NepseMarketStatus = isNepalMarketOpen(
-    new Date(scrapedAt)
-  )
+  const sessionEnd = merolaganiIndicesSessionEnd(dataAsOf, scrapedAt);
+  const marketStatus: NepseMarketStatus = isNepalMarketOpen(new Date(scrapedAt))
     ? "open"
     : "closed";
 
@@ -182,21 +219,18 @@ function parseMerolagani(html: string, scrapedAt: string): NepseSummary | null {
     sourceId: "nepse",
     sourceName: "Merolagani",
     timestamp: scrapedAt,
+    dataAsOf,
+    sessionEnd,
     index,
     change: change ?? null,
     changePercent: changePercent ?? null,
-    totalTurnover: totalTurnover ?? undefined,
-    tradedShares: tradedShares ?? undefined,
-    advancingIssues: advancingIssues ?? undefined,
-    decliningIssues: decliningIssues ?? undefined,
-    unchangedIssues: unchangedIssues ?? undefined,
     marketStatus,
-    topGainers: gainers.length > 0 ? gainers.slice(0, 5) : undefined,
-    topLosers: losers.length > 0 ? losers.slice(0, 5) : undefined,
   };
 }
 
 function parseSharesansarDatewise(html: string, scrapedAt: string): NepseSummary | null {
+  const dataAsOf = parseSharesansarPageDate(html);
+  const sessionEnd = sharesansarSessionEnd(dataAsOf, scrapedAt);
   const { document } = parseHTML(html);
   const pageText = (document.body?.textContent ?? "").replace(/\s+/g, " ").trim();
   const tradedShares = extractMetric(pageText, ["Traded Shares", "Total Shares"], false);
@@ -227,6 +261,8 @@ function parseSharesansarDatewise(html: string, scrapedAt: string): NepseSummary
         sourceId: "nepse",
         sourceName: "ShareSansar",
         timestamp: scrapedAt,
+        dataAsOf: dataAsOf ?? undefined,
+        sessionEnd,
         index,
         change,
         changePercent,
@@ -245,36 +281,63 @@ function parseSharesansarDatewise(html: string, scrapedAt: string): NepseSummary
 
 /**
  * NEPSE (Nepal Stock Exchange) daily index and top movers.
- * Primary: Merolagani; fallback: Sharesansar.
+ * Fetches ShareSansar + Merolagani in parallel; returns the fresher snapshot.
  */
 export async function fetchNepseSummary(): Promise<NepseSummary> {
   const scrapedAt = new Date().toISOString();
 
-  // Prefer ShareSansar "datewise indices" table (stable and explicit fields).
-  try {
-    const res = await fetchWithTimeout(SHARESANSAR_DATEWISE, {
-      timeout: NEPSE_FETCH_TIMEOUT_MS,
-    });
-    if (!res.ok) throw new Error(`ShareSansar ${res.status}`);
-    const html = await res.text();
-    const parsed = parseSharesansarDatewise(html, scrapedAt);
-    if (parsed) return parsed;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+  const [ssOutcome, mlOutcome] = await Promise.allSettled([
+    (async () => {
+      const res = await fetchWithTimeout(SHARESANSAR_DATEWISE, {
+        timeout: NEPSE_FETCH_TIMEOUT_MS,
+      });
+      if (!res.ok) throw new Error(`ShareSansar ${res.status}`);
+      const html = await res.text();
+      return parseSharesansarDatewise(html, scrapedAt);
+    })(),
+    (async () => {
+      const res = await fetchWithTimeout(MEROLAGANI_INDICES, {
+        timeout: NEPSE_FETCH_TIMEOUT_MS,
+      });
+      if (!res.ok) throw new Error(`Merolagani ${res.status}`);
+      const html = await res.text();
+      return parseMerolaganiIndices(html, scrapedAt);
+    })(),
+  ]);
+
+  const ssParsed =
+    ssOutcome.status === "fulfilled" && ssOutcome.value ? ssOutcome.value : null;
+  const mlParsed =
+    mlOutcome.status === "fulfilled" && mlOutcome.value ? mlOutcome.value : null;
+
+  const candidates: NepseSummary[] = [];
+  if (ssOutcome.status === "rejected") {
+    const message =
+      ssOutcome.reason instanceof Error
+        ? ssOutcome.reason.message
+        : String(ssOutcome.reason);
     console.warn("[nepse] ShareSansar fetch/parse failed:", message);
   }
-
-  try {
-    const res = await fetchWithTimeout(MEROLAGANI_SUMMARY, {
-      timeout: NEPSE_FETCH_TIMEOUT_MS,
-    });
-    if (!res.ok) throw new Error(`Merolagani ${res.status}`);
-    const html = await res.text();
-    const parsed = parseMerolagani(html, scrapedAt);
-    if (parsed) return parsed;
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+  if (mlOutcome.status === "rejected") {
+    const message =
+      mlOutcome.reason instanceof Error
+        ? mlOutcome.reason.message
+        : String(mlOutcome.reason);
     console.warn("[nepse] Merolagani fetch/parse failed:", message);
+  }
+
+  const mlEnriched = enrichMerolaganiFromShareSansar(mlParsed, ssParsed);
+  if (ssParsed) candidates.push(ssParsed);
+  if (mlEnriched) candidates.push(mlEnriched);
+
+  const best = pickLatestNepseSummary(candidates, scrapedAt);
+  if (best) {
+    if (candidates.length > 1) {
+      console.info(
+        `[nepse] using ${best.sourceName} (picked freshest of ${candidates.map((c) => c.sourceName).join(", ")})`
+      );
+    }
+    return best;
   }
 
   return {
