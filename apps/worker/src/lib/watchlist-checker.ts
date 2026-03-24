@@ -134,6 +134,21 @@ export function evaluateWatchlistItem(
   return itemMatches(item, ctx);
 }
 
+type FeedResponse = { events?: SignalEvent[]; total?: number } | SignalEvent[];
+
+export function normalizeSignalsFromFeedResponse(payload: unknown): SignalEvent[] {
+  if (Array.isArray(payload)) {
+    return payload as SignalEvent[];
+  }
+
+  if (payload && typeof payload === "object" && "events" in payload) {
+    const events = (payload as FeedResponse & { events?: unknown }).events;
+    return Array.isArray(events) ? (events as SignalEvent[]) : [];
+  }
+
+  return [];
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${url} ${res.status}`);
@@ -158,9 +173,9 @@ export async function runWatchlistCheck(
 
   let ctx: WatchlistContext;
   try {
-    const [signals, crisisSummary, crisisIncidents, floodPayload, earthquakes, nepseSummary, assetQuotes] =
+    const [signalsResponse, crisisSummary, crisisIncidents, floodPayload, earthquakes, nepseSummary, assetQuotes] =
       await Promise.all([
-        fetchJson<SignalEvent[]>(`${base}/v1/feed?limit=80`),
+        fetchJson<FeedResponse>(`${base}/v1/feed?limit=80`),
         fetchJson<CrisisSummary | null>(`${base}/v1/crisis/summary`).catch(() => null),
         fetchJson<CrisisIncident[]>(`${base}/v1/crisis/incidents`).catch(() => []),
         fetchJson<{ alerts?: FloodAlert[] }>(`${base}/v1/crisis/flood-alerts`).catch(() => ({ alerts: [] })),
@@ -169,7 +184,7 @@ export async function runWatchlistCheck(
         fetchJson<MarketAssetQuote[]>(`${base}/v1/economy/assets`).catch(() => []),
       ]);
     ctx = {
-      signals: Array.isArray(signals) ? signals : [],
+      signals: normalizeSignalsFromFeedResponse(signalsResponse),
       crisisSummary,
       crisisIncidents: Array.isArray(crisisIncidents) ? crisisIncidents : [],
       floodAlerts: Array.isArray(floodPayload?.alerts) ? floodPayload.alerts : [],

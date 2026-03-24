@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { WatchlistItem } from "@repo/shared";
 import {
   evaluateWatchlistItem,
+  normalizeSignalsFromFeedResponse,
   type WatchlistContext,
 } from "../lib/watchlist-checker";
 
@@ -236,5 +237,25 @@ describe("evaluateWatchlistItem", () => {
         )
       ).toBe(false);
     });
+  });
+});
+
+describe("normalizeSignalsFromFeedResponse", () => {
+  test("extracts events from paginated feed payload", () => {
+    const payload = {
+      events: [{ title: "Kathmandu update", body: "Signal body", constituencyId: "ktm-1" }],
+      total: 1,
+    };
+    expect(normalizeSignalsFromFeedResponse(payload)).toEqual(payload.events);
+  });
+
+  test("supports legacy array payload", () => {
+    const payload = [{ title: "Headline", body: "Body" }];
+    expect(normalizeSignalsFromFeedResponse(payload)).toEqual(payload);
+  });
+
+  test("returns empty array for invalid payload", () => {
+    expect(normalizeSignalsFromFeedResponse({ total: 10 })).toEqual([]);
+    expect(normalizeSignalsFromFeedResponse(null)).toEqual([]);
   });
 });

@@ -31,6 +31,8 @@ type GoldApiResponse = {
   timestamp?: number;
 };
 
+const FENEGOSIDA_URL = "https://www.fenegosida.org/";
+
 function asNumber(value: number | string | null | undefined): number | null {
   if (typeof value === "number") {
     return Number.isFinite(value) ? value : null;
@@ -245,6 +247,57 @@ async function fetchMetalsFromGoldApi(
   );
 }
 
+export function extractHallmarkGoldPerTolaNpr(pageText: string): number | null {
+  const fineGoldPerTolaPattern =
+    /FINE\s*GOLD\s*\(9999\)\s*per\s*1\s*tola[^0-9]*([0-9][0-9,]*)/i;
+  const match = pageText.match(fineGoldPerTolaPattern);
+  if (!match) return null;
+  const value = Number(match[1].replaceAll(",", "").trim());
+  return Number.isFinite(value) ? value : null;
+}
+
+async function fetchHallmarkGoldQuote(
+  previousByCode: Map<string, MarketAssetQuote>
+): Promise<MarketAssetQuote> {
+  const res = await fetch(FENEGOSIDA_URL, { headers: { Accept: "text/html" } });
+  if (!res.ok) throw new Error(`FENEGOSIDA request failed: ${res.status}`);
+  const html = await res.text();
+  const priceNprPerTola = extractHallmarkGoldPerTolaNpr(html);
+  if (priceNprPerTola == null) {
+    throw new Error("FENEGOSIDA page did not contain parsable hallmark gold tola price");
+  }
+
+  const previous = previousByCode.get("XAU");
+  const change =
+    previous?.price === undefined
+      ? null
+      : Number((priceNprPerTola - previous.price).toFixed(2));
+  const changePercent =
+    change === null || previous?.price === 0
+      ? null
+      : Number(((change / previous.price) * 100).toFixed(3));
+
+  let trend: MarketAssetQuote["trend"] = "new";
+  if (change !== null) {
+    if (change > 0) trend = "up";
+    else if (change < 0) trend = "down";
+    else trend = "flat";
+  }
+
+  return {
+    assetCode: "XAU",
+    assetName: "Gold (Hallmark)",
+    class: "metal",
+    currency: "NPR",
+    price: priceNprPerTola,
+    previousPrice: previous?.price ?? null,
+    change,
+    changePercent,
+    trend,
+    timestamp: new Date().toISOString(),
+  } satisfies MarketAssetQuote;
+}
+
 /** CoinGecko free tier: no API key, ~60s updates. */
 async function fetchCryptoFromCoinGecko(
   previousByCode: Map<string, MarketAssetQuote>
@@ -306,7 +359,13 @@ export async function fetchMarketAssetQuotes(
 ): Promise<MarketAssetQuote[]> {
   const { skipCrypto = false, onCryptoFailure } = options;
   const previousByCode = new Map(previousQuotes.map((q) => [q.assetCode, q]));
-  const metals = await fetchMetalsFromGoldApi(previousByCode);
+  let metals = await fetchMetalsFromGoldApi(previousByCode);
+  try {
+    const hallmarkGold = await fetchHallmarkGoldQuote(previousByCode);
+    metals = [hallmarkGold, ...metals.filter((m) => m.assetCode !== "XAU")];
+  } catch {
+    // Keep gold-api metal fallback when hallmark source is unavailable.
+  }
   let crypto: MarketAssetQuote[];
   if (skipCrypto) {
     crypto = previousQuotes.filter((q) => q.class === "crypto");

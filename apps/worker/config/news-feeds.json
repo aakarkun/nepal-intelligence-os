@@ -26,5 +26,29 @@
   {
     "name": "Nepali Times",
     "url": "https://www.nepalitimes.com/feed/"
+  },
+  {
+    "name": "Online Khabar English",
+    "url": "https://english.onlinekhabar.com/feed"
+  },
+  {
+    "name": "Baahrakhari",
+    "url": "https://www.baahrakhari.com/feed"
+  },
+  {
+    "name": "Makalu Khabar",
+    "url": "https://makalukhabar.com/feed"
+  },
+  {
+    "name": "News Polar",
+    "url": "https://newspolar.com/feed"
+  },
+  {
+    "name": "Himal Press",
+    "url": "https://himalpress.com/feed"
+  },
+  {
+    "name": "Nepal Live",
+    "url": "https://nepallive.com/feed"
   }
 ]

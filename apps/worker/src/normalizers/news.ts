@@ -15,7 +15,7 @@ const SECURITY_PATTERNS =
 const POLITICAL_PATTERNS =
   /(?:cabinet|मन्त्रिपरिषद्|parliament|संसद|ordinance|no-confidence|coalition|गठबन्धन|minister|मन्त्री|prime\s*minister|प्रधानमन्त्री|election|निर्वाचन|party|राजनीतिक|vote|constituency)/i;
 const ECONOMIC_PATTERNS =
-  /(?:NRB|राष्ट्र\s*बैंक|NOC|NEPSE|inflation|मूल्यवृद्धि|remittance|रेमिट्यान्स|fuel|तेल|GDP|budget|बजेट|forex|trade|stock\s*market|interest\s*rate|rupee|dollar|tax)/i;
+  /(?:NRB|राष्ट्र\s*बैंक|NOC|NEPSE|inflation|मूल्यवृद्धि|remittance|रेमिट्यान्स|fuel|तेल|GDP|budget|बजेट|forex|trade|stock\s*market|interest\s*rate|rupee|dollar|tax|gold|silver|bullion|hallmark|suna|chandi|सुन|चाँदी)/i;
 const DIPLOMATIC_PATTERNS =
   /(?:MEA|embassy|दूतावास|treaty|सन्धि|bilateral|visit|राजदूत|ambassador|foreign\s*minister|diplomatic|United\s*Nations|UN\b|SAARC|China|India\s*relation)/i;
 const HEALTH_PATTERNS =

@@ -18,6 +18,19 @@ function parseNumber(s: string | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function extractMetric(text: string, labels: string[], asInt = false): number | null {
+  for (const label of labels) {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const rx = new RegExp(`${escaped}\\s*[:\\-]?\\s*([0-9][0-9,]*(?:\\.[0-9]+)?)`, "i");
+    const match = text.match(rx);
+    if (!match) continue;
+    const parsed = parseNumber(match[1]);
+    if (parsed == null) continue;
+    return asInt ? Math.round(parsed) : parsed;
+  }
+  return null;
+}
+
 const NPT_OFFSET_MINS = 5 * 60 + 45;
 
 /** NPT date as YYYY-MM-DD (for holiday check). */
@@ -73,10 +86,15 @@ async function fetchWithTimeout(
 
 function parseMerolagani(html: string, scrapedAt: string): NepseSummary | null {
   const { document } = parseHTML(html);
+  const pageText = (document.body?.textContent ?? "").replace(/\s+/g, " ").trim();
   let index: number | null = null;
   let change: number | null = null;
   let changePercent: number | null = null;
   let totalTurnover: number | null = null;
+  const tradedShares = extractMetric(pageText, ["Traded Shares", "Total Shares"], false);
+  const advancingIssues = extractMetric(pageText, ["Advance", "ADV"], true);
+  const decliningIssues = extractMetric(pageText, ["Decline", "DEC"], true);
+  const unchangedIssues = extractMetric(pageText, ["Unchanged", "UNCH"], true);
   const gainers: Array<{ symbol: string; price: number; changePercent: number }> = [];
   const losers: Array<{ symbol: string; price: number; changePercent: number }> = [];
 
@@ -168,6 +186,10 @@ function parseMerolagani(html: string, scrapedAt: string): NepseSummary | null {
     change: change ?? null,
     changePercent: changePercent ?? null,
     totalTurnover: totalTurnover ?? undefined,
+    tradedShares: tradedShares ?? undefined,
+    advancingIssues: advancingIssues ?? undefined,
+    decliningIssues: decliningIssues ?? undefined,
+    unchangedIssues: unchangedIssues ?? undefined,
     marketStatus,
     topGainers: gainers.length > 0 ? gainers.slice(0, 5) : undefined,
     topLosers: losers.length > 0 ? losers.slice(0, 5) : undefined,
@@ -176,6 +198,11 @@ function parseMerolagani(html: string, scrapedAt: string): NepseSummary | null {
 
 function parseSharesansarDatewise(html: string, scrapedAt: string): NepseSummary | null {
   const { document } = parseHTML(html);
+  const pageText = (document.body?.textContent ?? "").replace(/\s+/g, " ").trim();
+  const tradedShares = extractMetric(pageText, ["Traded Shares", "Total Shares"], false);
+  const advancingIssues = extractMetric(pageText, ["Advance", "ADV"], true);
+  const decliningIssues = extractMetric(pageText, ["Decline", "DEC"], true);
+  const unchangedIssues = extractMetric(pageText, ["Unchanged", "UNCH"], true);
   const marketStatus: NepseMarketStatus = isNepalMarketOpen(new Date(scrapedAt))
     ? "open"
     : "closed";
@@ -204,6 +231,10 @@ function parseSharesansarDatewise(html: string, scrapedAt: string): NepseSummary
         change,
         changePercent,
         totalTurnover: totalTurnover ?? undefined,
+        tradedShares: tradedShares ?? undefined,
+        advancingIssues: advancingIssues ?? undefined,
+        decliningIssues: decliningIssues ?? undefined,
+        unchangedIssues: unchangedIssues ?? undefined,
         marketStatus,
       };
     }

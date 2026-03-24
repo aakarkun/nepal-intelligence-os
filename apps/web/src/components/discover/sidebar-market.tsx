@@ -18,6 +18,18 @@ function isNepseOpen(): boolean {
   return minutes >= 11 * 60 && minutes < 15 * 60;
 }
 
+export function computePercentChange(current: number, previous: number | null): number | null {
+  if (previous == null || previous === 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
+export function computeGoldNprPerTola(
+  xauUsdPerOunce: number,
+  usdNpr: number
+): number {
+  return xauUsdPerOunce * usdNpr * (11.6638038 / 31.1034768);
+}
+
 export function SidebarMarket() {
   const { data: nepse } = useQuery({
     queryKey: ["economy", "nepse"],
@@ -54,6 +66,20 @@ export function SidebarMarket() {
 
   const open = isNepseOpen();
   const updatedAt = nepse?.timestamp ?? usd?.publishedOn ?? usd?.date ?? assets[0]?.timestamp;
+  const btcPercent = btc
+    ? computePercentChange(btc.price, btc.previousPrice) ?? btc.changePercent
+    : null;
+  const goldPercent = gold
+    ? computePercentChange(gold.price, gold.previousPrice) ?? gold.changePercent
+    : null;
+  const goldNprPerTola =
+    gold == null
+      ? null
+      : gold.currency === "NPR"
+        ? gold.price
+        : usd
+          ? computeGoldNprPerTola(gold.price, usd.buy)
+          : null;
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -84,19 +110,58 @@ export function SidebarMarket() {
         {usd != null && (
           <div className="flex justify-between gap-2">
             <span className="text-muted-foreground">USD/NPR</span>
-            <span className="tabular-nums">{usd.buy?.toFixed(2) ?? "—"}</span>
+            <span className="tabular-nums">
+              {usd.buy?.toFixed(2) ?? "—"}
+              {(() => {
+                const usdPercent = computePercentChange(usd.buy, usd.previousBuy);
+                if (usdPercent == null) return null;
+                return (
+                  <span className={usdPercent >= 0 ? "text-emerald-500" : "text-red-500"}>
+                    {" "}
+                    {usdPercent >= 0 ? "+" : ""}
+                    {usdPercent.toFixed(2)}%
+                  </span>
+                );
+              })()}
+            </span>
           </div>
         )}
         {inr != null && (
           <div className="flex justify-between gap-2">
             <span className="text-muted-foreground">INR/NPR</span>
-            <span className="tabular-nums">{inr.buy?.toFixed(2) ?? "—"}</span>
+            <span className="tabular-nums">
+              {inr.buy?.toFixed(2) ?? "—"}
+              {(() => {
+                const inrPercent = computePercentChange(inr.buy, inr.previousBuy);
+                if (inrPercent == null) return null;
+                return (
+                  <span className={inrPercent >= 0 ? "text-emerald-500" : "text-red-500"}>
+                    {" "}
+                    {inrPercent >= 0 ? "+" : ""}
+                    {inrPercent.toFixed(2)}%
+                  </span>
+                );
+              })()}
+            </span>
           </div>
         )}
         {aud != null && (
           <div className="flex justify-between gap-2">
             <span className="text-muted-foreground">AUD/NPR</span>
-            <span className="tabular-nums">{aud.buy?.toFixed(2) ?? "—"}</span>
+            <span className="tabular-nums">
+              {aud.buy?.toFixed(2) ?? "—"}
+              {(() => {
+                const audPercent = computePercentChange(aud.buy, aud.previousBuy);
+                if (audPercent == null) return null;
+                return (
+                  <span className={audPercent >= 0 ? "text-emerald-500" : "text-red-500"}>
+                    {" "}
+                    {audPercent >= 0 ? "+" : ""}
+                    {audPercent.toFixed(2)}%
+                  </span>
+                );
+              })()}
+            </span>
           </div>
         )}
         {btc != null && (
@@ -104,15 +169,15 @@ export function SidebarMarket() {
             <span className="text-muted-foreground">BTC/USD</span>
             <span className="tabular-nums">
               ${btc.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              {btc.changePercent != null && (
+              {btcPercent != null && (
                 <span
                   className={
-                    (btc.changePercent ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"
+                    (btcPercent ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"
                   }
                 >
                   {" "}
-                  {(btc.changePercent ?? 0) >= 0 ? "+" : ""}
-                  {(btc.changePercent ?? 0).toFixed(2)}%
+                  {(btcPercent ?? 0) >= 0 ? "+" : ""}
+                  {(btcPercent ?? 0).toFixed(2)}%
                 </span>
               )}
             </span>
@@ -120,20 +185,38 @@ export function SidebarMarket() {
         )}
         {gold != null && (
           <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">Gold (XAU)</span>
+            <span className="text-muted-foreground">
+              {gold.currency === "NPR" ? "XAU/NPR (tola)" : "XAU/USD"}
+            </span>
             <span className="tabular-nums">
-              ${gold.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              {gold.changePercent != null && (
+              {gold.currency === "NPR" ? "रु " : "$"}
+              {gold.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              {goldPercent != null && (
                 <span
                   className={
-                    (gold.changePercent ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"
+                    (goldPercent ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"
                   }
                 >
                   {" "}
-                  {(gold.changePercent ?? 0) >= 0 ? "+" : ""}
-                  {(gold.changePercent ?? 0).toFixed(2)}%
+                  {(goldPercent ?? 0) >= 0 ? "+" : ""}
+                  {(goldPercent ?? 0).toFixed(2)}%
                 </span>
               )}
+              {gold.change != null && (
+                <span className={gold.change >= 0 ? "text-emerald-500" : "text-red-500"}>
+                  {" "}
+                  ({gold.change >= 0 ? "+" : ""}
+                  {gold.change.toLocaleString(undefined, { maximumFractionDigits: 0 })})
+                </span>
+              )}
+            </span>
+          </div>
+        )}
+        {goldNprPerTola != null && gold?.currency !== "NPR" && (
+          <div className="flex justify-between gap-2">
+            <span className="text-muted-foreground">XAU/NPR (tola)</span>
+            <span className="tabular-nums">
+              रु {goldNprPerTola.toLocaleString("en-NP", { maximumFractionDigits: 0 })}
             </span>
           </div>
         )}

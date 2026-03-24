@@ -47,7 +47,38 @@ const ECONOMY_KEYWORDS = [
   "tourism",
   "tax",
   "fuel",
+  "gold",
+  "silver",
+  "bullion",
+  "hallmark",
+  "suna",
+  "chandi",
+  "सुन",
+  "चाँदी",
 ];
+
+const PRECIOUS_METALS_KEYWORDS = [
+  "gold",
+  "silver",
+  "bullion",
+  "hallmark",
+  "xau",
+  "xag",
+  "suna",
+  "chandi",
+  "सुन",
+  "चाँदी",
+];
+
+const SENTIMENT_POSITIVE = /\b(rise|rises|up|surge|gain|bullish|increase|record high|soars|jumps)\b/i;
+const SENTIMENT_NEGATIVE = /\b(fall|falls|down|drop|decline|bearish|decrease|slump|weakens)\b/i;
+
+function inferMarketSentiment(title: string, body: string): "bullish" | "bearish" | "neutral" {
+  const text = `${title} ${body}`;
+  if (SENTIMENT_POSITIVE.test(text)) return "bullish";
+  if (SENTIMENT_NEGATIVE.test(text)) return "bearish";
+  return "neutral";
+}
 
 const TRACKED_CODES = ["AUD", "USD", "EUR", "GBP"] as const;
 
@@ -149,6 +180,27 @@ export default function EconomyPage() {
       return ECONOMY_KEYWORDS.some((keyword) => haystack.includes(keyword));
     });
   }, [feedData]);
+
+  const preciousMetalsNews = useMemo(() => {
+    const events = feedData?.events ?? [];
+    return events.filter((event) => {
+      const haystack = `${event.title} ${event.body} ${event.source ?? ""}`.toLowerCase();
+      return PRECIOUS_METALS_KEYWORDS.some((keyword) => haystack.includes(keyword));
+    });
+  }, [feedData]);
+
+  const preciousMetalsSentiment = useMemo(() => {
+    let bullish = 0;
+    let bearish = 0;
+    for (const event of preciousMetalsNews) {
+      const sentiment = inferMarketSentiment(event.title, event.body);
+      if (sentiment === "bullish") bullish++;
+      if (sentiment === "bearish") bearish++;
+    }
+    if (bullish > bearish) return "Bullish";
+    if (bearish > bullish) return "Bearish";
+    return "Neutral";
+  }, [preciousMetalsNews]);
 
   const economySources = sourceHealth.filter(
     (source) =>
@@ -300,10 +352,29 @@ export default function EconomyPage() {
                 )}
               </div>
               {nepse.totalTurnover != null && nepse.totalTurnover > 0 && (
-                <div className="text-xs text-muted-foreground">
-                  Turnover: NPR {formatNumber(nepse.totalTurnover)}
+                <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded bg-background/8 px-2 py-1">
+                    Turnover: NPR {formatNumber(nepse.totalTurnover)}
+                  </div>
+                  <div className="rounded bg-background/8 px-2 py-1">
+                    Traded shares:{" "}
+                    {nepse.tradedShares != null
+                      ? formatNumber(nepse.tradedShares)
+                      : "—"}
+                  </div>
+                  <div className="rounded bg-background/8 px-2 py-1">
+                    ADV/DEC/UNCH:{" "}
+                    {nepse.advancingIssues ?? 0}/{nepse.decliningIssues ?? 0}/
+                    {nepse.unchangedIssues ?? 0}
+                  </div>
+                  <div className="rounded bg-background/8 px-2 py-1">
+                    Breadth: {((nepse.advancingIssues ?? 0) - (nepse.decliningIssues ?? 0)) >= 0 ? "Positive" : "Negative"}
+                  </div>
                 </div>
               )}
+              <p className="text-[11px] text-muted-foreground/80">
+                ADV/DEC/UNCH means advancing, declining, and unchanged listed stocks for the session.
+              </p>
               {(nepse.topGainers?.length ?? 0) + (nepse.topLosers?.length ?? 0) > 0 && (
                 <div className="grid gap-2 sm:grid-cols-2">
                   {nepse.topGainers && nepse.topGainers.length > 0 && (
@@ -368,7 +439,7 @@ export default function EconomyPage() {
         <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
-              FX breadth
+              FX ADV/DEC/UNCH
             </div>
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
               <Badge className="border-emerald-500/20 bg-emerald-500/8 text-emerald-400">
@@ -383,6 +454,9 @@ export default function EconomyPage() {
               <Badge className="border-border/35 bg-background/18 text-foreground/90">
                 {formatNumber(summary?.trackedRates ?? 0)} tracked
               </Badge>
+            </div>
+            <div className="mt-2 text-[11px] text-muted-foreground/80">
+              ADV/DEC/UNCH = currencies moved up / down / unchanged versus previous board.
             </div>
           </div>
 
@@ -481,6 +555,42 @@ export default function EconomyPage() {
               {topNews.length === 0 && (
                 <div className="rounded-lg bg-background/6 p-4 text-sm text-muted-foreground">
                   No economy-tagged context headlines in the current feed window.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border bg-card/80 rounded-2xl w-full">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="font-display text-base">Gold & Silver Signal Board</CardTitle>
+                <Badge
+                  className={cn(
+                    "border",
+                    preciousMetalsSentiment === "Bullish" && "border-emerald-500/20 bg-emerald-500/8 text-emerald-400",
+                    preciousMetalsSentiment === "Bearish" && "border-red-500/20 bg-red-500/8 text-red-400",
+                    preciousMetalsSentiment === "Neutral" && "border-border/35 bg-muted/12 text-muted-foreground"
+                  )}
+                >
+                  {preciousMetalsSentiment}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {preciousMetalsNews.slice(0, 7).map((event, index) => (
+                <div
+                  key={`${event.id}-metals-${index}`}
+                  className="rounded-lg bg-background/8 p-3"
+                >
+                  <div className="text-sm font-medium leading-tight">{event.title}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {event.source ?? "Unknown source"} · {timeAgo(event.timestamp)}
+                  </div>
+                </div>
+              ))}
+              {preciousMetalsNews.length === 0 && (
+                <div className="rounded-lg bg-background/6 p-4 text-sm text-muted-foreground">
+                  No gold/silver market headlines in the current feed window.
                 </div>
               )}
             </CardContent>

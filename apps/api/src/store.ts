@@ -38,6 +38,7 @@ import * as crisisRepo from "./db/repos/crisis-incidents.js";
 import * as constituencyRepo from "./db/repos/constituency-results.js";
 import * as nationalSummariesRepo from "./db/repos/national-summaries.js";
 import * as snapshotsRepo from "./db/repos/snapshots.js";
+import * as nepseSnapshotsRepo from "./db/repos/nepse-snapshots.js";
 
 // ─── In-memory (no table yet) ────────────────────────────────────────────────
 
@@ -575,6 +576,36 @@ export function updateNepseSummary(summary: NepseSummary | null): void {
     data: summary,
     ttlDays: 14,
   });
+}
+
+export async function appendNepseSnapshot(summary: NepseSummary): Promise<void> {
+  await nepseSnapshotsRepo.insertNepseSnapshot({
+    id: nanoid10(),
+    indexValue: summary.index ?? null,
+    change: summary.change ?? null,
+    changePercent: summary.changePercent ?? null,
+    turnover: summary.totalTurnover ?? null,
+    marketStatus: summary.marketStatus ?? null,
+    topGainers: summary.topGainers ?? null,
+    topLosers: summary.topLosers ?? null,
+    scrapedAt: summary.timestamp,
+  });
+}
+
+export async function getNepseSnapshotHistory(limit = 200): Promise<
+  Array<{
+    id: string;
+    indexValue: number | null;
+    change: number | null;
+    changePercent: number | null;
+    turnover: number | null;
+    marketStatus: string | null;
+    topGainers: unknown;
+    topLosers: unknown;
+    scrapedAt: string;
+  }>
+> {
+  return nepseSnapshotsRepo.listNepseSnapshots(limit);
 }
 
 export function resetElectionData(datasetId?: string): void {

@@ -43,6 +43,7 @@ describe("inferSignalType", () => {
   test("returns economic for NRB/NEPSE/inflation", () => {
     expect(inferSignalType("NRB rate decision", "")).toBe("economic");
     expect(inferSignalType("NEPSE index rises", "")).toBe("economic");
+    expect(inferSignalType("Hallmark gold price rises in Nepal", "")).toBe("economic");
   });
   test("returns disaster for earthquake/flood/DHM", () => {
     expect(inferSignalType("Earthquake hits region", "")).toBe("disaster");

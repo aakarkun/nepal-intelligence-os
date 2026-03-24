@@ -47,3 +47,21 @@ export async function getLatestNepseSnapshot(): Promise<NepseSnapshotRow | null>
     scrapedAt: r.scrapedAt,
   };
 }
+
+export async function listNepseSnapshots(limit = 200): Promise<NepseSnapshotRow[]> {
+  const rows = await db.select()
+    .from(nepseSnapshots)
+    .orderBy(desc(nepseSnapshots.scrapedAt))
+    .limit(Math.max(1, Math.min(limit, 2000)));
+  return rows.map((r) => ({
+    id: r.id,
+    indexValue: r.indexValue,
+    change: r.change,
+    changePercent: r.changePercent,
+    turnover: r.turnover,
+    marketStatus: r.marketStatus,
+    topGainers: r.topGainers,
+    topLosers: r.topLosers,
+    scrapedAt: r.scrapedAt,
+  }));
+}

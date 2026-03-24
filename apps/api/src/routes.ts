@@ -66,6 +66,8 @@ import {
   updateEconomySummary,
   replaceMarketAssetQuotes,
   updateNepseSummary,
+  appendNepseSnapshot,
+  getNepseSnapshotHistory,
   resetElectionData,
 } from "./store";
 import { broadcast } from "./sse";
@@ -436,6 +438,12 @@ api.get("/economy/nepse", (c) => {
   return c.json(getNepseSummary() ?? null);
 });
 
+api.get("/economy/nepse/history", async (c) => {
+  const limit = Number(c.req.query("limit") ?? 200);
+  const rows = await getNepseSnapshotHistory(limit);
+  return c.json(rows);
+});
+
 api.get("/election-datasets", (c) => {
   return c.json(getElectionDatasets());
 });
@@ -804,6 +812,7 @@ api.post("/ingest/economy/nepse", async (c) => {
   }
 
   updateNepseSummary(parsed.data);
+  await appendNepseSnapshot(parsed.data);
   return c.json({ ok: true });
 });
 
