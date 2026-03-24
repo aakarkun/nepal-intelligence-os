@@ -1,16 +1,10 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import { ArrowDownRight, ArrowUpRight, Minus, Search } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Minus, Search } from "lucide-react";
 import {
   fetchEconomySummary,
   fetchFeed,
@@ -19,17 +13,17 @@ import {
   fetchNepseHistory,
   fetchNepseSummary,
 } from "@/lib/api";
-import { buildNepseSparkSeries, type NepseSparkSeries } from "@/lib/nepse-index-spark";
+import { buildNepseSparkSeries } from "@/lib/nepse-index-spark";
+import { dedupeSignalEventsByTitle, timeAgo } from "@/lib/utils";
 import {
-  dedupeSignalEventsByTitle,
-  formatNepalDateTime,
-  formatNumber,
-  timeAgo,
-} from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { IntelRailSections } from "@/components/layout/intel-rail";
+  IntelRailSections,
+  RailPanelHeader,
+  railCardInset,
+  railListBody,
+  railPagination,
+  railRow,
+  railShell,
+} from "@/components/layout/intel-rail";
 import { cn } from "@/lib/utils";
 
 const ECONOMY_KEYWORDS = [
@@ -75,9 +69,6 @@ function inferBullish(title: string, body: string): boolean {
 }
 
 const TRACKED_CODES = ["AUD", "USD", "EUR", "GBP"] as const;
-
-const panelClass = "border border-white/10 bg-[#0a0a0a] rounded-xl relative overflow-hidden";
-const headerClass = "text-[10px] font-mono uppercase tracking-[0.15em] text-[#888] px-4 py-2.5 border-b border-white/10 bg-[#111] flex items-center gap-2";
 
 function subscribeOnline(cb: () => void) {
   window.addEventListener("online", cb);
@@ -128,13 +119,22 @@ function LiveIndicator({ dataUpdatedAt }: { dataUpdatedAt: number }) {
 
   return (
     <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
-      <span className={cn("h-1.5 w-1.5 rounded-full", live ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
+      <span className={cn("h-1.5 w-1.5 rounded-sm", live ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
       <span className={live ? "text-emerald-500/80" : "text-rose-500/80"}>{label}</span>
     </div>
   );
 }
 
 const REF_ASSETS = ["BTC", "ETH", "XAU", "XAG"] as const;
+
+/** Official FX table: max 8 rows per page (Source Health–style pagination). */
+const FX_ROWS_PER_PAGE = 8;
+
+/** Intelligence Signals: same page size as FX for consistent rail UX. */
+const SIGNALS_ROWS_PER_PAGE = 8;
+
+const fxRowCellBg =
+  "bg-[#181818]/60 transition-colors duration-150 group-hover:bg-white/[0.06]";
 
 export default function EconomyPage() {
   const { data: summary } = useQuery({
@@ -175,6 +175,8 @@ export default function EconomyPage() {
 
   const panelOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
   const [rateQuery, setRateQuery] = useState("");
+  const [fxPage, setFxPage] = useState(0);
+  const [signalsPage, setSignalsPage] = useState(0);
 
   const filteredRates = useMemo(() => {
     const q = rateQuery.trim().toLowerCase();
@@ -184,6 +186,27 @@ export default function EconomyPage() {
       return haystack.includes(q);
     });
   }, [rates, rateQuery]);
+
+  useEffect(() => {
+    setFxPage(0);
+  }, [rateQuery]);
+
+  const fxTotalPages = Math.ceil(filteredRates.length / FX_ROWS_PER_PAGE) || 1;
+
+  useEffect(() => {
+    setFxPage((p) => Math.min(p, Math.max(0, fxTotalPages - 1)));
+  }, [fxTotalPages]);
+
+  const fxPageSafe = Math.min(fxPage, Math.max(0, fxTotalPages - 1));
+  const paginatedFxRates = useMemo(
+    () =>
+      filteredRates.slice(
+        fxPageSafe * FX_ROWS_PER_PAGE,
+        (fxPageSafe + 1) * FX_ROWS_PER_PAGE
+      ),
+    [filteredRates, fxPageSafe]
+  );
+  const showFxPagination = filteredRates.length > 0 && fxTotalPages > 1;
 
   const globalRefQuotes = useMemo(() => {
     const want = new Set<string>(REF_ASSETS);
@@ -204,6 +227,23 @@ export default function EconomyPage() {
     });
     return dedupeSignalEventsByTitle(filtered);
   }, [feedData]);
+
+  const signalsTotalPages = Math.ceil(topNews.length / SIGNALS_ROWS_PER_PAGE) || 1;
+
+  useEffect(() => {
+    setSignalsPage((p) => Math.min(p, Math.max(0, signalsTotalPages - 1)));
+  }, [signalsTotalPages]);
+
+  const signalsPageSafe = Math.min(signalsPage, Math.max(0, signalsTotalPages - 1));
+  const paginatedSignals = useMemo(
+    () =>
+      topNews.slice(
+        signalsPageSafe * SIGNALS_ROWS_PER_PAGE,
+        (signalsPageSafe + 1) * SIGNALS_ROWS_PER_PAGE
+      ),
+    [topNews, signalsPageSafe]
+  );
+  const showSignalsPagination = topNews.length > 0 && signalsTotalPages > 1;
 
   const signalSentiment = useMemo(() => {
     const slice = topNews.slice(0, 8);
@@ -245,195 +285,422 @@ export default function EconomyPage() {
         <div className="min-w-0 flex-1 space-y-4">
           
           {/* Top Indicators Strip */}
-          <div className={cn(panelClass, "flex flex-wrap divide-x divide-white/10")}>
-            {/* NEPSE */}
-            <div className="flex-1 min-w-[140px] p-3 flex flex-col justify-between">
-              <div>
-                <div className="text-[10px] font-mono text-[#888] uppercase tracking-wider mb-1">NEPSE Index</div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-mono text-[#e5e5e5]">
-                    {nepse?.index ? nepse.index.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "—"}
-                  </span>
-                  <IntelDelta change={nepse?.change ?? null} />
-                </div>
-              </div>
-              {nepseSparkSeries && (
-                <div className="mt-2 h-6 flex items-end gap-[1px] opacity-60">
-                  {nepseSparkSeries.values.map((v, i) => {
-                    const min = Math.min(...nepseSparkSeries.values);
-                    const max = Math.max(...nepseSparkSeries.values);
-                    const span = max - min || 1;
-                    const pct = 10 + ((v - min) / span) * 90;
-                    return <div key={i} className="flex-1 bg-emerald-500/50 min-w-[2px]" style={{ height: `${pct}%` }} />
-                  })}
-                </div>
-              )}
-            </div>
-            
-            {/* FX Tracked */}
-            {TRACKED_CODES.map((code) => {
-              const rate = rates.find((r) => r.currencyCode === code);
-              return (
-                <div key={code} className="flex-1 min-w-[120px] p-3 flex flex-col justify-between">
+          <div className={railShell}>
+            <RailPanelHeader title="Market snapshot" leadingDotClass="bg-emerald-500" />
+            <div className={cn(railListBody, "rounded-b-xl")}>
+              <div className={cn("flex flex-wrap gap-2", railCardInset)}>
+                {/* NEPSE */}
+                <div className="flex min-w-[140px] flex-1 flex-col justify-between rounded-xl bg-[#181818]/60 p-3">
                   <div>
-                    <div className="text-[10px] font-mono text-[#888] uppercase tracking-wider mb-1">{code}/NPR</div>
+                    <div className="mb-1 text-[10px] font-mono uppercase tracking-wider text-[#888]">
+                      NEPSE Index
+                    </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-xl font-mono text-[#e5e5e5]">
-                        {rate ? rate.buy.toFixed(2) : "—"}
+                        {nepse?.index
+                          ? nepse.index.toLocaleString(undefined, { minimumFractionDigits: 2 })
+                          : "—"}
                       </span>
-                      {rate && <IntelDelta change={rate.changeBuy} />}
+                      <IntelDelta change={nepse?.change ?? null} />
                     </div>
                   </div>
+                  {nepseSparkSeries && (
+                    <div className="mt-2 flex h-6 items-end gap-[1px] opacity-60">
+                      {nepseSparkSeries.values.map((v, i) => {
+                        const min = Math.min(...nepseSparkSeries.values);
+                        const max = Math.max(...nepseSparkSeries.values);
+                        const span = max - min || 1;
+                        const pct = 10 + ((v - min) / span) * 90;
+                        return (
+                          <div
+                            key={i}
+                            className="min-w-[2px] flex-1 bg-emerald-500/50"
+                            style={{ height: `${pct}%` }}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              );
-            })}
+
+                {TRACKED_CODES.map((code) => {
+                  const rate = rates.find((r) => r.currencyCode === code);
+                  return (
+                    <div
+                      key={code}
+                      className="flex min-w-[120px] flex-1 flex-col justify-between rounded-xl bg-[#181818]/60 p-3"
+                    >
+                      <div>
+                        <div className="mb-1 text-[10px] font-mono uppercase tracking-wider text-[#888]">
+                          {code}/NPR
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-mono text-[#e5e5e5]">
+                            {rate ? rate.buy.toFixed(2) : "—"}
+                          </span>
+                          {rate && <IntelDelta change={rate.changeBuy} />}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
-          {/* Main Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            
+          {/* Main Grid — right column narrower than 1/3 (9+3 of 12 ≈ 75% / 25%) */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
             {/* Left Column */}
-            <div className="xl:col-span-2 space-y-4">
+            <div className="min-w-0 space-y-4 xl:col-span-9">
               
               {/* FX Matrix */}
-              <div className={panelClass}>
-                <div className={headerClass}>
-                  <span className="h-1.5 w-1.5 bg-blue-500/80 rounded-full"></span>
-                  Official Exchange Rates (NRB)
-                </div>
-                <div className="p-2 border-b border-white/10 bg-[#0d0d0d]">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-[#555]" />
+              <div className={railShell}>
+                <RailPanelHeader
+                  title="Official Exchange Rates (NRB)"
+                  leadingDotClass="bg-blue-500"
+                />
+                <div className="bg-[#0c0c0c] px-1 py-2">
+                  <div className="flex items-center gap-2 px-3">
+                    <Search className="h-3 w-3 shrink-0 text-[#555]" aria-hidden />
                     <input
                       type="search"
                       value={rateQuery}
                       onChange={(e) => setRateQuery(e.target.value)}
                       placeholder="FILTER CURRENCIES..."
-                      className="w-full bg-transparent border-none text-[11px] font-mono text-[#ccc] placeholder:text-[#555] pl-8 py-1.5 focus:outline-none focus:ring-0"
+                      className="min-w-0 flex-1 border-none bg-transparent py-1.5 pl-0 font-mono text-[11px] text-[#ccc] placeholder:text-[#555] focus:outline-none focus:ring-0"
                     />
                   </div>
                 </div>
-                <div className="max-h-[400px] overflow-y-auto scrollbar-thin">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="sticky top-0 bg-[#0a0a0a] border-b border-white/10 z-10">
-                      <tr>
-                        <th className="px-4 py-2 text-[10px] font-mono text-[#555] font-normal uppercase">Code</th>
-                        <th className="px-4 py-2 text-[10px] font-mono text-[#555] font-normal uppercase text-right">Buy</th>
-                        <th className="px-4 py-2 text-[10px] font-mono text-[#555] font-normal uppercase text-right">Sell</th>
-                        <th className="px-4 py-2 text-[10px] font-mono text-[#555] font-normal uppercase text-right">Delta</th>
+                {/*
+                  Paginated (≤8 rows per page). Bottom row radius only when no pagination footer.
+                */}
+                <div
+                  className={cn(
+                    railListBody,
+                    "overflow-hidden rounded-t-xl",
+                    !showFxPagination && filteredRates.length > 0 && "rounded-b-xl"
+                  )}
+                >
+                  <div className="px-1 pb-1 pt-0">
+                  {/*
+                    border-separate + solid th bg: header matches main card (#0c0c0c), no alpha.
+                  */}
+                  <table className="w-full border-separate border-spacing-0 text-left">
+                    {/*
+                      Single rounded clip on thead + solid bg so tbody row color never shows through
+                      the header’s corners (per-th rounded cells can anti-alias over the first row).
+                    */}
+                    <thead className="overflow-hidden rounded-t-xl bg-[#0c0c0c]">
+                      <tr className="border-b border-white/[0.06]">
+                        <th
+                          scope="col"
+                          className="rounded-tl-xl border-0 bg-[#0c0c0c] px-3 py-3 text-left font-mono text-[11px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
+                        >
+                          Code
+                        </th>
+                        <th
+                          scope="col"
+                          className="border-0 bg-[#0c0c0c] px-3 py-3 text-right font-mono text-[11px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
+                        >
+                          Buy
+                        </th>
+                        <th
+                          scope="col"
+                          className="border-0 bg-[#0c0c0c] px-3 py-3 text-right font-mono text-[11px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
+                        >
+                          Sell
+                        </th>
+                        <th
+                          scope="col"
+                          className="rounded-tr-xl border-0 bg-[#0c0c0c] px-3 py-3 text-right font-mono text-[11px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
+                        >
+                          Delta
+                        </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {filteredRates.map((rate) => (
-                        <tr key={rate.currencyCode} className="hover:bg-white/[0.02] transition-colors">
-                          <td className="px-4 py-2.5">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-[12px] text-[#e5e5e5]">{rate.currencyCode}</span>
-                              <span className="font-mono text-[10px] text-[#555] truncate max-w-[120px]">{rate.currencyName}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5 text-right font-mono text-[12px] text-[#ccc]">{rate.buy.toFixed(3)}</td>
-                          <td className="px-4 py-2.5 text-right font-mono text-[12px] text-[#ccc]">{rate.sell.toFixed(3)}</td>
-                          <td className="px-4 py-2.5 text-right"><IntelDelta change={rate.changeBuy} /></td>
-                        </tr>
-                      ))}
+                    <tbody>
+                      {paginatedFxRates.map((rate, idx) => {
+                        const isFirstRowOnPage = idx === 0;
+                        const isLastRowOnPage = idx === paginatedFxRates.length - 1;
+                        const roundBottom = isLastRowOnPage;
+                        return (
+                          <tr key={rate.currencyCode} className="group">
+                            <td
+                              className={cn(
+                                "px-3 py-3",
+                                fxRowCellBg,
+                                isFirstRowOnPage && "rounded-tl-xl",
+                                roundBottom && "rounded-bl-xl"
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-[12px] text-[#e5e5e5]">
+                                  {rate.currencyCode}
+                                </span>
+                                <span className="max-w-[120px] truncate font-mono text-[10px] text-[#555]">
+                                  {rate.currencyName}
+                                </span>
+                              </div>
+                            </td>
+                            <td
+                              className={cn(
+                                "px-3 py-3 text-right font-mono text-[12px] text-[#ccc]",
+                                fxRowCellBg
+                              )}
+                            >
+                              {rate.buy.toFixed(3)}
+                            </td>
+                            <td
+                              className={cn(
+                                "px-3 py-3 text-right font-mono text-[12px] text-[#ccc]",
+                                fxRowCellBg
+                              )}
+                            >
+                              {rate.sell.toFixed(3)}
+                            </td>
+                            <td
+                              className={cn(
+                                "px-3 py-3 text-right",
+                                fxRowCellBg,
+                                isFirstRowOnPage && "rounded-tr-xl",
+                                roundBottom && "rounded-br-xl"
+                              )}
+                            >
+                              <IntelDelta change={rate.changeBuy} />
+                            </td>
+                          </tr>
+                        );
+                      })}
                       {filteredRates.length === 0 && (
                         <tr>
-                          <td colSpan={4} className="px-4 py-6 text-center font-mono text-[11px] text-[#555]">
+                          <td
+                            colSpan={4}
+                            className="rounded-b-xl px-3 py-6 text-center font-mono text-[11px] text-[#555]"
+                          >
                             NO DATA MATCHING FILTER
                           </td>
                         </tr>
                       )}
                     </tbody>
                   </table>
+                  </div>
+
+                  {showFxPagination && (
+                    <div className={cn(railPagination, "flex items-center justify-between rounded-b-xl")}>
+                      <span className="font-mono text-[9px] text-[#555]">
+                        PAGE {fxPageSafe + 1} OF {fxTotalPages}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setFxPage((p) => Math.max(0, p - 1))}
+                          disabled={fxPageSafe === 0}
+                          className="rounded p-1 transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
+                          aria-label="Previous page"
+                        >
+                          <ChevronLeft className="h-3 w-3 text-[#888]" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFxPage((p) => Math.min(fxTotalPages - 1, p + 1))
+                          }
+                          disabled={fxPageSafe >= fxTotalPages - 1}
+                          className="rounded p-1 transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
+                          aria-label="Next page"
+                        >
+                          <ChevronRight className="h-3 w-3 text-[#888]" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Strategic Commodities */}
-              <div className={panelClass}>
-                <div className={headerClass}>
-                  <span className="h-1.5 w-1.5 bg-amber-500/80 rounded-full"></span>
-                  Strategic Commodities
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-white/10">
-                  {REF_ASSETS.map((code) => {
-                    const quote = globalRefQuotes.find((q) => q.assetCode === code);
-                    return (
-                      <div key={code} className="p-3">
-                        <div className="text-[10px] font-mono text-[#888] uppercase tracking-wider mb-1">{quote?.assetName ?? code}</div>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-lg font-mono text-[#e5e5e5]">
-                            {quote ? quote.price.toLocaleString("en-US", { maximumFractionDigits: code === "BTC" ? 0 : 2 }) : "—"}
-                          </span>
-                          {quote && <IntelDelta change={quote.change} />}
+              <div className={railShell}>
+                <RailPanelHeader
+                  title="Strategic Commodities"
+                  leadingDotClass="bg-amber-500"
+                />
+                <div className={cn(railListBody, "rounded-b-xl")}>
+                  <div className={cn("grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2", railCardInset)}>
+                    {REF_ASSETS.map((code) => {
+                      const quote = globalRefQuotes.find((q) => q.assetCode === code);
+                      return (
+                        <div key={code} className="rounded-xl bg-[#181818]/60 p-3">
+                          <div className="mb-1 text-[10px] font-mono uppercase tracking-wider text-[#888]">
+                            {quote?.assetName ?? code}
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <span className="font-mono text-lg text-[#e5e5e5]">
+                              {quote
+                                ? quote.price.toLocaleString("en-US", {
+                                    maximumFractionDigits: code === "BTC" ? 0 : 2,
+                                  })
+                                : "—"}
+                            </span>
+                            {quote && <IntelDelta change={quote.change} />}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
             </div>
 
             {/* Right Column */}
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4 xl:col-span-3">
               
               {/* Intelligence Signals */}
-              <div className={panelClass}>
-                <div className={headerClass}>
-                  <span className={cn("h-1.5 w-1.5 rounded-full", signalSentiment === "bearish" ? "bg-rose-500/80" : "bg-emerald-500/80")}></span>
-                  Intelligence Signals
-                </div>
-                <div className="max-h-[400px] overflow-y-auto divide-y divide-white/5 scrollbar-thin">
-                  {topNews.slice(0, 8).map((event, i) => {
-                    const bearish = inferBearish(event.title, event.body);
-                    const bullish = inferBullish(event.title, event.body);
-                    return (
-                      <div key={i} className="p-3 hover:bg-white/[0.02] transition-colors">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="font-mono text-[9px] text-[#555]">[{timeAgo(event.timestamp).toUpperCase()}]</span>
-                          <span className="font-mono text-[9px] text-[#888] uppercase bg-white/5 px-1.5 py-0.5 rounded-md">{event.source ?? "SYS"}</span>
-                          {(bearish || bullish) && (
-                            <span className={cn("font-mono text-[9px] uppercase px-1.5 py-0.5 rounded-md", bearish ? "text-rose-400 bg-rose-400/10" : "text-emerald-400 bg-emerald-400/10")}>
-                              {bearish ? "RISK" : "OPP"}
-                            </span>
-                          )}
+              <div className={railShell}>
+                <RailPanelHeader
+                  title="Intelligence Signals"
+                  leadingDotClass={
+                    signalSentiment === "bearish" ? "bg-rose-500" : "bg-emerald-500"
+                  }
+                />
+                <div
+                  className={cn(
+                    railListBody,
+                    "overflow-hidden rounded-t-xl",
+                    !showSignalsPagination && topNews.length > 0 && "rounded-b-xl"
+                  )}
+                >
+                  <div className={railCardInset}>
+                    <div className="flex flex-col">
+                      {paginatedSignals.map((event, i) => {
+                        const bearish = inferBearish(event.title, event.body);
+                        const bullish = inferBullish(event.title, event.body);
+                        const isFirst = i === 0;
+                        const isLast = i === paginatedSignals.length - 1;
+                        return (
+                          <div
+                            key={`${event.timestamp}-${signalsPageSafe}-${i}`}
+                            className={cn(
+                              railRow,
+                              isFirst && "rounded-t-xl",
+                              isLast && "rounded-b-xl"
+                            )}
+                          >
+                            <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2">
+                              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                <span className="rounded-md bg-white/5 px-1.5 py-0.5 font-mono text-[9px] uppercase text-[#888]">
+                                  {event.source ?? "SYS"}
+                                </span>
+                                {(bearish || bullish) && (
+                                  <span
+                                    className={cn(
+                                      "rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase",
+                                      bearish
+                                        ? "bg-rose-400/10 text-rose-400"
+                                        : "bg-emerald-400/10 text-emerald-400"
+                                    )}
+                                  >
+                                    {bearish ? "RISK" : "OPP"}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="shrink-0 font-mono text-[9px] text-[#555]">
+                                [{timeAgo(event.timestamp).toUpperCase()}]
+                              </span>
+                            </div>
+                            <p className="font-sans text-[12px] leading-snug text-[#ccc]">{event.title}</p>
+                          </div>
+                        );
+                      })}
+                      {topNews.length === 0 && (
+                        <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
+                          <p className="font-mono text-[10px] uppercase text-[#555]">
+                            NO SIGNALS DETECTED.
+                          </p>
                         </div>
-                        <p className="text-[12px] text-[#ccc] leading-snug font-sans">{event.title}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {showSignalsPagination && (
+                    <div className={cn(railPagination, "flex items-center justify-between rounded-b-xl")}>
+                      <span className="font-mono text-[9px] text-[#555]">
+                        PAGE {signalsPageSafe + 1} OF {signalsTotalPages}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setSignalsPage((p) => Math.max(0, p - 1))}
+                          disabled={signalsPageSafe === 0}
+                          className="rounded p-1 transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
+                          aria-label="Previous page"
+                        >
+                          <ChevronLeft className="h-3 w-3 text-[#888]" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSignalsPage((p) => Math.min(signalsTotalPages - 1, p + 1))
+                          }
+                          disabled={signalsPageSafe >= signalsTotalPages - 1}
+                          className="rounded p-1 transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
+                          aria-label="Next page"
+                        >
+                          <ChevronRight className="h-3 w-3 text-[#888]" />
+                        </button>
                       </div>
-                    );
-                  })}
-                  {topNews.length === 0 && (
-                    <div className="p-4 text-[11px] font-mono text-[#555]">NO SIGNALS DETECTED.</div>
+                    </div>
                   )}
                 </div>
               </div>
 
               {/* Volatility Watch */}
-              <div className={panelClass}>
-                <div className={headerClass}>
-                  <span className="h-1.5 w-1.5 bg-purple-500/80 rounded-full"></span>
-                  Volatility Watch (Movers)
-                </div>
-                <div className="divide-y divide-white/5">
-                  {(summary?.topMovers ?? []).map((mover, i) => (
-                    <div key={mover.currencyCode} className="flex items-center justify-between p-3 hover:bg-white/[0.02] transition-colors">
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono text-[10px] text-[#555] w-4">{i + 1}</span>
-                        <div>
-                          <div className="font-mono text-[12px] text-[#e5e5e5]">{mover.currencyCode}</div>
-                          <div className="font-mono text-[9px] text-[#555] truncate max-w-[80px]">{mover.currencyName}</div>
+              <div className={railShell}>
+                <RailPanelHeader
+                  title="Volatility Watch (Movers)"
+                  leadingDotClass="bg-purple-500"
+                />
+                <div className={cn(railListBody, "rounded-b-xl")}>
+                  <div className={cn("flex flex-col", railCardInset)}>
+                    {(summary?.topMovers ?? []).map((mover, i, arr) => {
+                      const last = i === arr.length - 1;
+                      return (
+                        <div
+                          key={mover.currencyCode}
+                          className={cn(
+                            railRow,
+                            "flex items-start justify-between gap-3",
+                            i === 0 && "rounded-t-xl",
+                            last && "rounded-b-xl"
+                          )}
+                        >
+                          <div className="flex min-w-0 flex-1 items-start gap-3">
+                            <span className="w-4 shrink-0 pt-0.5 font-mono text-[10px] text-[#555]">
+                              {i + 1}
+                            </span>
+                            <div className="min-w-0">
+                              <div className="font-mono text-[12px] text-[#e5e5e5]">
+                                {mover.currencyCode}
+                              </div>
+                              <div className="break-words font-mono text-[9px] leading-snug text-[#555]">
+                                {mover.currencyName}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <div className="font-mono text-[12px] text-[#ccc]">{mover.buy.toFixed(3)}</div>
+                            <IntelDelta change={mover.changeBuy} />
+                          </div>
                         </div>
+                      );
+                    })}
+                    {(summary?.topMovers ?? []).length === 0 && (
+                      <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
+                        <p className="font-mono text-[10px] uppercase text-[#555]">
+                          AWAITING VOLATILITY DATA.
+                        </p>
                       </div>
-                      <div className="text-right">
-                        <div className="font-mono text-[12px] text-[#ccc]">{mover.buy.toFixed(3)}</div>
-                        <IntelDelta change={mover.changeBuy} />
-                      </div>
-                    </div>
-                  ))}
-                  {(summary?.topMovers ?? []).length === 0 && (
-                    <div className="p-4 text-[11px] font-mono text-[#555]">AWAITING VOLATILITY DATA.</div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
 

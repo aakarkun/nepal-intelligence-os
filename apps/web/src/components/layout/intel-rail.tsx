@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import {
@@ -28,14 +28,19 @@ import { Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 /* Intel Rail — locked mini-card surface (shared with Source Health)     */
 /* ------------------------------------------------------------------ */
 
-const railShell = "overflow-hidden rounded-xl bg-[#0c0c0c] p-1";
-const railListBody = "min-w-0 overflow-hidden rounded-t-xl bg-[#0c0c0c]";
-const railRow =
+/** Shared intel / economy terminal card surface — matches rail sections (inset p-1). */
+export const railShell = "overflow-hidden rounded-xl bg-[#0c0c0c] p-1";
+export const railListBody = "min-w-0 overflow-hidden rounded-t-xl bg-[#0c0c0c]";
+export const railRow =
   "bg-[#181818]/60 px-3 py-3 transition-colors duration-150 hover:bg-white/[0.06]";
-const railPagination = "bg-[#0c0c0c] px-3 py-2";
+/** Footer bar for paginated rail lists (Source Health, watchlist, etc.). */
+export const railPagination = "bg-[#0c0c0c] px-3 py-2";
+
+/** Inner inset for rail list bodies — matches economy Intelligence Signals card (`p-1`). */
+export const railCardInset = "p-1";
 
 /** Top strip inside each rail card: title (+ optional section dot) | optional right indicators */
-function RailPanelHeader({
+export function RailPanelHeader({
   title,
   leadingDotClass,
   right,
@@ -82,7 +87,8 @@ function PanelSection({
   subHeader,
 }: {
   title: string;
-  dotClass: string;
+  /** Leading accent dot; omit when using only `headerRight` (e.g. Watchlist status dots). */
+  dotClass?: string;
   children: ReactNode;
   headerRight?: ReactNode;
   subHeader?: ReactNode;
@@ -217,20 +223,23 @@ function AnomaliesSection() {
     >
       {paginatedItems.length === 0 ? (
         <div className={railListBody}>
-          <div className="flex flex-col">
-            <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-              <p className="font-mono text-[10px] text-[#555] uppercase">
-                {anomalyView === "operational"
-                  ? "NO SOURCE ISSUES"
-                  : "NO ANOMALIES DETECTED"}
-              </p>
+          <div className={railCardInset}>
+            <div className="flex flex-col">
+              <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
+                <p className="font-mono text-[10px] text-[#555] uppercase">
+                  {anomalyView === "operational"
+                    ? "NO SOURCE ISSUES"
+                    : "NO ANOMALIES DETECTED"}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       ) : (
         <>
           <div className={railListBody}>
-            <div className="flex flex-col">
+            <div className={railCardInset}>
+              <div className="flex flex-col">
               {paginatedItems.map((a, i) => {
                 const hasViewMore = merged.length > itemsPerPage;
                 const isLast = i === paginatedItems.length - 1;
@@ -246,10 +255,10 @@ function AnomaliesSection() {
                       lastRowRoundedB && "rounded-b-xl"
                     )}
                   >
-                    <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="flex min-w-0 items-center justify-between gap-2">
                       <span
                         className={cn(
-                          "rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider",
+                          "shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider",
                           a.severity === "critical" &&
                             "bg-rose-500/10 text-rose-400",
                           a.severity === "warning" &&
@@ -264,7 +273,7 @@ function AnomaliesSection() {
                             ? "ERROR"
                             : a.type.replace(/_/g, " ")}
                       </span>
-                      <span className="font-mono text-[9px] text-[#555]">
+                      <span className="shrink-0 font-mono text-[9px] text-[#555]">
                         [{timeAgo(a.timestamp).toUpperCase()}]
                       </span>
                     </div>
@@ -277,6 +286,7 @@ function AnomaliesSection() {
                   </div>
                 );
               })}
+              </div>
             </div>
           </div>
           {totalPages > 1 && (
@@ -311,7 +321,7 @@ function AnomaliesSection() {
             </div>
           )}
           {merged.length > itemsPerPage && (
-            <div className="mt-3 flex justify-end rounded-b-xl bg-[#0c0c0c] px-3 pb-3 pt-1">
+            <div className="mt-3 flex justify-end rounded-b-xl bg-[#0c0c0c] px-1 pb-3 pt-1">
               <Link
                 href="/disasters?focus=anomalies"
                 className="font-mono text-[9px] uppercase tracking-wider text-rose-400 hover:underline"
@@ -347,20 +357,63 @@ function WatchlistSection() {
   const totalPages = Math.ceil(mergedWatchlist.length / itemsPerPage);
   const paginatedItems = mergedWatchlist.slice(page * itemsPerPage, (page + 1) * itemsPerPage);
 
+  /** Same query keys as WatchlistItem / CandidateWatchItem — one dot per item, shared cache. */
+  const watchlistDetailQueries = useQueries({
+    queries: mergedWatchlist.map((item) =>
+      item.type === "constituency"
+        ? {
+            queryKey: ["watchlist-constituency", item.id] as const,
+            queryFn: () => fetchConstituency(item.id),
+          }
+        : {
+            queryKey: ["watchlist-candidate", item.candidate.constituencyId] as const,
+            queryFn: () => fetchConstituency(item.candidate.constituencyId),
+          }
+    ),
+  });
+
+  /** Per-item: green = details loaded, red = unavailable (matches row “DETAILS UNAVAILABLE”), amber = loading. */
+  const watchlistDotsUi =
+    mergedWatchlist.length === 0 ? null : (
+      <div className="flex shrink-0 gap-[3px]">
+        {watchlistDetailQueries.map((q, idx) => {
+          const tone = q.isPending
+            ? "bg-amber-500/80"
+            : q.isError || !q.data
+              ? "bg-rose-500/80"
+              : "bg-emerald-500/80";
+          return (
+            <span
+              key={idx}
+              className={cn("h-1.5 w-1.5 rounded-sm animate-health-dot", tone)}
+              style={{ animationDelay: `${(idx * 0.9) % 2.7}s` }}
+            />
+          );
+        })}
+      </div>
+    );
+
   return (
-    <PanelSection title="Watchlist" dotClass="bg-blue-500">
+    <PanelSection
+      title="Watchlist"
+      dotClass="bg-blue-500"
+      headerRight={watchlistDotsUi}
+    >
       {mergedWatchlist.length === 0 ? (
         <div className={railListBody}>
-          <div className="flex flex-col">
-            <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-              <p className="font-mono text-[10px] text-[#555] uppercase">NO WATCHLIST ITEMS</p>
+          <div className={railCardInset}>
+            <div className="flex flex-col">
+              <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
+                <p className="font-mono text-[10px] text-[#555] uppercase">NO WATCHLIST ITEMS</p>
+              </div>
             </div>
           </div>
         </div>
       ) : (
         <>
           <div className={railListBody}>
-            <div className="flex flex-col">
+            <div className={railCardInset}>
+              <div className="flex flex-col">
               {paginatedItems.map((item, idx) =>
                 item.type === "constituency" ? (
                   <WatchlistItem
@@ -378,6 +431,7 @@ function WatchlistSection() {
                   />
                 )
               )}
+              </div>
             </div>
           </div>
           {totalPages > 1 && (
@@ -623,26 +677,31 @@ function AlertRulesSection() {
     <PanelSection title="Alert rules" dotClass="bg-amber-500">
       {isLoading ? (
         <div className={railListBody}>
-          <div className="flex flex-col">
-            <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-              <p className="font-mono text-[10px] text-[#555] uppercase">LOADING…</p>
+          <div className={railCardInset}>
+            <div className="flex flex-col">
+              <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
+                <p className="font-mono text-[10px] text-[#555] uppercase">LOADING…</p>
+              </div>
             </div>
           </div>
         </div>
       ) : items.length === 0 && !addOpen ? (
         <div className={railListBody}>
-          <div className="flex flex-col">
-            <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-              <p className="font-mono text-[10px] text-[#555] uppercase">
-                NO ACTIVE ALERTS
-              </p>
+          <div className={railCardInset}>
+            <div className="flex flex-col">
+              <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
+                <p className="font-mono text-[10px] text-[#555] uppercase">
+                  NO ACTIVE ALERTS
+                </p>
+              </div>
             </div>
           </div>
         </div>
       ) : (
         <>
           <div className={railListBody}>
-            <div className="flex flex-col">
+            <div className={railCardInset}>
+              <div className="flex flex-col">
           {paginatedItems.map((item, idx) => {
             const isLast = idx === paginatedItems.length - 1;
             const lastRowRoundedB = isLast && totalPages > 1 && !addOpen;
@@ -702,6 +761,7 @@ function AlertRulesSection() {
             </div>
             );
           })}
+              </div>
             </div>
           </div>
 
@@ -733,7 +793,7 @@ function AlertRulesSection() {
             </div>
           )}
           {addOpen && (
-            <div className="space-y-2 rounded-b-xl bg-[#0c0c0c] p-4">
+            <div className={cn("space-y-2 rounded-b-xl bg-[#0c0c0c]", railCardInset)}>
               <input
                 type="text"
                 placeholder="LABEL"
@@ -797,7 +857,7 @@ function AlertRulesSection() {
             </div>
           )}
           {!addOpen && (
-            <div className="rounded-b-xl bg-[#0c0c0c] p-3">
+            <div className={cn("rounded-b-xl bg-[#0c0c0c]", railCardInset)}>
               <button
                 type="button"
                 onClick={() => setAddOpen(true)}
@@ -903,13 +963,16 @@ function SourceHealthSection() {
         )}
       >
         {!sources || sources.length === 0 ? (
-          <div className="flex flex-col">
-            <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-              <p className="font-mono text-[10px] text-[#555] uppercase">NO SOURCE DATA</p>
+          <div className={railCardInset}>
+            <div className="flex flex-col">
+              <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
+                <p className="font-mono text-[10px] text-[#555] uppercase">NO SOURCE DATA</p>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col">
+          <div className={railCardInset}>
+            <div className="flex flex-col">
             {paginatedSources.map((s, i) => {
               const isFirstRow = i === 0;
               const isLastRow = i === paginatedSources.length - 1;
@@ -919,12 +982,12 @@ function SourceHealthSection() {
                   key={s.sourceId}
                   className={cn(
                     railRow,
-                    "flex min-w-0 items-start gap-2",
+                    "grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(2.75rem,4rem)_auto] items-start gap-x-2",
                     isFirstRow && "rounded-t-xl",
                     isLastRow && "rounded-b-xl"
                   )}
                 >
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0">
                     <div className="truncate font-sans text-[11px] font-medium text-[#e5e5e5]">
                       {s.sourceName}
                     </div>
@@ -966,12 +1029,12 @@ function SourceHealthSection() {
                       </div>
                     )}
                   </div>
-                  <div className="shrink-0 pt-0.5 text-right tabular-nums">
-                    <div className="whitespace-nowrap font-mono text-[10px] text-[#888]">
+                  <div className="flex justify-center pt-0.5 tabular-nums">
+                    <div className="whitespace-nowrap text-center font-mono text-[10px] text-[#888]">
                       {s.updateCount}
                     </div>
                   </div>
-                  <div className="shrink-0 pt-0.5 text-right">
+                  <div className="flex shrink-0 justify-end pt-0.5">
                     <span
                       className={cn(
                         "inline-flex whitespace-nowrap rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider",
@@ -989,6 +1052,7 @@ function SourceHealthSection() {
                 </div>
               );
             })}
+            </div>
           </div>
         )}
 
