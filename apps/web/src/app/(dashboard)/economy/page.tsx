@@ -27,6 +27,7 @@ import {
   railShell,
 } from "@/components/layout/intel-rail";
 import { cn } from "@/lib/utils";
+import type { MarketAssetQuote } from "@repo/shared";
 
 const ECONOMY_KEYWORDS = [
   "economy",
@@ -138,6 +139,20 @@ function LiveIndicator({ dataUpdatedAt }: { dataUpdatedAt: number }) {
 }
 
 const REF_ASSETS = ["BTC", "ETH", "XAU", "XAG"] as const;
+
+/** Matches worker `fetchMarketAssetQuotes` (CoinGecko, Gold API, FENEGOSIDA hallmark). */
+function strategicCommoditySource(q: MarketAssetQuote): string {
+  if (q.class === "crypto") return "CoinGecko";
+  if (q.assetCode === "XAU" && q.currency === "NPR") return "FENEGOSIDA";
+  if (q.assetCode === "XAU") return "Gold API";
+  if (q.assetCode === "XAG") return "Gold API";
+  return "—";
+}
+
+function latestStrategicTimestamp(quotes: MarketAssetQuote[]): string | null {
+  if (quotes.length === 0) return null;
+  return new Date(Math.max(...quotes.map((q) => new Date(q.timestamp).getTime()))).toISOString();
+}
 
 /** Official FX table: max 8 rows per page (Source Health–style pagination). */
 const FX_ROWS_PER_PAGE = 8;
@@ -253,6 +268,11 @@ export default function EconomyPage() {
         return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
       });
   }, [assetQuotes]);
+
+  const strategicLatestTs = useMemo(
+    () => latestStrategicTimestamp(globalRefQuotes),
+    [globalRefQuotes]
+  );
 
   const topNews = useMemo(() => {
     const events = feedData?.events ?? [];
@@ -462,12 +482,86 @@ export default function EconomyPage() {
             {/* Left Column */}
             <div className="min-w-0 space-y-4 xl:col-span-9">
               
-              {/* Market portal (aggregated) */}
+              {/* Strategic Commodities */}
+              <div className={railShell}>
+                <RailPanelHeader
+                  title="Strategic Commodities"
+                  leadingDotClass="bg-amber-500"
+                  right={
+                    strategicLatestTs ? (
+                      <span className="max-w-[min(100%,14rem)] text-right font-mono text-[10px] leading-none">
+                        <span className="uppercase tracking-[0.12em] text-[#666]">Updated</span>{" "}
+                        <span className="text-[#a1a1aa]">{timeAgo(strategicLatestTs)}</span>
+                      </span>
+                    ) : (
+                      <span className="font-mono text-[10px] text-[#555]">—</span>
+                    )
+                  }
+                />
+                <div className="flex flex-wrap bg-[#0c0c0c] px-3 py-1.5 font-mono text-[10px] leading-snug text-[#666]">
+                  <span>
+                    <span className="text-[#555]">Sources</span>
+                    <span className="text-[#666]">
+                      {" · "}CoinGecko · Gold API · FENEGOSIDA · 24h % CoinGecko
+                    </span>
+                  </span>
+                </div>
+                <div className={cn(railListBody, "rounded-b-xl")}>
+                  <div className={cn("grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2", railCardInset)}>
+                    {REF_ASSETS.map((code) => {
+                      const quote = globalRefQuotes.find((q) => q.assetCode === code);
+                      return (
+                        <div key={code} className="rounded-xl bg-[#181818]/60 p-3">
+                          <div className="mb-1 text-[10px] font-mono uppercase tracking-wider text-[#888]">
+                            {quote?.assetName ?? code}
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                              <span className="font-mono text-lg tabular-nums text-[#e5e5e5]">
+                                {quote
+                                  ? quote.price.toLocaleString("en-US", {
+                                      maximumFractionDigits: code === "BTC" ? 0 : 2,
+                                    })
+                                  : "—"}
+                              </span>
+                              {quote && (
+                                <span className="font-mono text-[9px] uppercase tracking-wider text-[#555]">
+                                  {quote.currency}
+                                </span>
+                              )}
+                            </div>
+                            {quote &&
+                              (quote.change != null || quote.changePercent != null) && (
+                                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                                  {quote.change != null && <IntelDelta change={quote.change} />}
+                                  {quote.changePercent != null && (
+                                    <span className="font-mono text-[10px] text-[#888]">
+                                      ({quote.changePercent >= 0 ? "+" : ""}
+                                      {quote.changePercent.toFixed(2)}% 24h)
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            {quote && (
+                              <div className="mt-2 space-y-0.5 border-t border-white/[0.06] pt-2 font-mono text-[9px] leading-tight text-[#555]">
+                                <div className="text-[#888]">{strategicCommoditySource(quote)}</div>
+                                <div>{timeAgo(quote.timestamp)}</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Portal market panels */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className={cn(railShell, "min-w-0 md:col-span-2")}>
                 <RailPanelHeader
-                  title="Market portal — Main indices"
-                  leadingDotClass="bg-orange-500"
+                  title="Main indices"
+                  leadingDotClass="bg-cyan-500"
                   right={<RailPanelAsOf date={marketPortal?.mainIndicesAsOf} />}
                 />
                 {(marketPortal?.mainIndicesTurnoverNpr != null ||
@@ -547,8 +641,8 @@ export default function EconomyPage() {
 
               <div className={cn(railShell, "min-w-0 md:col-span-2")}>
                 <RailPanelHeader
-                  title="Market portal — Sub-indices"
-                  leadingDotClass="bg-orange-500"
+                  title="Sub-indices"
+                  leadingDotClass="bg-violet-500"
                   right={<RailPanelAsOf date={marketPortal?.subIndicesAsOf} />}
                 />
                 <div className={cn(railListBody, "rounded-b-xl")}>
@@ -636,8 +730,8 @@ export default function EconomyPage() {
 
               <div className={cn(railShell, "min-w-0")}>
                 <RailPanelHeader
-                  title="Market portal — Gold & silver"
-                  leadingDotClass="bg-orange-500"
+                  title="Gold & silver"
+                  leadingDotClass="bg-yellow-600"
                   right={<RailPanelAsOf date={marketPortal?.metalsAsOf} />}
                 />
                 <div className={cn(railListBody, "rounded-b-xl")}>
@@ -690,8 +784,8 @@ export default function EconomyPage() {
 
               <div className={cn(railShell, "min-w-0")}>
                 <RailPanelHeader
-                  title="Market portal — Retail fuel (Nepal)"
-                  leadingDotClass="bg-orange-500"
+                  title="Retail fuel (Nepal)"
+                  leadingDotClass="bg-rose-500"
                   right={<RailPanelAsOf date={marketPortal?.oilAsOf} />}
                 />
                 <div className={cn(railListBody, "rounded-b-xl")}>
@@ -898,38 +992,6 @@ export default function EconomyPage() {
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
-
-              {/* Strategic Commodities */}
-              <div className={railShell}>
-                <RailPanelHeader
-                  title="Strategic Commodities"
-                  leadingDotClass="bg-amber-500"
-                />
-                <div className={cn(railListBody, "rounded-b-xl")}>
-                  <div className={cn("grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2", railCardInset)}>
-                    {REF_ASSETS.map((code) => {
-                      const quote = globalRefQuotes.find((q) => q.assetCode === code);
-                      return (
-                        <div key={code} className="rounded-xl bg-[#181818]/60 p-3">
-                          <div className="mb-1 text-[10px] font-mono uppercase tracking-wider text-[#888]">
-                            {quote?.assetName ?? code}
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <span className="font-mono text-lg text-[#e5e5e5]">
-                              {quote
-                                ? quote.price.toLocaleString("en-US", {
-                                    maximumFractionDigits: code === "BTC" ? 0 : 2,
-                                  })
-                                : "—"}
-                            </span>
-                            {quote && <IntelDelta change={quote.change} />}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
                 </div>
               </div>
 

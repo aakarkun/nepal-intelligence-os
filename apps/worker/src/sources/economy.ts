@@ -197,10 +197,71 @@ const COINGECKO_IDS: Record<string, string> = {
   ETH: "ethereum",
 };
 
-type CoinGeckoResponse = Record<string, { usd?: number }>;
+/** CoinGecko spot proxies for 24h % when primary price is Gold API (spot USD tracks ~same move). */
+const COINGECKO_METAL_24H_IDS: Record<string, string> = {
+  XAU: "tether-gold",
+  XAG: "kinesis-silver",
+};
+
+type CoinGeckoSimpleEntry = { usd?: number; usd_24h_change?: number };
+type CoinGeckoSimpleResponse = Record<string, CoinGeckoSimpleEntry | undefined>;
+
+function applyUsd24hMove(
+  price: number,
+  pct24h: number
+): {
+  change: number;
+  changePercent: number;
+  previousPrice: number;
+  trend: MarketAssetQuote["trend"];
+} {
+  const previousPrice = price / (1 + pct24h / 100);
+  const change = Number((price - previousPrice).toFixed(2));
+  const changePercent = Number(pct24h.toFixed(3));
+  let trend: MarketAssetQuote["trend"] = "flat";
+  if (pct24h > 0) trend = "up";
+  else if (pct24h < 0) trend = "down";
+  return { change, changePercent, previousPrice, trend };
+}
+
+function applySessionDelta(
+  price: number,
+  previous: MarketAssetQuote | undefined
+): {
+  change: number | null;
+  changePercent: number | null;
+  previousPrice: number | null;
+  trend: MarketAssetQuote["trend"];
+} {
+  const prev = previous?.price;
+  if (prev === undefined || prev === null) {
+    return { change: null, changePercent: null, previousPrice: null, trend: "new" };
+  }
+  const change = Number((price - prev).toFixed(2));
+  const changePercent =
+    prev === 0 ? null : Number(((change / prev) * 100).toFixed(3));
+  let trend: MarketAssetQuote["trend"] = "flat";
+  if (change > 0) trend = "up";
+  else if (change < 0) trend = "down";
+  return { change, changePercent, previousPrice: prev, trend };
+}
+
+async function fetchCoinGeckoSimpleWith24h(ids: string): Promise<CoinGeckoSimpleResponse | null> {
+  try {
+    const res = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`,
+      { headers: { Accept: "application/json" } }
+    );
+    if (!res.ok) throw new Error(`CoinGecko request failed: ${res.status}`);
+    return (await res.json()) as CoinGeckoSimpleResponse;
+  } catch {
+    return null;
+  }
+}
 
 async function fetchMetalsFromGoldApi(
-  previousByCode: Map<string, MarketAssetQuote>
+  previousByCode: Map<string, MarketAssetQuote>,
+  cg: CoinGeckoSimpleResponse | null
 ): Promise<MarketAssetQuote[]> {
   return Promise.all(
     METAL_DEFS.map(async (asset) => {
@@ -213,19 +274,24 @@ async function fetchMetalsFromGoldApi(
         throw new Error(`Gold API ${asset.assetCode} returned no usable price`);
       }
       const previous = previousByCode.get(asset.assetCode);
-      const change =
-        previous?.price === undefined
-          ? null
-          : Number((payload.price - previous.price).toFixed(2));
-      const changePercent =
-        change === null || previous?.price === 0
-          ? null
-          : Number(((change / previous!.price) * 100).toFixed(3));
-      let trend: MarketAssetQuote["trend"] = "new";
-      if (change !== null) {
-        if (change > 0) trend = "up";
-        else if (change < 0) trend = "down";
-        else trend = "flat";
+      const refId = COINGECKO_METAL_24H_IDS[asset.assetCode];
+      const pct24h = refId ? cg?.[refId]?.usd_24h_change : undefined;
+      let change: number | null;
+      let changePercent: number | null;
+      let previousPrice: number | null;
+      let trend: MarketAssetQuote["trend"];
+      if (typeof pct24h === "number" && Number.isFinite(pct24h)) {
+        const m = applyUsd24hMove(payload.price, pct24h);
+        change = m.change;
+        changePercent = m.changePercent;
+        previousPrice = m.previousPrice;
+        trend = m.trend;
+      } else {
+        const s = applySessionDelta(payload.price, previous);
+        change = s.change;
+        changePercent = s.changePercent;
+        previousPrice = s.previousPrice;
+        trend = s.trend;
       }
       return {
         assetCode: asset.assetCode,
@@ -233,7 +299,7 @@ async function fetchMetalsFromGoldApi(
         class: asset.class,
         currency: payload.currency ?? "USD",
         price: payload.price,
-        previousPrice: previous?.price ?? null,
+        previousPrice,
         change,
         changePercent,
         trend,
@@ -257,7 +323,8 @@ export function extractHallmarkGoldPerTolaNpr(pageText: string): number | null {
 }
 
 async function fetchHallmarkGoldQuote(
-  previousByCode: Map<string, MarketAssetQuote>
+  previousByCode: Map<string, MarketAssetQuote>,
+  cg: CoinGeckoSimpleResponse | null
 ): Promise<MarketAssetQuote> {
   const res = await fetch(FENEGOSIDA_URL, { headers: { Accept: "text/html" } });
   if (!res.ok) throw new Error(`FENEGOSIDA request failed: ${res.status}`);
@@ -268,20 +335,24 @@ async function fetchHallmarkGoldQuote(
   }
 
   const previous = previousByCode.get("XAU");
-  const change =
-    previous?.price === undefined
-      ? null
-      : Number((priceNprPerTola - previous.price).toFixed(2));
-  const changePercent =
-    change === null || previous?.price === 0
-      ? null
-      : Number(((change / previous.price) * 100).toFixed(3));
-
-  let trend: MarketAssetQuote["trend"] = "new";
-  if (change !== null) {
-    if (change > 0) trend = "up";
-    else if (change < 0) trend = "down";
-    else trend = "flat";
+  const refId = COINGECKO_METAL_24H_IDS.XAU;
+  const pct24h = refId ? cg?.[refId]?.usd_24h_change : undefined;
+  let change: number | null;
+  let changePercent: number | null;
+  let previousPrice: number | null;
+  let trend: MarketAssetQuote["trend"];
+  if (typeof pct24h === "number" && Number.isFinite(pct24h)) {
+    const m = applyUsd24hMove(priceNprPerTola, pct24h);
+    change = m.change;
+    changePercent = m.changePercent;
+    previousPrice = m.previousPrice;
+    trend = m.trend;
+  } else {
+    const s = applySessionDelta(priceNprPerTola, previous);
+    change = s.change;
+    changePercent = s.changePercent;
+    previousPrice = s.previousPrice;
+    trend = s.trend;
   }
 
   return {
@@ -290,7 +361,7 @@ async function fetchHallmarkGoldQuote(
     class: "metal",
     currency: "NPR",
     price: priceNprPerTola,
-    previousPrice: previous?.price ?? null,
+    previousPrice,
     change,
     changePercent,
     trend,
@@ -298,37 +369,36 @@ async function fetchHallmarkGoldQuote(
   } satisfies MarketAssetQuote;
 }
 
-/** CoinGecko free tier: no API key, ~60s updates. */
-async function fetchCryptoFromCoinGecko(
+/** CoinGecko free tier: no API key; 24h move from `include_24hr_change`. */
+function buildCryptoQuotesFromCg(
+  cg: CoinGeckoSimpleResponse | null,
   previousByCode: Map<string, MarketAssetQuote>
-): Promise<MarketAssetQuote[]> {
-  const ids = Object.values(COINGECKO_IDS).join(",");
-  const res = await fetch(
-    `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`,
-    { headers: { Accept: "application/json" } }
-  );
-  if (!res.ok) throw new Error(`CoinGecko request failed: ${res.status}`);
-  const data = (await res.json()) as CoinGeckoResponse;
+): MarketAssetQuote[] {
+  if (!cg) return [];
   const now = new Date().toISOString();
   const quotes: MarketAssetQuote[] = [];
   const names: Record<string, string> = { BTC: "Bitcoin", ETH: "Ethereum" };
   for (const [code, id] of Object.entries(COINGECKO_IDS)) {
-    const usd = data[id]?.usd;
+    const row = cg[id];
+    const usd = row?.usd;
     if (typeof usd !== "number" || !Number.isFinite(usd)) continue;
-    const previous = previousByCode.get(code);
-    const change =
-      previous?.price === undefined
-        ? null
-        : Number((usd - previous.price).toFixed(2));
-    const changePercent =
-      change === null || previous?.price === 0
-        ? null
-        : Number(((change / previous!.price) * 100).toFixed(3));
-    let trend: MarketAssetQuote["trend"] = "new";
-    if (change !== null) {
-      if (change > 0) trend = "up";
-      else if (change < 0) trend = "down";
-      else trend = "flat";
+    const pct = row?.usd_24h_change;
+    let change: number | null;
+    let changePercent: number | null;
+    let previousPrice: number | null;
+    let trend: MarketAssetQuote["trend"];
+    if (typeof pct === "number" && Number.isFinite(pct)) {
+      const m = applyUsd24hMove(usd, pct);
+      change = m.change;
+      changePercent = m.changePercent;
+      previousPrice = m.previousPrice;
+      trend = m.trend;
+    } else {
+      const s = applySessionDelta(usd, previousByCode.get(code));
+      change = s.change;
+      changePercent = s.changePercent;
+      previousPrice = s.previousPrice;
+      trend = s.trend;
     }
     quotes.push({
       assetCode: code,
@@ -336,7 +406,7 @@ async function fetchCryptoFromCoinGecko(
       class: "crypto",
       currency: "USD",
       price: usd,
-      previousPrice: previous?.price ?? null,
+      previousPrice,
       change,
       changePercent,
       trend,
@@ -359,9 +429,14 @@ export async function fetchMarketAssetQuotes(
 ): Promise<MarketAssetQuote[]> {
   const { skipCrypto = false, onCryptoFailure } = options;
   const previousByCode = new Map(previousQuotes.map((q) => [q.assetCode, q]));
-  let metals = await fetchMetalsFromGoldApi(previousByCode);
+  const cgIds = skipCrypto
+    ? "tether-gold,kinesis-silver"
+    : "bitcoin,ethereum,tether-gold,kinesis-silver";
+  const cg = await fetchCoinGeckoSimpleWith24h(cgIds);
+
+  let metals = await fetchMetalsFromGoldApi(previousByCode, cg);
   try {
-    const hallmarkGold = await fetchHallmarkGoldQuote(previousByCode);
+    const hallmarkGold = await fetchHallmarkGoldQuote(previousByCode, cg);
     metals = [hallmarkGold, ...metals.filter((m) => m.assetCode !== "XAU")];
   } catch {
     // Keep gold-api metal fallback when hallmark source is unavailable.
@@ -370,9 +445,10 @@ export async function fetchMarketAssetQuotes(
   if (skipCrypto) {
     crypto = previousQuotes.filter((q) => q.class === "crypto");
   } else {
-    try {
-      crypto = await fetchCryptoFromCoinGecko(previousByCode);
-    } catch {
+    const built = buildCryptoQuotesFromCg(cg, previousByCode);
+    if (built.length > 0) {
+      crypto = built;
+    } else {
       onCryptoFailure?.();
       crypto = previousQuotes.filter((q) => q.class === "crypto");
     }

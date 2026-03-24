@@ -4,6 +4,8 @@
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "db:up": "docker compose up -d db",
+    "docker:up": "docker compose up --build",
+    "docker:up:d": "docker compose up -d --build",
     "dev": "bun run dev:all",
     "dev:web": "HOST=0.0.0.0 bun run --cwd apps/web dev",
     "dev:api": "HOST=0.0.0.0 bun run --filter api dev",
