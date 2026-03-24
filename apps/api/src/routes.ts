@@ -831,7 +831,7 @@ api.post("/ingest/economy/market-portal", async (c) => {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
 
-  updateMarketPortalSnapshot(parsed.data);
+  await updateMarketPortalSnapshot(parsed.data);
   return c.json({ ok: true });
 });
 

@@ -313,6 +313,18 @@ export const workerState = pgTable("worker_state", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Append-only ingest history for market portal (never deleted; retention is manual if ever needed). */
+export const marketPortalSnapshots = pgTable(
+  "market_portal_snapshots",
+  {
+    id: text("id").primaryKey(),
+    scrapedAt: text("scraped_at").notNull(),
+    data: jsonb("data").notNull(),
+    ingestedAt: text("ingested_at").notNull(),
+  },
+  (t) => [index("idx_market_portal_scraped_at").on(t.scrapedAt)]
+);
+
 export const snapshots = pgTable(
   "snapshots",
   {

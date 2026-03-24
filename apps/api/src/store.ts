@@ -40,6 +40,7 @@ import * as constituencyRepo from "./db/repos/constituency-results.js";
 import * as nationalSummariesRepo from "./db/repos/national-summaries.js";
 import * as snapshotsRepo from "./db/repos/snapshots.js";
 import * as nepseSnapshotsRepo from "./db/repos/nepse-snapshots.js";
+import * as marketPortalHistoryRepo from "./db/repos/market-portal-snapshots.js";
 
 // ─── In-memory (no table yet) ────────────────────────────────────────────────
 
@@ -249,6 +250,9 @@ export async function hydrateOperationalCacheFromDb(): Promise<void> {
   if (nepseSnap?.data && typeof nepseSnap.data === "object") nepseSummary = nepseSnap.data as NepseSummary;
   if (marketPortalSnap?.data && typeof marketPortalSnap.data === "object") {
     marketPortalSnapshot = marketPortalSnap.data as MarketPortalSnapshot;
+  } else {
+    const fromHistory = await marketPortalHistoryRepo.getLatestMarketPortalSnapshot();
+    if (fromHistory) marketPortalSnapshot = fromHistory;
   }
   if (crisisSnap?.data && typeof crisisSnap.data === "object") crisisSummary = crisisSnap.data as CrisisSummary;
   if (Array.isArray(quakeSnap?.data)) earthquakeIncidents = quakeSnap.data as EarthquakeIncident[];
@@ -590,7 +594,9 @@ export function updateNepseSummary(summary: NepseSummary | null): void {
   });
 }
 
-export function updateMarketPortalSnapshot(snapshot: MarketPortalSnapshot | null): void {
+export async function updateMarketPortalSnapshot(
+  snapshot: MarketPortalSnapshot | null
+): Promise<void> {
   marketPortalSnapshot = snapshot;
   persistCacheSnapshot({
     slug: SNAPSHOT_SLUGS.marketPortalSnapshot,
@@ -599,6 +605,13 @@ export function updateMarketPortalSnapshot(snapshot: MarketPortalSnapshot | null
     data: snapshot,
     ttlDays: 14,
   });
+  if (snapshot) {
+    await marketPortalHistoryRepo.insertMarketPortalSnapshot({
+      id: nanoid10(),
+      scrapedAt: snapshot.timestamp,
+      data: snapshot,
+    });
+  }
 }
 
 export async function appendNepseSnapshot(summary: NepseSummary): Promise<void> {
