@@ -8,6 +8,8 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import { ArrowDownRight, ArrowUpRight, Minus, Search } from "lucide-react";
 import {
   fetchEconomySummary,
@@ -171,6 +173,7 @@ export default function EconomyPage() {
     refetchInterval: 30_000,
   });
 
+  const panelOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
   const [rateQuery, setRateQuery] = useState("");
 
   const filteredRates = useMemo(() => {
@@ -439,7 +442,14 @@ export default function EconomyPage() {
         </div>
 
         {/* Right Sidebar (Intel Rail) */}
-        <aside className="hidden w-[300px] shrink-0 overflow-hidden lg:block">
+        <aside
+          className={cn(
+            "hidden shrink-0 overflow-hidden transition-[transform,opacity,width] duration-200 ease-out lg:block",
+            panelOpen
+              ? "w-[300px] translate-x-0 opacity-100"
+              : "pointer-events-none w-0 translate-x-6 opacity-0"
+          )}
+        >
           <div className="space-y-3">
             <IntelRailSections />
           </div>

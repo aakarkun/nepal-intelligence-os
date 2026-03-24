@@ -5,12 +5,14 @@ export type TypeFilterValue = SignalEventType | "all";
 
 export interface UiState {
   briefingPanelOpen: boolean;
+  intelRailOpen: boolean;
   /** Signal feed type filter; "all" = no type filter. Persisted. */
   typeFilter: TypeFilterValue;
 }
 
 const initialState: UiState = {
   briefingPanelOpen: false,
+  intelRailOpen: true,
   typeFilter: "all",
 };
 
@@ -21,10 +23,14 @@ export const uiSlice = createSlice({
     setBriefingPanelOpen: (state, action: { payload: boolean }) => {
       state.briefingPanelOpen = action.payload;
     },
+    toggleIntelRail: (state) => {
+      state.intelRailOpen = !state.intelRailOpen;
+    },
     setTypeFilter: (state, action: { payload: TypeFilterValue }) => {
       state.typeFilter = action.payload;
     },
   },
 });
 
-export const { setBriefingPanelOpen, setTypeFilter } = uiSlice.actions;
+export const { setBriefingPanelOpen, toggleIntelRail, setTypeFilter } =
+  uiSlice.actions;

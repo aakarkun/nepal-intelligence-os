@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import { TopBar } from "./top-bar";
 import { NavRail } from "./nav-rail";
 import { IntelRail } from "./intel-rail";
@@ -11,6 +13,7 @@ import { CommandPalette } from "@/components/command-palette";
 import { IntelPanel } from "@/components/intel/intel-panel";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
+  const intelRailOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
   const pathname = usePathname();
   const isEconomyRoute = pathname.startsWith("/economy");
   const [commandOpen, setCommandOpen] = useState(false);
@@ -37,7 +40,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           // md+: make room for left rail + optional intel rail + ticker
           "md:ml-14 md:mt-12 md:mb-8 md:min-h-[calc(100vh-5rem)] md:px-6 md:py-6",
           "transition-[margin] duration-200",
-          !isEconomyRoute ? "md:mr-[300px]" : "md:mr-0"
+          intelRailOpen && !isEconomyRoute ? "md:mr-[300px]" : "md:mr-0"
         )}
       >
         {children}

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import {
   useGetWatchlistQuery,
   useCreateWatchlistItemMutation,
@@ -1046,17 +1048,31 @@ export function IntelRailSections() {
 /* ------------------------------------------------------------------ */
 
 export function IntelRail() {
+  const isOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
+
   return (
     <>
       <aside
-        className="fixed inset-x-0 bottom-14 top-12 z-40 overflow-y-auto border-t border-white/10 bg-[#050505] px-3 pb-3 pt-3 scrollbar-thin md:hidden"
+        className={cn(
+          "fixed inset-x-0 bottom-14 top-12 z-40 overflow-y-auto border-t border-white/10 bg-[#050505] px-3 pb-3 pt-3 scrollbar-thin transition-[transform,opacity] duration-200 ease-out md:hidden",
+          isOpen
+            ? "translate-x-0 opacity-100"
+            : "pointer-events-none translate-x-full opacity-0"
+        )}
       >
         <div className="space-y-3">
           <IntelRailSections />
         </div>
       </aside>
 
-      <aside className="fixed bottom-8 right-0 top-12 z-40 hidden w-[300px] overflow-y-auto border-l border-white/10 bg-[#050505] scrollbar-thin md:block">
+      <aside
+        className={cn(
+          "fixed bottom-8 right-0 top-12 z-40 hidden w-[300px] overflow-y-auto border-l border-white/10 bg-[#050505] scrollbar-thin transition-[transform,opacity] duration-200 ease-out md:block",
+          isOpen
+            ? "translate-x-0 opacity-100"
+            : "pointer-events-none translate-x-full opacity-0"
+        )}
+      >
         <div className="space-y-3 p-3">
           <IntelRailSections />
         </div>
