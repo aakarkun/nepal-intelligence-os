@@ -56,6 +56,43 @@ export function formatNepalDateTime(timestamp: string): string {
   });
 }
 
+/** Collapses whitespace for stable duplicate headline matching. */
+export function normalizeFeedTitle(title: string): string {
+  return title.trim().replace(/\s+/g, " ");
+}
+
+/**
+ * One row per normalized title — keeps the newest event (largest `getTime` value).
+ * Events with an empty title after normalization are kept (not merged).
+ */
+export function dedupeEventsByTitle<T extends { title: string }>(
+  events: T[],
+  getTime: (e: T) => number
+): T[] {
+  if (events.length <= 1) return events;
+  const sorted = [...events].sort((a, b) => getTime(b) - getTime(a));
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const e of sorted) {
+    const key = normalizeFeedTitle(e.title);
+    if (!key) {
+      out.push(e);
+      continue;
+    }
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(e);
+  }
+  return out.sort((a, b) => getTime(b) - getTime(a));
+}
+
+/** Dedupe signal feed rows where `timestamp` is ISO time. */
+export function dedupeSignalEventsByTitle<T extends { title: string; timestamp: string }>(
+  events: T[]
+): T[] {
+  return dedupeEventsByTitle(events, (e) => new Date(e.timestamp).getTime());
+}
+
 /** Uses NEXT_PUBLIC_SSE_STALE_SECONDS (default 90): live < threshold, stale < 5×, else error. */
 export function getConnectionStatusColor(
   lastHeartbeat: number | null

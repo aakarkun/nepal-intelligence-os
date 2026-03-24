@@ -8,7 +8,7 @@ import { fetchFeed } from "@/lib/api";
 import { useLanguage } from "@/providers/language-provider";
 import { shouldShowByLanguage } from "@/lib/language-filter";
 import { useRealtimeStore } from "@/stores/realtime-store";
-import { cn, timeAgo } from "@/lib/utils";
+import { cn, dedupeSignalEventsByTitle, timeAgo } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 export type GeographySelection =
@@ -101,8 +101,10 @@ export function GeographyNewsPanel({ selection }: { selection: GeographySelectio
     const apiEvents = feedData?.events ?? [];
     const merged = new Map<string, SignalEvent>();
     for (const e of [...apiEvents, ...sseEvents]) merged.set(e.id, e);
-    return Array.from(merged.values()).sort(
-      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    return dedupeSignalEventsByTitle(
+      Array.from(merged.values()).sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      )
     );
   }, [feedData, sseEvents]);
 

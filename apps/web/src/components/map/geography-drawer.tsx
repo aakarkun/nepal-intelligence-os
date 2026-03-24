@@ -9,8 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { fetchDistrictDetail, fetchProvinceDetail } from "@/lib/api";
 import { cn, formatNumber, timeAgo } from "@/lib/utils";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
-import { useSelector } from "react-redux";
-import type { RootState } from "@/store";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GeographyNewsPanel } from "@/components/map/geography-news-panel";
 
@@ -48,7 +46,6 @@ export function GeographyDrawer({
   onClose,
   onSelectDistrict,
 }: GeographyDrawerProps) {
-  const intelRailOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
   const { selectedDatasetId } = useElectionDatasetStore();
   const [activeTab, setActiveTab] = useState<"election" | "news">("election");
 
@@ -105,7 +102,7 @@ export function GeographyDrawer({
       <div
         className={cn(
           "fixed top-12 bottom-8 z-30 w-[26rem] bg-card border-l border-border overflow-y-auto scrollbar-thin transition-transform duration-300",
-          intelRailOpen ? "right-72" : "right-0",
+          "right-72",
           selection ? "translate-x-0" : "translate-x-full"
         )}
       >

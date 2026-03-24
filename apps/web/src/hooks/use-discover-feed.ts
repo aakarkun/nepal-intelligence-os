@@ -6,6 +6,7 @@ import {
   fetchWorldArticles,
   fetchCrisisIncidents,
 } from "@/lib/api";
+import { dedupeEventsByTitle } from "@/lib/utils";
 import type { SignalEventType } from "@repo/shared";
 
 export type FeedItemSeverity = "critical" | "warning" | "info";
@@ -95,18 +96,6 @@ function normalizeCrisisIncident(c: {
   };
 }
 
-function dedupeByTitle(items: FeedItem[], titleKeyLen = 40): FeedItem[] {
-  const seen = new Map<string, FeedItem>();
-  for (const item of items) {
-    const key = item.title.slice(0, titleKeyLen).toLowerCase().trim();
-    const existing = seen.get(key);
-    if (!existing || new Date(item.publishedAt) > new Date(existing.publishedAt)) {
-      seen.set(key, item);
-    }
-  }
-  return Array.from(seen.values());
-}
-
 function sortBySeverityThenTime(a: FeedItem, b: FeedItem): number {
   const sev = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity];
   if (sev !== 0) return sev;
@@ -139,7 +128,10 @@ export function useDiscoverFeed() {
     if (worldResult.status === "fulfilled") merged.push(...worldResult.value);
     if (crisisResult.status === "fulfilled") merged.push(...crisisResult.value);
 
-    const deduped = dedupeByTitle(merged);
+    const deduped = dedupeEventsByTitle(
+      merged,
+      (i) => new Date(i.publishedAt).getTime()
+    );
     const sorted = deduped.sort(sortBySeverityThenTime);
 
     setItems(sorted);
@@ -167,7 +159,10 @@ export function useDiscoverFeed() {
       if (feedResult.status === "fulfilled") merged.push(...feedResult.value);
       if (worldResult.status === "fulfilled") merged.push(...worldResult.value);
       if (crisisResult.status === "fulfilled") merged.push(...crisisResult.value);
-      const deduped = dedupeByTitle(merged);
+      const deduped = dedupeEventsByTitle(
+      merged,
+      (i) => new Date(i.publishedAt).getTime()
+    );
       const sorted = deduped.sort(sortBySeverityThenTime);
       setItems((prev) => {
         const prevIds = new Set(prev.map((i) => i.id));

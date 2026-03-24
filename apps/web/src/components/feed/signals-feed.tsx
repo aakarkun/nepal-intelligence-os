@@ -21,7 +21,7 @@ import {
 import Link from "next/link";
 import { fetchFeed, fetchSocialFeed } from "@/lib/api";
 import { useRealtimeStore } from "@/stores/realtime-store";
-import { cn, timeAgo } from "@/lib/utils";
+import { cn, dedupeSignalEventsByTitle, timeAgo } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -133,6 +133,11 @@ export function SignalsFeed(
     });
   }, [allEvents, typeFilter, severityFilter, allowedTypes, sourceFilter]);
 
+  const displayEvents = useMemo(
+    () => dedupeSignalEventsByTitle(filtered),
+    [filtered]
+  );
+
   const sourceOptions = useMemo(() => {
     const seen = new Set<string>();
     for (const event of allEvents) {
@@ -213,7 +218,7 @@ export function SignalsFeed(
       )}
 
       <div className="space-y-0">
-        {filtered.map((event) => {
+        {displayEvents.map((event) => {
           const config = getTypeConfig(event.type);
           let Icon = config.icon;
 
@@ -331,7 +336,7 @@ export function SignalsFeed(
           );
         })}
 
-        {filtered.length === 0 && (
+        {displayEvents.length === 0 && (
           <Card>
             <CardContent className="py-8 text-center text-sm text-muted-foreground">
               No events match the current filters

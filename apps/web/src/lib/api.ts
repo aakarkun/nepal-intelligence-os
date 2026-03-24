@@ -203,6 +203,23 @@ export function fetchNepseSummary(): Promise<NepseSummary | null> {
   return fetchJSON<NepseSummary | null>("/v1/economy/nepse");
 }
 
+export type NepseSnapshotHistoryRow = {
+  id: string;
+  indexValue: number | null;
+  change: number | null;
+  changePercent: number | null;
+  turnover: number | null;
+  marketStatus: string | null;
+  topGainers: unknown;
+  topLosers: unknown;
+  scrapedAt: string;
+};
+
+export function fetchNepseHistory(limit = 500): Promise<NepseSnapshotHistoryRow[]> {
+  const q = new URLSearchParams({ limit: String(Math.min(2000, Math.max(1, limit))) });
+  return fetchJSON<NepseSnapshotHistoryRow[]>(`/v1/economy/nepse/history?${q}`);
+}
+
 export function fetchElectionDatasets(): Promise<ElectionDataset[]> {
   return fetchJSON("/v1/election-datasets");
 }

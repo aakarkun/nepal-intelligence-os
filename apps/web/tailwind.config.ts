@@ -64,6 +64,15 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        "economy-live-dot": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.3" },
+        },
+      },
+      animation: {
+        "economy-live-dot": "economy-live-dot 2s ease-in-out infinite",
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

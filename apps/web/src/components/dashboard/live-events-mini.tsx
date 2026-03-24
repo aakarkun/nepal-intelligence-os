@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useRealtimeStore } from "@/stores/realtime-store";
-import { cn, timeAgo } from "@/lib/utils";
+import { cn, dedupeSignalEventsByTitle, timeAgo } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchFeed } from "@/lib/api";
 import type { SignalEvent, SignalEventType } from "@repo/shared";
@@ -64,8 +64,10 @@ export function LiveEventsMini() {
   for (const e of [...apiEvents, ...recentEvents]) {
     mergedMap.set(e.id, e);
   }
-  const allEvents = Array.from(mergedMap.values()).sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  const allEvents = dedupeSignalEventsByTitle(
+    Array.from(mergedMap.values()).sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    )
   );
 
   const electionEvents = allEvents.filter(isElectionRelated);

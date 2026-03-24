@@ -3,15 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Command, PanelRight, Sparkles } from "lucide-react";
+import { Command, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNepalTime } from "@/lib/utils";
 import { useRealtimeStore } from "@/stores/realtime-store";
 import { useDispatch } from "react-redux";
 import { useFilterStore } from "@/stores/filter-store";
-import { setBriefingPanelOpen, toggleIntelRail } from "@/store/slices/uiSlice";
+import { setBriefingPanelOpen } from "@/store/slices/uiSlice";
 import { useLanguage } from "@/providers/language-provider";
-
 const MODULES = [
   { id: "discover", label: "Discover", href: "/", ready: true },
   { id: "parliament", label: "Parliament", href: "/parliament", ready: true },
@@ -38,8 +37,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
   const setActiveModule = useFilterStore((s) => s.setActiveModule);
   const dispatch = useDispatch();
   const openBriefing = () => dispatch(setBriefingPanelOpen(true));
-  const togglePanel = () => dispatch(toggleIntelRail());
-   const { language, toggleLanguage } = useLanguage();
+  const { language, toggleLanguage } = useLanguage();
 
   useEffect(() => {
     function tick() {
@@ -148,15 +146,6 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
         >
           <Sparkles className="h-3 w-3" />
           <span className="hidden xs:inline sm:inline">Briefing</span>
-        </button>
-        {/* Panel rail toggle — show/hide right sidebar */}
-        <button
-          onClick={togglePanel}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
-          title="Toggle right panel"
-        >
-          <PanelRight className="h-3 w-3" />
-          <span className="hidden xs:inline sm:inline">Panel</span>
         </button>
         {/* ⌘K trigger (icon-only on xs) */}
         <button

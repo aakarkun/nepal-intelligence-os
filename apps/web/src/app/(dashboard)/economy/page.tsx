@@ -1,31 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Bitcoin,
-  CircleDollarSign,
-  Coins,
-  Gem,
-  Landmark,
-  LineChart,
-  RadioTower,
-  Scale,
-  Search,
-} from "lucide-react";
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowDownRight, ArrowUpRight, Minus, Search } from "lucide-react";
 import {
   fetchEconomySummary,
   fetchFeed,
   fetchForexRates,
   fetchMarketAssetQuotes,
+  fetchNepseHistory,
   fetchNepseSummary,
-  fetchSourceHealth,
 } from "@/lib/api";
-import { formatNepalDateTime, formatNumber, timeAgo } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buildNepseSparkSeries, type NepseSparkSeries } from "@/lib/nepse-index-spark";
+import {
+  dedupeSignalEventsByTitle,
+  formatNepalDateTime,
+  formatNumber,
+  timeAgo,
+} from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { IntelRailSections } from "@/components/layout/intel-rail";
 import { cn } from "@/lib/utils";
 
 const ECONOMY_KEYWORDS = [
@@ -57,51 +59,80 @@ const ECONOMY_KEYWORDS = [
   "चाँदी",
 ];
 
-const PRECIOUS_METALS_KEYWORDS = [
-  "gold",
-  "silver",
-  "bullion",
-  "hallmark",
-  "xau",
-  "xag",
-  "suna",
-  "chandi",
-  "सुन",
-  "चाँदी",
-];
+const SENTIMENT_NEGATIVE =
+  /\b(fall|falls|down|drop|decline|bearish|decrease|slump|weakens)\b/i;
+const SENTIMENT_POSITIVE =
+  /\b(rise|rises|up|gain|bullish|increase|surge|strong|soar|rally)\b/i;
 
-const SENTIMENT_POSITIVE = /\b(rise|rises|up|surge|gain|bullish|increase|record high|soars|jumps)\b/i;
-const SENTIMENT_NEGATIVE = /\b(fall|falls|down|drop|decline|bearish|decrease|slump|weakens)\b/i;
+function inferBearish(title: string, body: string): boolean {
+  return SENTIMENT_NEGATIVE.test(`${title} ${body}`);
+}
 
-function inferMarketSentiment(title: string, body: string): "bullish" | "bearish" | "neutral" {
-  const text = `${title} ${body}`;
-  if (SENTIMENT_POSITIVE.test(text)) return "bullish";
-  if (SENTIMENT_NEGATIVE.test(text)) return "bearish";
-  return "neutral";
+function inferBullish(title: string, body: string): boolean {
+  return SENTIMENT_POSITIVE.test(`${title} ${body}`);
 }
 
 const TRACKED_CODES = ["AUD", "USD", "EUR", "GBP"] as const;
 
-function rateTone(change: number | null) {
-  if (change === null || change === 0) {
-    return "text-muted-foreground";
-  }
-  return change > 0 ? "text-emerald-400" : "text-red-400";
+const panelClass = "border border-white/10 bg-[#0a0a0a] rounded-xl relative overflow-hidden";
+const headerClass = "text-[10px] font-mono uppercase tracking-[0.15em] text-[#888] px-4 py-2.5 border-b border-white/10 bg-[#111] flex items-center gap-2";
+
+function subscribeOnline(cb: () => void) {
+  window.addEventListener("online", cb);
+  window.addEventListener("offline", cb);
+  return () => {
+    window.removeEventListener("online", cb);
+    window.removeEventListener("offline", cb);
+  };
 }
 
-function trendLabel(change: number | null) {
-  if (change === null || change === 0) return "Flat";
-  return change > 0 ? "Up" : "Down";
+function useOnline() {
+  return useSyncExternalStore(
+    subscribeOnline,
+    () => navigator.onLine,
+    () => true
+  );
 }
 
-function trendBadgeClass(change: number | null) {
-  if (change === null || change === 0) {
-    return "border-border/35 bg-muted/12 text-muted-foreground";
-  }
-  return change > 0
-    ? "border-emerald-500/20 bg-emerald-500/8 text-emerald-400"
-    : "border-red-500/20 bg-red-500/8 text-red-400";
+function useSecondTick() {
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setTick((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, []);
 }
+
+function IntelDelta({ change }: { change: number | null }) {
+  if (change === null || change === 0) return <span className="text-[11px] font-mono text-[#555]">0.00</span>;
+  const isPos = change > 0;
+  return (
+    <span className={cn("text-[11px] font-mono", isPos ? "text-emerald-400/80" : "text-rose-400/80")}>
+      {isPos ? "+" : ""}{change.toFixed(2)}
+    </span>
+  );
+}
+
+function LiveIndicator({ dataUpdatedAt }: { dataUpdatedAt: number }) {
+  useSecondTick();
+  const online = useOnline();
+
+  const label = !online
+    ? "SYS: OFFLINE"
+    : !dataUpdatedAt
+      ? "SYS: AWAITING SYNC"
+      : `SYNC: ${timeAgo(new Date(dataUpdatedAt).toISOString()).toUpperCase()}`;
+
+  const live = online && dataUpdatedAt > 0;
+
+  return (
+    <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
+      <span className={cn("h-1.5 w-1.5 rounded-full", live ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
+      <span className={live ? "text-emerald-500/80" : "text-rose-500/80"}>{label}</span>
+    </div>
+  );
+}
+
+const REF_ASSETS = ["BTC", "ETH", "XAU", "XAG"] as const;
 
 export default function EconomyPage() {
   const { data: summary } = useQuery({
@@ -110,7 +141,7 @@ export default function EconomyPage() {
     refetchInterval: 30 * 60 * 1000,
   });
 
-  const { data: rates = [] } = useQuery({
+  const { data: rates = [], dataUpdatedAt: forexUpdatedAt } = useQuery({
     queryKey: ["economy", "forex"],
     queryFn: fetchForexRates,
     refetchInterval: 30 * 60 * 1000,
@@ -128,613 +159,292 @@ export default function EconomyPage() {
     refetchInterval: 30 * 60 * 1000,
   });
 
+  const { data: nepseHistory = [] } = useQuery({
+    queryKey: ["economy", "nepse", "history"],
+    queryFn: () => fetchNepseHistory(500),
+    refetchInterval: 30 * 60 * 1000,
+  });
+
   const { data: feedData } = useQuery({
     queryKey: ["feed", "economy-context"],
     queryFn: () => fetchFeed(120, 0),
     refetchInterval: 30_000,
   });
 
-  const { data: sourceHealth = [] } = useQuery({
-    queryKey: ["source-health", "economy"],
-    queryFn: fetchSourceHealth,
-    refetchInterval: 30_000,
-  });
-
-  const trackedRates = useMemo(
-    () =>
-      TRACKED_CODES.map((code) => rates.find((rate) => rate.currencyCode === code)).filter(
-        (rate): rate is NonNullable<(typeof rates)[number]> => Boolean(rate)
-      ),
-    [rates]
-  );
-
   const [rateQuery, setRateQuery] = useState("");
 
-  const filteredRates = useMemo(
-    () => {
-      const q = rateQuery.trim().toLowerCase();
-      if (!q) return rates;
-      return rates.filter((rate) => {
-        const haystack = `${rate.currencyCode} ${rate.currencyName}`.toLowerCase();
-        return haystack.includes(q);
-      });
-    },
-    [rates, rateQuery]
-  );
+  const filteredRates = useMemo(() => {
+    const q = rateQuery.trim().toLowerCase();
+    if (!q) return rates;
+    return rates.filter((rate) => {
+      const haystack = `${rate.currencyCode} ${rate.currencyName}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [rates, rateQuery]);
 
-  const orderedAssetQuotes = useMemo(() => {
-    const order = ["BTC", "ETH", "XAU", "XAG"];
-    const rank = (code: string) => {
-      const index = order.indexOf(code);
-      return index === -1 ? order.length + 1 : index;
-    };
-    return [...assetQuotes].sort(
-      (a, b) => rank(a.assetCode) - rank(b.assetCode)
-    );
+  const globalRefQuotes = useMemo(() => {
+    const want = new Set<string>(REF_ASSETS);
+    return [...assetQuotes]
+      .filter((q) => want.has(q.assetCode))
+      .sort((a, b) => {
+        const ia = REF_ASSETS.indexOf(a.assetCode as (typeof REF_ASSETS)[number]);
+        const ib = REF_ASSETS.indexOf(b.assetCode as (typeof REF_ASSETS)[number]);
+        return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+      });
   }, [assetQuotes]);
 
   const topNews = useMemo(() => {
     const events = feedData?.events ?? [];
-    return events.filter((event) => {
+    const filtered = events.filter((event) => {
       const haystack = `${event.title} ${event.body} ${event.source ?? ""}`.toLowerCase();
       return ECONOMY_KEYWORDS.some((keyword) => haystack.includes(keyword));
     });
+    return dedupeSignalEventsByTitle(filtered);
   }, [feedData]);
 
-  const preciousMetalsNews = useMemo(() => {
-    const events = feedData?.events ?? [];
-    return events.filter((event) => {
-      const haystack = `${event.title} ${event.body} ${event.source ?? ""}`.toLowerCase();
-      return PRECIOUS_METALS_KEYWORDS.some((keyword) => haystack.includes(keyword));
-    });
-  }, [feedData]);
-
-  const preciousMetalsSentiment = useMemo(() => {
-    let bullish = 0;
-    let bearish = 0;
-    for (const event of preciousMetalsNews) {
-      const sentiment = inferMarketSentiment(event.title, event.body);
-      if (sentiment === "bullish") bullish++;
-      if (sentiment === "bearish") bearish++;
+  const signalSentiment = useMemo(() => {
+    const slice = topNews.slice(0, 8);
+    let bear = 0;
+    let bull = 0;
+    for (const e of slice) {
+      const t = `${e.title} ${e.body}`;
+      if (inferBearish(e.title, e.body)) bear++;
+      else if (inferBullish(e.title, e.body)) bull++;
+      else if (SENTIMENT_NEGATIVE.test(t)) bear++;
+      else if (SENTIMENT_POSITIVE.test(t)) bull++;
     }
-    if (bullish > bearish) return "Bullish";
-    if (bearish > bullish) return "Bearish";
-    return "Neutral";
-  }, [preciousMetalsNews]);
+    if (bear === 0 && bull === 0) return "bullish" as const;
+    return bear >= bull ? ("bearish" as const) : ("bullish" as const);
+  }, [topNews]);
 
-  const economySources = sourceHealth.filter(
-    (source) =>
-      source.sourceId === "economy" ||
-      source.sourceId.startsWith("economy:") ||
-      source.sourceId.startsWith("news:")
+  const nepseSparkSeries = useMemo(
+    () => buildNepseSparkSeries(nepseHistory),
+    [nepseHistory]
   );
 
-  const assetIcon = (code: string) => {
-    if (code === "XAU") return Gem;
-    if (code === "XAG") return Coins;
-    return Bitcoin; // BTC, ETH
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2 xl:flex-row xl:items-end xl:justify-between">
+    <div className={cn("-mx-4 px-4 pb-10 md:-mx-6 md:px-6 min-h-full bg-[#050505] text-[#e5e5e5] antialiased")}>
+      
+      {/* Header */}
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-4 pt-2">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight">
-            Economic Pulse
+          <h1 className="font-mono text-lg uppercase tracking-[0.2em] text-[#e5e5e5]">
+            Macroeconomic Intelligence
           </h1>
-          <p className="text-muted-foreground text-sm">
-            Direct FX board from Nepal Rastra Bank, with live macro context layered beside it
+          <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-[#888]">
+            Nepal Rastra Bank · NEPSE · Global Commodities
           </p>
         </div>
-        <div className="rounded-lg border border-border bg-card/10 px-4 py-3 text-xs text-muted-foreground">
-          Source: {summary?.sourceName ?? "Nepal Rastra Bank Forex"} ·{" "}
-          {summary ? formatNepalDateTime(summary.timestamp) : "Waiting for first pull"}
-        </div>
+        <LiveIndicator dataUpdatedAt={forexUpdatedAt} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {trackedRates.map((rate) => (
-          <Card
-            key={rate.currencyCode}
-            className="border border-border bg-card/80 rounded-xl"
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                {rate.currencyCode} / NPR
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="font-display text-4xl font-bold tabular-nums leading-none">
-                {rate.buy.toFixed(2)}
-              </div>
-              <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                {rate.currencyName} buying rate
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        {orderedAssetQuotes.map((quote) => {
-          const Icon = assetIcon(quote.assetCode);
-          return (
-            <Card
-              key={quote.assetCode}
-              className={cn(
-                "border border-border bg-card/10 rounded-xl transition-colors",
-                quote.change !== null && quote.change > 0 && "border-emerald-500/15 bg-emerald-500/5",
-                quote.change !== null && quote.change < 0 && "border-red-500/15 bg-red-500/5"
-              )}
-            >
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Icon className={cn("h-4 w-4", rateTone(quote.change))} />
-                    <CardTitle className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                      {quote.assetName}
-                    </CardTitle>
-                  </div>
-                  <Badge className={trendBadgeClass(quote.change)}>{quote.assetCode}</Badge>
+      <div className="flex items-start gap-4">
+        <div className="min-w-0 flex-1 space-y-4">
+          
+          {/* Top Indicators Strip */}
+          <div className={cn(panelClass, "flex flex-wrap divide-x divide-white/10")}>
+            {/* NEPSE */}
+            <div className="flex-1 min-w-[140px] p-3 flex flex-col justify-between">
+              <div>
+                <div className="text-[10px] font-mono text-[#888] uppercase tracking-wider mb-1">NEPSE Index</div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-mono text-[#e5e5e5]">
+                    {nepse?.index ? nepse.index.toLocaleString(undefined, { minimumFractionDigits: 2 }) : "—"}
+                  </span>
+                  <IntelDelta change={nepse?.change ?? null} />
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="font-display text-4xl font-bold tabular-nums leading-none">
-                  {quote.price.toLocaleString("en-US", {
-                    maximumFractionDigits: quote.assetCode === "BTC" ? 0 : 2,
+              </div>
+              {nepseSparkSeries && (
+                <div className="mt-2 h-6 flex items-end gap-[1px] opacity-60">
+                  {nepseSparkSeries.values.map((v, i) => {
+                    const min = Math.min(...nepseSparkSeries.values);
+                    const max = Math.max(...nepseSparkSeries.values);
+                    const span = max - min || 1;
+                    const pct = 10 + ((v - min) / span) * 90;
+                    return <div key={i} className="flex-1 bg-emerald-500/50 min-w-[2px]" style={{ height: `${pct}%` }} />
                   })}
                 </div>
-                <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                  {quote.currency} spot reference
-                </div>
-                <div className={cn("flex items-center gap-2 text-sm", rateTone(quote.change))}>
-                  {quote.change !== null && quote.change > 0 ? (
-                    <ArrowUpRight className="h-4 w-4" />
-                  ) : quote.change !== null && quote.change < 0 ? (
-                    <ArrowDownRight className="h-4 w-4" />
-                  ) : (
-                    <Scale className="h-4 w-4" />
-                  )}
-                  <span className="tabular-nums">
-                    {quote.change === null ? "First tracked print" : `${quote.change > 0 ? "+" : ""}${quote.change.toFixed(2)}`}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {quote.changePercent === null
-                      ? ""
-                      : `(${quote.changePercent > 0 ? "+" : ""}${quote.changePercent.toFixed(2)}%)`}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <Card className="border border-border bg-card/80 rounded-xl">
-        <CardHeader className="pb-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <LineChart className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="font-display text-base">NEPSE</CardTitle>
-            {nepse?.index != null && nepse.index > 0 && nepse.sourceName && (
-              <span className="text-xs text-muted-foreground">{nepse.sourceName}</span>
-            )}
-            {nepse?.marketStatus && (
-              <Badge
-                className={cn(
-                  nepse.marketStatus === "open"
-                    ? "border-emerald-500/20 bg-emerald-500/8 text-emerald-400"
-                    : "border-border/35 bg-muted/12 text-muted-foreground"
-                )}
-              >
-                {nepse.marketStatus === "open" ? "Open" : "Closed"}
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {nepse && nepse.index > 0 ? (
-            <>
-              <div className="flex flex-wrap items-baseline gap-3">
-                <span className="font-display text-2xl font-bold tabular-nums">
-                  {nepse.index.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-                {(nepse.change != null || nepse.changePercent != null) && (
-                  <span className={cn("text-sm tabular-nums", rateTone(nepse.change))}>
-                    {nepse.change != null && (nepse.change >= 0 ? "+" : "")}
-                    {nepse.change?.toFixed(2) ?? ""}
-                    {nepse.changePercent != null && (
-                      <span className="ml-1">
-                        ({nepse.changePercent >= 0 ? "+" : ""}
-                        {nepse.changePercent.toFixed(2)}%)
+              )}
+            </div>
+            
+            {/* FX Tracked */}
+            {TRACKED_CODES.map((code) => {
+              const rate = rates.find((r) => r.currencyCode === code);
+              return (
+                <div key={code} className="flex-1 min-w-[120px] p-3 flex flex-col justify-between">
+                  <div>
+                    <div className="text-[10px] font-mono text-[#888] uppercase tracking-wider mb-1">{code}/NPR</div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xl font-mono text-[#e5e5e5]">
+                        {rate ? rate.buy.toFixed(2) : "—"}
                       </span>
-                    )}
-                  </span>
-                )}
-              </div>
-              {nepse.totalTurnover != null && nepse.totalTurnover > 0 && (
-                <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded bg-background/8 px-2 py-1">
-                    Turnover: NPR {formatNumber(nepse.totalTurnover)}
-                  </div>
-                  <div className="rounded bg-background/8 px-2 py-1">
-                    Traded shares:{" "}
-                    {nepse.tradedShares != null
-                      ? formatNumber(nepse.tradedShares)
-                      : "—"}
-                  </div>
-                  <div className="rounded bg-background/8 px-2 py-1">
-                    ADV/DEC/UNCH:{" "}
-                    {nepse.advancingIssues ?? 0}/{nepse.decliningIssues ?? 0}/
-                    {nepse.unchangedIssues ?? 0}
-                  </div>
-                  <div className="rounded bg-background/8 px-2 py-1">
-                    Breadth: {((nepse.advancingIssues ?? 0) - (nepse.decliningIssues ?? 0)) >= 0 ? "Positive" : "Negative"}
+                      {rate && <IntelDelta change={rate.changeBuy} />}
+                    </div>
                   </div>
                 </div>
-              )}
-              <p className="text-[11px] text-muted-foreground/80">
-                ADV/DEC/UNCH means advancing, declining, and unchanged listed stocks for the session.
-              </p>
-              {(nepse.topGainers?.length ?? 0) + (nepse.topLosers?.length ?? 0) > 0 && (
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {nepse.topGainers && nepse.topGainers.length > 0 && (
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Top gainers</div>
-                      <ul className="mt-1 space-y-0.5 text-sm">
-                        {nepse.topGainers.slice(0, 5).map((g) => (
-                          <li key={g.symbol} className="flex justify-between text-emerald-400">
-                            <span>{g.symbol}</span>
-                            <span className="tabular-nums">
-                              +{"changePercent" in g ? g.changePercent.toFixed(2) : (g as { change: number }).change.toFixed(2)}%
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {nepse.topLosers && nepse.topLosers.length > 0 && (
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Top losers</div>
-                      <ul className="mt-1 space-y-0.5 text-sm">
-                        {nepse.topLosers.slice(0, 5).map((g) => (
-                          <li key={g.symbol} className="flex justify-between text-red-400">
-                            <span>{g.symbol}</span>
-                            <span className="tabular-nums">
-                              {"changePercent" in g
-                                ? `${(g as { changePercent: number }).changePercent.toFixed(2)}%`
-                                : (g as { change: number }).change.toFixed(2)}%
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+              );
+            })}
+          </div>
+
+          {/* Main Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            
+            {/* Left Column */}
+            <div className="xl:col-span-2 space-y-4">
+              
+              {/* FX Matrix */}
+              <div className={panelClass}>
+                <div className={headerClass}>
+                  <span className="h-1.5 w-1.5 bg-blue-500/80 rounded-full"></span>
+                  Official Exchange Rates (NRB)
                 </div>
-              )}
-              <p className="text-[11px] text-muted-foreground">
-                As of {formatNepalDateTime(nepse.timestamp)} NPT
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Market data unavailable. {nepse?.timestamp ? `Last known: ${formatNepalDateTime(nepse.timestamp)} NPT` : "Waiting for first pull after market close."}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card
-        className={cn(
-          "border border-border rounded-xl",
-          summary &&
-            Math.max(
-              summary.advancingRates ?? 0,
-              summary.decliningRates ?? 0,
-              summary.unchangedRates ?? 0
-            ) === (summary.advancingRates ?? 0)
-            ? "border-emerald-500/20 bg-emerald-500/5"
-            : "border-rose-100/20 bg-rose-100/5"
-        )}
-      >
-        <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
-              FX ADV/DEC/UNCH
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2 text-xs">
-              <Badge className="border-emerald-500/20 bg-emerald-500/8 text-emerald-400">
-                {summary?.advancingRates ?? 0} up
-              </Badge>
-              <Badge className="border-red-500/20 bg-red-500/8 text-red-400">
-                {summary?.decliningRates ?? 0} down
-              </Badge>
-              <Badge className="border-border/35 bg-muted/12 text-muted-foreground">
-                {summary?.unchangedRates ?? 0} flat
-              </Badge>
-              <Badge className="border-border/35 bg-background/18 text-foreground/90">
-                {formatNumber(summary?.trackedRates ?? 0)} tracked
-              </Badge>
-            </div>
-            <div className="mt-2 text-[11px] text-muted-foreground/80">
-              ADV/DEC/UNCH = currencies moved up / down / unchanged versus previous board.
-            </div>
-          </div>
-
-          <div className="text-left md:text-right">
-            <div className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
-              Pulse freshness
-            </div>
-            <div className="mt-2 font-display text-3xl font-bold tabular-nums leading-none">
-              {summary ? timeAgo(summary.timestamp) : "--"}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
-        <div className="space-y-4 w-full xl:flex-[1.3]">
-          <Card className="overflow-hidden border border-border bg-card/80 rounded-2xl w-full">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-2">
-                <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
-                <CardTitle className="font-display text-lg">NRB FX Board</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="grid grid-cols-1 md:grid-cols-2">
-                {trackedRates.map((rate) => (
-                  <div key={rate.currencyCode} className="space-y-4 p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-display text-xl font-semibold">
-                          {rate.currencyCode}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {rate.currencyName} · unit {rate.unit}
-                        </div>
-                      </div>
-                      <Badge className={trendBadgeClass(rate.changeBuy)}>
-                        {trendLabel(rate.changeBuy)}
-                      </Badge>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-lg bg-background/16 p-3">
-                        <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                          Buy
-                        </div>
-                        <div className="mt-1 font-display text-2xl font-semibold tabular-nums">
-                          {rate.buy.toFixed(3)}
-                        </div>
-                      </div>
-                      <div className="rounded-lg bg-background/16 p-3">
-                        <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                          Sell
-                        </div>
-                        <div className="mt-1 font-display text-2xl font-semibold tabular-nums">
-                          {rate.sell.toFixed(3)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={cn("flex items-center gap-2 text-sm", rateTone(rate.changeBuy))}>
-                      {rate.changeBuy !== null && rate.changeBuy > 0 ? (
-                        <ArrowUpRight className="h-4 w-4" />
-                      ) : rate.changeBuy !== null && rate.changeBuy < 0 ? (
-                        <ArrowDownRight className="h-4 w-4" />
-                      ) : (
-                        <Scale className="h-4 w-4" />
+                <div className="p-2 border-b border-white/10 bg-[#0d0d0d]">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-[#555]" />
+                    <input
+                      type="search"
+                      value={rateQuery}
+                      onChange={(e) => setRateQuery(e.target.value)}
+                      placeholder="FILTER CURRENCIES..."
+                      className="w-full bg-transparent border-none text-[11px] font-mono text-[#ccc] placeholder:text-[#555] pl-8 py-1.5 focus:outline-none focus:ring-0"
+                    />
+                  </div>
+                </div>
+                <div className="max-h-[400px] overflow-y-auto scrollbar-thin">
+                  <table className="w-full text-left border-collapse">
+                    <thead className="sticky top-0 bg-[#0a0a0a] border-b border-white/10 z-10">
+                      <tr>
+                        <th className="px-4 py-2 text-[10px] font-mono text-[#555] font-normal uppercase">Code</th>
+                        <th className="px-4 py-2 text-[10px] font-mono text-[#555] font-normal uppercase text-right">Buy</th>
+                        <th className="px-4 py-2 text-[10px] font-mono text-[#555] font-normal uppercase text-right">Sell</th>
+                        <th className="px-4 py-2 text-[10px] font-mono text-[#555] font-normal uppercase text-right">Delta</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {filteredRates.map((rate) => (
+                        <tr key={rate.currencyCode} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-[12px] text-[#e5e5e5]">{rate.currencyCode}</span>
+                              <span className="font-mono text-[10px] text-[#555] truncate max-w-[120px]">{rate.currencyName}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5 text-right font-mono text-[12px] text-[#ccc]">{rate.buy.toFixed(3)}</td>
+                          <td className="px-4 py-2.5 text-right font-mono text-[12px] text-[#ccc]">{rate.sell.toFixed(3)}</td>
+                          <td className="px-4 py-2.5 text-right"><IntelDelta change={rate.changeBuy} /></td>
+                        </tr>
+                      ))}
+                      {filteredRates.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-4 py-6 text-center font-mono text-[11px] text-[#555]">
+                            NO DATA MATCHING FILTER
+                          </td>
+                        </tr>
                       )}
-                      <span className="tabular-nums">
-                        {rate.changeBuy === null ? "No prior compare" : `${rate.changeBuy > 0 ? "+" : ""}${rate.changeBuy.toFixed(3)}`}
-                      </span>
-                      <span className="text-muted-foreground">vs previous board</span>
-                    </div>
-                  </div>
-                ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </CardContent>
-          </Card>
 
-          <Card className="border border-border bg-card/80 rounded-2xl w-full">
-            <CardHeader className="pb-4">
-              <CardTitle className="font-display text-base">Signal Board</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {topNews.slice(0, 7).map((event, index) => (
-                <div
-                  key={`${event.id}-${index}`}
-                  className="rounded-lg bg-background/8 p-3"
-                >
-                  <div className="text-sm font-medium leading-tight">{event.title}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {event.source ?? "Unknown source"} · {timeAgo(event.timestamp)}
-                  </div>
+              {/* Strategic Commodities */}
+              <div className={panelClass}>
+                <div className={headerClass}>
+                  <span className="h-1.5 w-1.5 bg-amber-500/80 rounded-full"></span>
+                  Strategic Commodities
                 </div>
-              ))}
-              {topNews.length === 0 && (
-                <div className="rounded-lg bg-background/6 p-4 text-sm text-muted-foreground">
-                  No economy-tagged context headlines in the current feed window.
+                <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-white/10">
+                  {REF_ASSETS.map((code) => {
+                    const quote = globalRefQuotes.find((q) => q.assetCode === code);
+                    return (
+                      <div key={code} className="p-3">
+                        <div className="text-[10px] font-mono text-[#888] uppercase tracking-wider mb-1">{quote?.assetName ?? code}</div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-lg font-mono text-[#e5e5e5]">
+                            {quote ? quote.price.toLocaleString("en-US", { maximumFractionDigits: code === "BTC" ? 0 : 2 }) : "—"}
+                          </span>
+                          {quote && <IntelDelta change={quote.change} />}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
 
-          <Card className="border border-border bg-card/80 rounded-2xl w-full">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle className="font-display text-base">Gold & Silver Signal Board</CardTitle>
-                <Badge
-                  className={cn(
-                    "border",
-                    preciousMetalsSentiment === "Bullish" && "border-emerald-500/20 bg-emerald-500/8 text-emerald-400",
-                    preciousMetalsSentiment === "Bearish" && "border-red-500/20 bg-red-500/8 text-red-400",
-                    preciousMetalsSentiment === "Neutral" && "border-border/35 bg-muted/12 text-muted-foreground"
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-4">
+              
+              {/* Intelligence Signals */}
+              <div className={panelClass}>
+                <div className={headerClass}>
+                  <span className={cn("h-1.5 w-1.5 rounded-full", signalSentiment === "bearish" ? "bg-rose-500/80" : "bg-emerald-500/80")}></span>
+                  Intelligence Signals
+                </div>
+                <div className="max-h-[400px] overflow-y-auto divide-y divide-white/5 scrollbar-thin">
+                  {topNews.slice(0, 8).map((event, i) => {
+                    const bearish = inferBearish(event.title, event.body);
+                    const bullish = inferBullish(event.title, event.body);
+                    return (
+                      <div key={i} className="p-3 hover:bg-white/[0.02] transition-colors">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="font-mono text-[9px] text-[#555]">[{timeAgo(event.timestamp).toUpperCase()}]</span>
+                          <span className="font-mono text-[9px] text-[#888] uppercase bg-white/5 px-1.5 py-0.5 rounded-md">{event.source ?? "SYS"}</span>
+                          {(bearish || bullish) && (
+                            <span className={cn("font-mono text-[9px] uppercase px-1.5 py-0.5 rounded-md", bearish ? "text-rose-400 bg-rose-400/10" : "text-emerald-400 bg-emerald-400/10")}>
+                              {bearish ? "RISK" : "OPP"}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[12px] text-[#ccc] leading-snug font-sans">{event.title}</p>
+                      </div>
+                    );
+                  })}
+                  {topNews.length === 0 && (
+                    <div className="p-4 text-[11px] font-mono text-[#555]">NO SIGNALS DETECTED.</div>
                   )}
-                >
-                  {preciousMetalsSentiment}
-                </Badge>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {preciousMetalsNews.slice(0, 7).map((event, index) => (
-                <div
-                  key={`${event.id}-metals-${index}`}
-                  className="rounded-lg bg-background/8 p-3"
-                >
-                  <div className="text-sm font-medium leading-tight">{event.title}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {event.source ?? "Unknown source"} · {timeAgo(event.timestamp)}
-                  </div>
-                </div>
-              ))}
-              {preciousMetalsNews.length === 0 && (
-                <div className="rounded-lg bg-background/6 p-4 text-sm text-muted-foreground">
-                  No gold/silver market headlines in the current feed window.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
 
-        <div className="space-y-4 w-full xl:flex-[0.7]">
-          <Card className="border border-border bg-card/80 rounded-xl">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-2">
-                <Landmark className="h-4 w-4 text-muted-foreground" />
-                <CardTitle className="font-display text-base">Top Movers</CardTitle>
+              {/* Volatility Watch */}
+              <div className={panelClass}>
+                <div className={headerClass}>
+                  <span className="h-1.5 w-1.5 bg-purple-500/80 rounded-full"></span>
+                  Volatility Watch (Movers)
+                </div>
+                <div className="divide-y divide-white/5">
+                  {(summary?.topMovers ?? []).map((mover, i) => (
+                    <div key={mover.currencyCode} className="flex items-center justify-between p-3 hover:bg-white/[0.02] transition-colors">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-[10px] text-[#555] w-4">{i + 1}</span>
+                        <div>
+                          <div className="font-mono text-[12px] text-[#e5e5e5]">{mover.currencyCode}</div>
+                          <div className="font-mono text-[9px] text-[#555] truncate max-w-[80px]">{mover.currencyName}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono text-[12px] text-[#ccc]">{mover.buy.toFixed(3)}</div>
+                        <IntelDelta change={mover.changeBuy} />
+                      </div>
+                    </div>
+                  ))}
+                  {(summary?.topMovers ?? []).length === 0 && (
+                    <div className="p-4 text-[11px] font-mono text-[#555]">AWAITING VOLATILITY DATA.</div>
+                  )}
+                </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {(summary?.topMovers ?? []).map((mover, index) => (
-                <div
-                  key={mover.currencyCode}
-                  className="flex items-center justify-between rounded-lg bg-background/8 px-3 py-2"
-                >
-                  <div>
-                    <div className="text-sm font-medium">
-                      {index + 1}. {mover.currencyCode}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {mover.currencyName} · unit {mover.unit}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold tabular-nums">
-                      {mover.buy.toFixed(3)}
-                    </div>
-                    <div className={cn("text-xs tabular-nums", rateTone(mover.changeBuy))}>
-                      {mover.changeBuy > 0 ? "+" : ""}
-                      {mover.changeBuy.toFixed(3)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {(summary?.topMovers ?? []).length === 0 && (
-                <div className="rounded-lg bg-background/6 p-4 text-sm text-muted-foreground">
-                  Waiting for direct NRB comparison data.
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          <Card className="border border-border bg-card/80 rounded-xl">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-2">
-                <RadioTower className="h-4 w-4 text-muted-foreground" />
-                <CardTitle className="font-display text-base">Source Health</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {economySources.map((source) => (
-                <div
-                  key={source.sourceId}
-                  className="flex items-center justify-between rounded-lg bg-background/8 px-3 py-2"
-                >
-                  <div>
-                    <div className="text-sm font-medium">{source.sourceName}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {source.updateCount} updates · {timeAgo(source.lastUpdate)}
-                    </div>
-                  </div>
-                  <Badge
-                    variant={
-                      source.status === "live"
-                        ? "live"
-                        : source.status === "stale"
-                          ? "outline"
-                          : "destructive"
-                    }
-                  >
-                    {source.status}
-                  </Badge>
-                </div>
-              ))}
-              {economySources.length === 0 && (
-                <div className="rounded-lg bg-background/6 p-4 text-sm text-muted-foreground">
-                  No economy source health yet.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      <Card className="mt-4 border border-border bg-card/80 rounded-2xl w-full">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <CardTitle className="font-display text-base">Full Rate Ladder</CardTitle>
-            <div className="relative w-full md:w-64">
-              <Search className="pointer-events-none absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground/70" />
-              <input
-                type="text"
-                value={rateQuery}
-                onChange={(e) => setRateQuery(e.target.value)}
-                placeholder="Filter currencies…"
-                className="w-full rounded-md border border-border bg-background/40 py-1.5 pl-7 pr-3 text-xs font-mono uppercase tracking-[0.18em] text-foreground/90 placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-border/50"
-              />
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="grid grid-cols-[1.2fr_0.8fr_0.8fr_0.7fr] gap-2 px-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-            <div>Currency</div>
-            <div className="text-right">Buy</div>
-            <div className="text-right">Sell</div>
-            <div className="text-right">Delta</div>
+        </div>
+
+        {/* Right Sidebar (Intel Rail) */}
+        <aside className="hidden w-[300px] shrink-0 overflow-hidden lg:block">
+          <div className="space-y-3">
+            <IntelRailSections />
           </div>
-          <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
-            {filteredRates.map((rate) => (
-              <div
-                key={rate.currencyCode}
-                className="grid grid-cols-[1.2fr_0.8fr_0.8fr_0.7fr] items-center gap-2 rounded-lg bg-background/8 px-3 py-2 text-sm"
-              >
-                <div>
-                  <div className="font-medium">{rate.currencyCode}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {rate.currencyName} · unit {rate.unit}
-                  </div>
-                </div>
-                <div className="text-right tabular-nums">{rate.buy.toFixed(3)}</div>
-                <div className="text-right tabular-nums">{rate.sell.toFixed(3)}</div>
-                <div className={cn("text-right tabular-nums", rateTone(rate.changeBuy))}>
-                  {rate.changeBuy === null ? "--" : `${rate.changeBuy > 0 ? "+" : ""}${rate.changeBuy.toFixed(3)}`}
-                </div>
-              </div>
-            ))}
-            {rates.length === 0 && (
-              <div className="rounded-lg bg-background/6 p-4 text-sm text-muted-foreground">
-                Waiting for the first NRB forex pull.
-              </div>
-            )}
-            {rates.length > 0 && filteredRates.length === 0 && (
-              <div className="rounded-lg bg-background/6 p-4 text-xs text-muted-foreground">
-                No currencies match this filter.
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        </aside>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchFeed } from "@/lib/api";
 import { useMemo } from "react";
+import { dedupeSignalEventsByTitle } from "@/lib/utils";
 import type { SignalEventEntities } from "@repo/shared";
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
@@ -20,7 +21,7 @@ export function SidebarTrending({
   });
 
   const trending = useMemo(() => {
-    const events = data?.events ?? [];
+    const events = dedupeSignalEventsByTitle(data?.events ?? []);
     const cutoff = Date.now() - SIX_HOURS_MS;
     const recent = events.filter(
       (e) => new Date(e.timestamp).getTime() >= cutoff

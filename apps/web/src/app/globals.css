@@ -119,3 +119,17 @@
 .animate-shimmer {
   animation: shimmer 1.5s infinite;
 }
+
+@keyframes economy-delta-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+.animate-economy-delta-flash {
+  animation: economy-delta-flash 0.55s ease-out;
+}

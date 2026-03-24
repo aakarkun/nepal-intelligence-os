@@ -8,7 +8,7 @@ import { persistStorage } from "./storage";
 const uiPersistConfig = {
   key: "nepal-intel-ui",
   storage: persistStorage,
-  whitelist: ["briefingPanelOpen", "intelRailOpen", "typeFilter"],
+  whitelist: ["briefingPanelOpen", "typeFilter"],
 };
 
 const watchlistApiPersistConfig = {
