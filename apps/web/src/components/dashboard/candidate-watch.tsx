@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, Flame, Megaphone, Trophy } from "lucide-react";
+import { ArrowUpRight, Flame, Megaphone, Trophy } from "@/components/icons";
 import type { ConstituencyResult } from "@repo/shared";
 import { fetchConstituencies } from "@/lib/api";
 import { cn, formatNumber } from "@/lib/utils";
@@ -176,7 +176,7 @@ export function CandidateWatch() {
                 <div className="font-mono text-sm font-bold tabular-nums">
                   {formatNumber(candidate.votes)}
                 </div>
-                <div className="text-[10px] text-muted-foreground">
+                <div className="text-[12px] text-muted-foreground">
                   Margin {formatNumber(candidate.margin)}
                 </div>
               </div>
@@ -251,7 +251,7 @@ export function CandidateWatch() {
                     <Megaphone className="h-3.5 w-3.5" />
                     #{candidate.personalityRank}
                   </div>
-                  <div className="text-[10px] text-muted-foreground">
+                  <div className="text-[12px] text-muted-foreground">
                     curated priority
                   </div>
                 </div>

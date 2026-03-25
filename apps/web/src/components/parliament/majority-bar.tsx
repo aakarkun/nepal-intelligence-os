@@ -38,7 +38,7 @@ export function MajorityBar() {
                     backgroundColor: p.partyColor,
                   }}
                 >
-                  <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="absolute inset-0 flex items-center justify-center text-[12px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
                     {p.partyShortName} {p.seatsWon + p.seatsLeading}
                   </span>
                 </div>
@@ -48,7 +48,7 @@ export function MajorityBar() {
             className="absolute top-0 bottom-0 border-l-2 border-dashed border-white/60"
             style={{ left: `${majorityPct}%` }}
           >
-            <span className="absolute -top-5 -translate-x-1/2 text-[10px] text-muted-foreground whitespace-nowrap">
+            <span className="absolute -top-5 -translate-x-1/2 text-[12px] text-muted-foreground whitespace-nowrap">
               Majority: {HOR_MAJORITY_THRESHOLD}
             </span>
           </div>

@@ -34,7 +34,7 @@ export function SeatFlipLog() {
                   <span className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium truncate">{e.title}</p>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[12px] text-muted-foreground">
                       {timeAgo(e.timestamp)}
                     </p>
                   </div>

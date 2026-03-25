@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Layers, MapPin, AlertTriangle, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Layers, MapPin, AlertTriangle, ZoomIn, ZoomOut, RotateCcw } from "@/components/icons";
 
 export interface LayerVisibility {
   provinces: boolean;
@@ -48,7 +48,7 @@ export function MapControls({
             type="button"
             onClick={() => onToggleLayer(key)}
             className={cn(
-              "flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-medium transition-colors",
+              "flex items-center gap-1.5 rounded px-2 py-1 text-[13px] font-medium transition-colors",
               active
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:bg-accent/50"

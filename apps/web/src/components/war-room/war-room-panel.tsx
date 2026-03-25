@@ -8,7 +8,7 @@ import {
   PhoneOff,
   Lock,
   Radio,
-} from "lucide-react";
+} from "@/components/icons";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { env } from "@/lib/env";
@@ -65,7 +65,7 @@ function VoiceRoom() {
                 ) : (
                   <Mic className="h-3.5 w-3.5 text-green-500" />
                 )}
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[12px] text-muted-foreground">
                   {p.muted ? "Muted" : "Speaking"}
                 </span>
               </div>
@@ -198,7 +198,7 @@ function AIBriefingPanel() {
           </div>
         </div>
         <div className="pt-2 border-t border-border">
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             This briefing is AI-generated from current data feeds. Not for
             official citation.
           </p>

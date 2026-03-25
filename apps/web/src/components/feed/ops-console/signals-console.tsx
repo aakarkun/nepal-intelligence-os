@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Radio, ListFilter, Search } from "lucide-react";
+import { Radio, ListFilter, Search } from "@/components/icons";
 import type { SignalEvent, SignalEventType, SignalSeverity } from "@repo/shared";
 import { fetchFeed } from "@/lib/api";
 import { useRealtimeStore } from "@/stores/realtime-store";

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { X } from "@/components/icons";
 import Link from "next/link";
 import { PROVINCES, type ConstituencyResult } from "@repo/shared";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +49,7 @@ export function GeographyDrawer({
   onSelectDistrict,
 }: GeographyDrawerProps) {
   const { selectedDatasetId } = useElectionDatasetStore();
+  const intelRailOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
   const [activeTab, setActiveTab] = useState<"election" | "news">("election");
 
   const districtQuery = useQuery({

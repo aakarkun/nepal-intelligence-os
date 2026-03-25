@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Clock } from "lucide-react";
+import { Clock } from "@/components/icons";
 import { fetchConstituencies } from "@/lib/api";
 import { cn, formatNepalDateTime, timeAgo } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,7 +93,7 @@ export function WhatChangedCard() {
             Change tracking is only available for the live dataset. Archived elections render as fixed snapshots for comparison.
           </p>
           {selectedDataset?.timestamp && (
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[12px] text-muted-foreground">
               Snapshot timestamp {formatNepalDateTime(selectedDataset.timestamp)}
             </p>
           )}
@@ -196,7 +196,7 @@ export function WhatChangedCard() {
           </div>
         )}
         {lastSnapshotTime.current > 0 && (
-          <p className="mt-3 text-[10px] text-muted-foreground">
+          <p className="mt-3 text-[12px] text-muted-foreground">
             Snapshot taken{" "}
             {timeAgo(new Date(lastSnapshotTime.current).toISOString())}
           </p>

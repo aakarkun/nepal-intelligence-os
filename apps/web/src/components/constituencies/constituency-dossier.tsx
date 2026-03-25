@@ -13,7 +13,7 @@ import {
   LineChart,
   CartesianGrid,
 } from "recharts";
-import { ArrowLeft, Copy, Check, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Copy, Check, Eye, EyeOff } from "@/components/icons";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { useRealtimeStore } from "@/stores/realtime-store";
 
@@ -99,7 +99,7 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
                 ? removeFromWatchlist(data.constituencyId)
                 : addToWatchlist(data.constituencyId)
             }
-            className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-[11px] text-muted-foreground hover:text-nepal-red hover:border-nepal-red/60 transition-colors"
+            className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-[13px] text-muted-foreground hover:text-nepal-red hover:border-nepal-red/60 transition-colors"
           >
             {isWatched ? (
               <>

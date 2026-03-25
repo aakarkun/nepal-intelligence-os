@@ -106,7 +106,7 @@ export function NationalSummaryCards() {
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    className="h-4 w-4 rounded-full border border-border text-[10px] flex items-center justify-center leading-none"
+                    className="h-4 w-4 rounded-full border border-border text-[12px] flex items-center justify-center leading-none"
                     aria-label="Seat breakdown details"
                   >
                     i

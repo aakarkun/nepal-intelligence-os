@@ -63,7 +63,7 @@ export function FederalProportionalCard() {
                   <div className="font-medium text-foreground leading-tight">
                     {party.partyShortName || party.partyName}
                   </div>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[13px] text-muted-foreground">
                     {formatNumber(party.totalVotes)} votes
                   </p>
                 </div>
@@ -72,13 +72,13 @@ export function FederalProportionalCard() {
                 <p className="font-mono text-sm font-semibold tabular-nums">
                   {party.seatsWon + party.seatsLeading}
                 </p>
-                <p className="text-[11px] text-muted-foreground">seats (won + lead)</p>
+                <p className="text-[13px] text-muted-foreground">seats (won + lead)</p>
               </div>
             </div>
           ))}
         </div>
         {sorted.length > 9 && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             Showing top 9 parties by votes. Use the Parliament and Constituencies views for full
             board detail.
           </p>

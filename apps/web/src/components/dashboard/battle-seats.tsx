@@ -95,7 +95,7 @@ export function BattleSeats() {
                 />
               </div>
 
-              <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted-foreground">
+              <div className="mt-1.5 flex items-center justify-between text-[12px] text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <span
                     className="inline-block h-1.5 w-1.5 rounded-full"

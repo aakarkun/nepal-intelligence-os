@@ -14,7 +14,7 @@ import {
   Globe,
   AlertTriangle,
   Headphones,
-} from "lucide-react";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -37,7 +37,7 @@ export function NavRail() {
   return (
     <>
       {/* Desktop / tablet rail */}
-      <nav className="group/rail fixed bottom-8 left-0 top-12 z-40 hidden w-14 flex-col border-r border-border bg-card transition-all duration-200 hover:w-48 md:flex">
+      <nav className="group/rail fixed bottom-8 left-0 top-12 z-40 hidden w-14 flex-col border-r border-white/[0.06] bg-background transition-all duration-200 hover:w-48 md:flex">
         <div className="flex flex-1 flex-col gap-1 overflow-hidden py-2">
           {NAV_ITEMS.map((item) => {
             const isActive =
@@ -67,7 +67,7 @@ export function NavRail() {
       </nav>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex h-14 items-center justify-between border-t border-border bg-background/95 px-2 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex h-14 items-center justify-between border-t border-white/[0.06] bg-background px-2 backdrop-blur-sm md:hidden">
         <div className="flex w-full items-center justify-around gap-1">
           {NAV_ITEMS.map((item) => {
             const isActive =
@@ -80,7 +80,7 @@ export function NavRail() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1 text-[10px] font-medium",
+                  "flex flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1 text-[12px] font-medium",
                   isActive
                     ? "text-nepal-red"
                     : "text-muted-foreground hover:text-foreground"

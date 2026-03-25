@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, Users, Calendar } from "lucide-react";
+import { Building2, Users, Calendar } from "@/components/icons";
 import {
   fetchCabinetEvents,
   fetchParliamentSession,
@@ -198,7 +198,7 @@ export function PoliticalPulseCards() {
               }}
             />
           </div>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             PR seats allocated proportionally after FPTP count.
           </p>
         </CardContent>

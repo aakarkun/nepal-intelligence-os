@@ -61,7 +61,7 @@ export function PartyStandings() {
               return (
                 <div
                   key={party.partyId}
-                  className="relative flex items-center justify-center text-[10px] font-bold text-white transition-all duration-500"
+                  className="relative flex items-center justify-center text-[12px] font-bold text-white transition-all duration-500"
                   style={{
                     width: `${widthPct}%`,
                     backgroundColor: resolvePartyColor(
@@ -90,7 +90,7 @@ export function PartyStandings() {
             className="absolute top-0 h-full border-l-2 border-dashed border-white/40"
             style={{ left: `${majorityPct}%` }}
           >
-            <span className="absolute -top-5 left-1 text-[10px] text-muted-foreground">
+            <span className="absolute -top-5 left-1 text-[12px] text-muted-foreground">
               {HOR_MAJORITY_THRESHOLD}
             </span>
           </div>
@@ -129,11 +129,11 @@ function PartyCard({ party }: { party: PartyResult }) {
         <span className="text-xs font-semibold">{party.partyShortName}</span>
       </div>
       <p className="mt-1 font-mono text-lg font-bold tabular-nums">{total}</p>
-      <div className="flex gap-2 text-[10px] text-muted-foreground">
+      <div className="flex gap-2 text-[12px] text-muted-foreground">
         <span>Won {party.seatsWon}</span>
         <span>Lead {party.seatsLeading}</span>
       </div>
-      <p className="mt-0.5 font-mono text-[10px] tabular-nums text-muted-foreground">
+      <p className="mt-0.5 font-mono text-[12px] tabular-nums text-muted-foreground">
         {formatNumber(party.totalVotes)} votes
       </p>
     </div>

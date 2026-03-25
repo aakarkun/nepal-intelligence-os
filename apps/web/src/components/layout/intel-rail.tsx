@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
-import { Eye, EyeOff } from "lucide-react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
@@ -22,22 +21,30 @@ import {
   fetchSourceHealth,
   type AnomalyContextFilter,
 } from "@/lib/api";
-import { Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Plus,
+  X,
+} from "@/components/icons";
 
 /* ------------------------------------------------------------------ */
 /* Intel Rail — locked mini-card surface (shared with Source Health)     */
 /* ------------------------------------------------------------------ */
 
-/** Shared intel / economy terminal card surface — matches rail sections (inset p-1). */
-export const railShell = "overflow-hidden rounded-xl bg-[#0c0c0c] p-1";
+/** Shared intel / economy terminal card surface — matches rail sections (inset). */
+export const railShell = "overflow-hidden rounded-xl bg-[#0c0c0c] p-0.5";
 export const railListBody = "min-w-0 overflow-hidden rounded-t-xl bg-[#0c0c0c]";
+/** Horizontal padding matches bottom so list rows don’t feel tight under the baseline. */
 export const railRow =
-  "bg-[#181818]/60 px-3 py-3 transition-colors duration-150 hover:bg-white/[0.06]";
+  "bg-[#181818]/60 px-3 pt-2 pb-3 transition-colors duration-150 hover:bg-white/[0.06]";
 /** Footer bar for paginated rail lists (Source Health, watchlist, etc.). */
-export const railPagination = "bg-[#0c0c0c] px-3 py-2";
+export const railPagination = "bg-[#0c0c0c] px-3 pt-2 pb-2.5";
 
-/** Inner inset for rail list bodies — matches economy Intelligence Signals card (`p-1`). */
-export const railCardInset = "p-1";
+/** Inner inset — extra bottom so content clears the card edge. */
+export const railCardInset = "px-1 pt-0.5 pb-1";
 
 /** Top strip inside each rail card: title (+ optional section dot) | optional right indicators */
 export function RailPanelHeader({
@@ -51,12 +58,12 @@ export function RailPanelHeader({
   right?: ReactNode;
 }) {
   return (
-    <div className="flex min-w-0 items-center justify-between gap-3 bg-[#0c0c0c] px-3 py-2">
+    <div className="flex min-w-0 items-center justify-between gap-2 bg-[#0c0c0c] px-3 pt-1.5 pb-2">
       <div className="flex min-w-0 items-center gap-2">
         {leadingDotClass ? (
           <span className={cn("h-1.5 w-1.5 shrink-0 rounded-sm", leadingDotClass)} />
         ) : null}
-        <span className="truncate font-mono text-[11px] leading-none text-[#a1a1aa]">
+        <span className="truncate font-mono text-[13px] leading-none text-[#a1a1aa]">
           {title}
         </span>
       </div>
@@ -71,7 +78,7 @@ export function RailPanelHeader({
 export function RailPanelAsOf({ date }: { date?: string | null }) {
   const formatted = formatPortalAsOfLabel(date);
   return (
-    <span className="max-w-[min(100%,11rem)] text-right font-mono text-[10px] leading-none tabular-nums">
+    <span className="max-w-[min(100%,11rem)] text-right font-mono text-[12px] leading-none tabular-nums">
       {formatted ? (
         <>
           <span className="uppercase tracking-[0.12em] text-[#666]">As of</span>{" "}
@@ -146,7 +153,7 @@ function PanelSection({
         right={headerRight}
       />
       {subHeader ? (
-        <div className="mb-1 bg-[#0c0c0c] px-3 py-0.5">{subHeader}</div>
+        <div className="mb-0.5 bg-[#0c0c0c] px-3 py-0.5">{subHeader}</div>
       ) : null}
       {children}
     </div>
@@ -254,7 +261,7 @@ function AnomaliesSection() {
               type="button"
               onClick={() => setAnomalyView(ctx)}
               className={cn(
-                "min-w-0 flex-1 rounded-full px-1.5 py-1 font-mono text-[9px] uppercase tracking-[0.08em] transition-colors duration-150",
+                "min-w-0 flex-1 rounded-full px-1.5 py-1 font-mono text-[11px] uppercase tracking-[0.08em] transition-colors duration-150",
                 anomalyView === ctx
                   ? "bg-[#2e2e2e] text-white shadow-sm"
                   : "text-[#6b6b6b] hover:text-[#9ca3af]"
@@ -271,7 +278,7 @@ function AnomaliesSection() {
           <div className={railCardInset}>
             <div className="flex flex-col">
               <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-                <p className="font-mono text-[10px] text-[#555] uppercase">
+                <p className="font-mono text-[12px] text-[#555] uppercase">
                   {anomalyView === "operational"
                     ? "NO SOURCE ISSUES"
                     : "NO ANOMALIES DETECTED"}
@@ -303,7 +310,7 @@ function AnomaliesSection() {
                     <div className="flex min-w-0 items-center justify-between gap-2">
                       <span
                         className={cn(
-                          "shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider",
+                          "shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-wider",
                           a.severity === "critical" &&
                             "bg-rose-500/10 text-rose-400",
                           a.severity === "warning" &&
@@ -318,12 +325,12 @@ function AnomaliesSection() {
                             ? "ERROR"
                             : a.type.replace(/_/g, " ")}
                       </span>
-                      <span className="shrink-0 font-mono text-[9px] text-[#555]">
+                      <span className="shrink-0 font-mono text-[11px] text-[#555]">
                         [{timeAgo(a.timestamp).toUpperCase()}]
                       </span>
                     </div>
                     <p
-                      className="mt-1 text-[11px] font-sans leading-snug text-[#ccc]"
+                      className="mt-1 text-[13px] font-sans leading-snug text-[#ccc]"
                       title={a.details}
                     >
                       {a.details}
@@ -342,7 +349,7 @@ function AnomaliesSection() {
                 merged.length <= itemsPerPage && "rounded-b-xl"
               )}
             >
-              <span className="font-mono text-[9px] text-[#555]">
+              <span className="font-mono text-[11px] text-[#555]">
                 PAGE {page + 1} OF {totalPages}
               </span>
               <div className="flex items-center gap-1">
@@ -369,7 +376,7 @@ function AnomaliesSection() {
             <div className="mt-3 flex justify-end rounded-b-xl bg-[#0c0c0c] px-1 pb-3 pt-1">
               <Link
                 href="/disasters?focus=anomalies"
-                className="font-mono text-[9px] uppercase tracking-wider text-rose-400 hover:underline"
+                className="font-mono text-[11px] uppercase tracking-wider text-rose-400 hover:underline"
               >
                 VIEW MORE &rarr;
               </Link>
@@ -449,7 +456,7 @@ function WatchlistSection() {
           <div className={railCardInset}>
             <div className="flex flex-col">
               <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-                <p className="font-mono text-[10px] text-[#555] uppercase">NO WATCHLIST ITEMS</p>
+                <p className="font-mono text-[12px] text-[#555] uppercase">NO WATCHLIST ITEMS</p>
               </div>
             </div>
           </div>
@@ -481,7 +488,7 @@ function WatchlistSection() {
           </div>
           {totalPages > 1 && (
             <div className={cn(railPagination, "flex items-center justify-between rounded-b-xl")}>
-              <span className="font-mono text-[9px] text-[#555]">
+              <span className="font-mono text-[11px] text-[#555]">
                 PAGE {page + 1} OF {totalPages}
               </span>
               <div className="flex items-center gap-1">
@@ -544,10 +551,10 @@ function WatchlistItem({
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="rounded-md bg-white/5 px-1.5 py-0.5 font-mono text-[9px] text-[#888]">
+          <span className="rounded-md bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-[#888]">
             {id}
           </span>
-          <span className="truncate font-sans text-[11px] font-medium text-[#e5e5e5]">
+          <span className="truncate font-sans text-[13px] font-medium text-[#e5e5e5]">
             {data?.constituencyName ?? id}
           </span>
           <button
@@ -562,7 +569,7 @@ function WatchlistItem({
             <EyeOff className="h-3 w-3" />
           </button>
         </div>
-        <div className="truncate font-mono text-[9px] text-[#555] uppercase mt-0.5">
+        <div className="truncate font-mono text-[11px] text-[#555] uppercase mt-0.5">
           {data
             ? `${data.districtName} · ${
                 data.status === "final"
@@ -577,7 +584,7 @@ function WatchlistItem({
         </div>
       </div>
       {data && (
-        <span className="ml-2 font-mono text-[10px] text-[#888]">
+        <span className="ml-2 font-mono text-[12px] text-[#888]">
           {data.totalVotes.toLocaleString("en-IN")}
         </span>
       )}
@@ -630,10 +637,10 @@ function CandidateWatchItem({
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="rounded-md bg-white/5 px-1.5 py-0.5 font-mono text-[9px] text-[#888]">
+          <span className="rounded-md bg-white/5 px-1.5 py-0.5 font-mono text-[11px] text-[#888]">
             {candidate.constituencyId}
           </span>
-          <span className="truncate font-sans text-[11px] font-medium text-[#e5e5e5]">
+          <span className="truncate font-sans text-[13px] font-medium text-[#e5e5e5]">
             {candidate.candidateName}
           </span>
           <button
@@ -648,7 +655,7 @@ function CandidateWatchItem({
             <EyeOff className="h-3 w-3" />
           </button>
         </div>
-        <div className="truncate font-mono text-[9px] text-[#555] uppercase mt-0.5">
+        <div className="truncate font-mono text-[11px] text-[#555] uppercase mt-0.5">
           SEAT: {candidate.constituencyId}
           {" · "}
           {candidate.partyName
@@ -660,7 +667,7 @@ function CandidateWatchItem({
         </div>
       </div>
       {candidateVotes !== null && (
-        <span className="ml-2 font-mono text-[10px] text-[#888]">
+        <span className="ml-2 font-mono text-[12px] text-[#888]">
           {candidateVotes.toLocaleString("en-IN")}
         </span>
       )}
@@ -725,7 +732,7 @@ function AlertRulesSection() {
           <div className={railCardInset}>
             <div className="flex flex-col">
               <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-                <p className="font-mono text-[10px] text-[#555] uppercase">LOADING…</p>
+                <p className="font-mono text-[12px] text-[#555] uppercase">LOADING…</p>
               </div>
             </div>
           </div>
@@ -735,7 +742,7 @@ function AlertRulesSection() {
           <div className={railCardInset}>
             <div className="flex flex-col">
               <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-                <p className="font-mono text-[10px] text-[#555] uppercase">
+                <p className="font-mono text-[12px] text-[#555] uppercase">
                   NO ACTIVE ALERTS
                 </p>
               </div>
@@ -763,12 +770,12 @@ function AlertRulesSection() {
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="truncate font-sans text-[11px] font-medium text-[#e5e5e5]">
+                  <span className="truncate font-sans text-[13px] font-medium text-[#e5e5e5]">
                     {item.label}
                   </span>
                   <span
                     className={cn(
-                      "shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider",
+                      "shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-wider",
                       item.active
                         ? "bg-emerald-500/10 text-emerald-400"
                         : "bg-white/5 text-[#888]"
@@ -777,7 +784,7 @@ function AlertRulesSection() {
                     {item.type.replace("_", " ")}
                   </span>
                 </div>
-                <p className="mt-0.5 font-mono text-[9px] text-[#555] uppercase">
+                <p className="mt-0.5 font-mono text-[11px] text-[#555] uppercase">
                   {item.lastTriggeredAt
                     ? `LAST: ${timeAgo(item.lastTriggeredAt)}`
                     : "NEVER TRIGGERED"}
@@ -814,7 +821,7 @@ function AlertRulesSection() {
             <div
               className={cn(railPagination, "flex items-center justify-between")}
             >
-              <span className="font-mono text-[9px] text-[#555]">
+              <span className="font-mono text-[11px] text-[#555]">
                 PAGE {page + 1} OF {totalPages}
               </span>
               <div className="flex items-center gap-1">
@@ -844,12 +851,12 @@ function AlertRulesSection() {
                 placeholder="LABEL"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-[#111] px-2 py-1.5 font-mono text-[10px] text-[#e5e5e5] placeholder:text-[#555] focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="w-full rounded-md border border-white/10 bg-[#111] px-2 py-1.5 font-mono text-[12px] text-[#e5e5e5] placeholder:text-[#555] focus:outline-none focus:ring-1 focus:ring-white/20"
               />
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as WatchlistItemType)}
-                className="w-full rounded-md border border-white/10 bg-[#111] px-2 py-1.5 font-mono text-[10px] text-[#e5e5e5] focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="w-full rounded-md border border-white/10 bg-[#111] px-2 py-1.5 font-mono text-[12px] text-[#e5e5e5] focus:outline-none focus:ring-1 focus:ring-white/20"
               >
                 {WATCHLIST_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
@@ -862,7 +869,7 @@ function AlertRulesSection() {
                 placeholder="VALUE (E.G. NABIL, DANGER)"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-[#111] px-2 py-1.5 font-mono text-[10px] text-[#e5e5e5] placeholder:text-[#555] focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="w-full rounded-md border border-white/10 bg-[#111] px-2 py-1.5 font-mono text-[12px] text-[#e5e5e5] placeholder:text-[#555] focus:outline-none focus:ring-1 focus:ring-white/20"
               />
               {type === "price_threshold" && (
                 <input
@@ -870,7 +877,7 @@ function AlertRulesSection() {
                   placeholder="THRESHOLD %"
                   value={threshold}
                   onChange={(e) => setThreshold(e.target.value)}
-                  className="w-full rounded-md border border-white/10 bg-[#111] px-2 py-1.5 font-mono text-[10px] text-[#e5e5e5] placeholder:text-[#555] focus:outline-none focus:ring-1 focus:ring-white/20"
+                  className="w-full rounded-md border border-white/10 bg-[#111] px-2 py-1.5 font-mono text-[12px] text-[#e5e5e5] placeholder:text-[#555] focus:outline-none focus:ring-1 focus:ring-white/20"
                 />
               )}
               <input
@@ -878,23 +885,23 @@ function AlertRulesSection() {
                 placeholder="TELEGRAM CHAT ID (OPTIONAL)"
                 value={telegramChatId}
                 onChange={(e) => setTelegramChatId(e.target.value)}
-                className="w-full rounded-md border border-white/10 bg-[#111] px-2 py-1.5 font-mono text-[10px] text-[#e5e5e5] placeholder:text-[#555] focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="w-full rounded-md border border-white/10 bg-[#111] px-2 py-1.5 font-mono text-[12px] text-[#e5e5e5] placeholder:text-[#555] focus:outline-none focus:ring-1 focus:ring-white/20"
               />
-              <p className="font-mono text-[9px] text-[#555]">
+              <p className="font-mono text-[11px] text-[#555]">
                 GET CHAT ID FROM @USERINFOBOT
               </p>
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
                   onClick={handleAdd}
-                  className="rounded-md bg-white text-black px-2.5 py-1.5 font-mono text-[10px] uppercase font-semibold hover:bg-white/90"
+                  className="rounded-md bg-white text-black px-2.5 py-1.5 font-mono text-[12px] uppercase font-semibold hover:bg-white/90"
                 >
                   ADD
                 </button>
                 <button
                   type="button"
                   onClick={() => setAddOpen(false)}
-                  className="rounded-md border border-white/10 px-2.5 py-1.5 font-mono text-[10px] uppercase text-[#888] hover:text-[#e5e5e5]"
+                  className="rounded-md border border-white/10 px-2.5 py-1.5 font-mono text-[12px] uppercase text-[#888] hover:text-[#e5e5e5]"
                 >
                   CANCEL
                 </button>
@@ -906,7 +913,7 @@ function AlertRulesSection() {
               <button
                 type="button"
                 onClick={() => setAddOpen(true)}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/10 px-2.5 py-2 font-mono text-[10px] uppercase tracking-wider text-[#555] hover:border-white/20 hover:text-[#888]"
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/10 px-2.5 py-2 font-mono text-[12px] uppercase tracking-wider text-[#555] hover:border-white/20 hover:text-[#888]"
               >
                 <Plus className="h-3 w-3" />
                 NEW ALERT
@@ -988,7 +995,7 @@ function SourceHealthSection() {
       </div>
     ) : null;
 
-  /* Toolbar header (flex) + list body (flex rows) — avoids table column math in a ~300px rail */
+  /* Toolbar header (flex) + list body (flex rows) — avoids table column math in a narrow rail */
   const showPaginationFooter =
     Boolean(sources?.length) && totalPages > 1;
 
@@ -1011,7 +1018,7 @@ function SourceHealthSection() {
           <div className={railCardInset}>
             <div className="flex flex-col">
               <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-                <p className="font-mono text-[10px] text-[#555] uppercase">NO SOURCE DATA</p>
+                <p className="font-mono text-[12px] text-[#555] uppercase">NO SOURCE DATA</p>
               </div>
             </div>
           </div>
@@ -1033,15 +1040,15 @@ function SourceHealthSection() {
                   )}
                 >
                   <div className="min-w-0">
-                    <div className="truncate font-sans text-[11px] font-medium text-[#e5e5e5]">
+                    <div className="truncate font-sans text-[13px] font-medium text-[#e5e5e5]">
                       {s.sourceName}
                     </div>
-                    <div className="mt-0.5 font-mono text-[9px] uppercase text-[#555]">
+                    <div className="mt-0.5 font-mono text-[11px] uppercase text-[#555]">
                       LAST: {s.lastUpdate ? timeAgo(s.lastUpdate) : "—"}
                       {s.sourceId === "social" && " · X + REDDIT"}
                     </div>
                     {"suspended" in s && s.suspended && (
-                      <div className="mt-0.5 font-mono text-[9px] text-rose-400">
+                      <div className="mt-0.5 font-mono text-[11px] text-rose-400">
                         SUSPENDED · FAILED {(s as { failureCount?: number }).failureCount ?? 0}X
                         {(s as { suspendedAt?: string }).suspendedAt && (
                           <>
@@ -1064,25 +1071,25 @@ function SourceHealthSection() {
                       (s as { failureCount?: number }).failureCount != null &&
                       (s as { failureCount: number }).failureCount > 0 &&
                       !(s as { suspended?: boolean }).suspended && (
-                        <div className="mt-0.5 font-mono text-[9px] text-amber-400">
+                        <div className="mt-0.5 font-mono text-[11px] text-amber-400">
                           DEGRADED ({(s as { failureCount: number }).failureCount} FAILS)
                         </div>
                       )}
                     {s.errorRate > 0 && !("suspended" in s && s.suspended) && (
-                      <div className="mt-0.5 font-mono text-[9px] text-rose-400">
+                      <div className="mt-0.5 font-mono text-[11px] text-rose-400">
                         {Math.round(s.errorRate * 100)}% ERROR
                       </div>
                     )}
                   </div>
                   <div className="flex justify-center pt-0.5 tabular-nums">
-                    <div className="whitespace-nowrap text-center font-mono text-[10px] text-[#888]">
+                    <div className="whitespace-nowrap text-center font-mono text-[12px] text-[#888]">
                       {s.updateCount}
                     </div>
                   </div>
                   <div className="flex shrink-0 justify-end pt-0.5">
                     <span
                       className={cn(
-                        "inline-flex whitespace-nowrap rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider",
+                        "inline-flex whitespace-nowrap rounded-md px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-wider",
                         s.status === "live" &&
                           "bg-emerald-500/10 text-emerald-400",
                         s.status === "error" &&
@@ -1104,7 +1111,7 @@ function SourceHealthSection() {
         {sources && sources.length > 0 && totalPages > 1 && (
           <div className={cn(railPagination, "rounded-b-xl")}>
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] text-[#555]">
+              <span className="font-mono text-[11px] text-[#555]">
                 PAGE {page + 1} OF {totalPages}
               </span>
               <div className="flex items-center gap-1">
@@ -1163,7 +1170,7 @@ export function IntelRail() {
     <>
       <aside
         className={cn(
-          "fixed inset-x-0 bottom-14 top-12 z-40 overflow-y-auto border-t border-white/10 bg-[#050505] px-3 pb-3 pt-3 scrollbar-thin transition-[transform,opacity] duration-200 ease-out md:hidden",
+          "fixed inset-x-0 bottom-14 top-12 z-40 overflow-y-auto border-t border-white/[0.06] bg-background px-3 pb-3 pt-3 scrollbar-thin transition-[transform,opacity] duration-200 ease-out md:hidden",
           isOpen
             ? "translate-x-0 opacity-100"
             : "pointer-events-none translate-x-full opacity-0"
@@ -1176,7 +1183,7 @@ export function IntelRail() {
 
       <aside
         className={cn(
-          "fixed bottom-8 right-0 top-12 z-40 hidden w-[300px] overflow-y-auto border-l border-white/10 bg-[#050505] scrollbar-thin transition-[transform,opacity] duration-200 ease-out md:block",
+          "fixed bottom-8 right-0 top-12 z-40 hidden w-[var(--intel-rail-width)] overflow-y-auto border-l border-white/[0.06] bg-background scrollbar-thin transition-[transform,opacity] duration-200 ease-out md:block",
           isOpen
             ? "translate-x-0 opacity-100"
             : "pointer-events-none translate-x-full opacity-0"

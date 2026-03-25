@@ -215,7 +215,7 @@ export function GeographyNewsPanel({ selection }: { selection: GeographySelectio
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex flex-wrap items-start gap-2">
                     <span
-                      className="rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                      className="rounded-md border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide"
                       style={{ borderColor: config.color, color: config.color }}
                     >
                       {config.label}
@@ -239,7 +239,7 @@ export function GeographyNewsPanel({ selection }: { selection: GeographySelectio
                     </p>
                   ) : null}
 
-                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                  <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
                     <span>{timeAgo(event.timestamp)}</span>
                     {event.source ? <span>via {event.source}</span> : null}
                     {event.url ? (

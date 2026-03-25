@@ -105,7 +105,7 @@ export function LiveEventsMini() {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-medium">{event.title}</p>
-                  <p className="font-mono text-[10px] tabular-nums text-muted-foreground">
+                  <p className="font-mono text-[12px] tabular-nums text-muted-foreground">
                     {timeAgo(event.timestamp)}
                   </p>
                 </div>

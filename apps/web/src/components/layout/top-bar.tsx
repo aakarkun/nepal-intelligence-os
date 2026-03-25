@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Command, PanelRight, Sparkles } from "lucide-react";
+import { Command, PanelRight, Sparkles } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { formatNepalTime } from "@/lib/utils";
 import { useRealtimeStore } from "@/stores/realtime-store";
@@ -85,7 +85,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
   const status = STATUS_CONFIG[connectionStatus];
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b border-border bg-background/80 px-3 backdrop-blur sm:px-4">
+    <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b border-white/[0.06] bg-background/95 px-3 backdrop-blur-sm sm:px-4">
       {/* Left — Logo */}
       <Link
         href="/"
@@ -120,7 +120,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
               title="Soon"
             >
               {mod.label}
-              <span className="absolute -right-1 -top-1 rounded-full bg-muted px-1 text-[9px] leading-tight text-muted-foreground">
+              <span className="absolute -right-1 -top-1 rounded-full bg-muted px-1 text-[11px] leading-tight text-muted-foreground">
                 Soon
               </span>
             </span>
@@ -134,17 +134,17 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
         <button
           type="button"
           onClick={toggleLanguage}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
           title="Toggle news language"
         >
-          <span className="font-mono text-[10px] uppercase">
+          <span className="font-mono text-[12px] uppercase">
             {language === "en" ? "EN" : "NP"}
           </span>
         </button>
         {/* AI Briefing (Sparkles) — opens briefing modal */}
         <button
           onClick={openBriefing}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
           title="Generate briefing"
         >
           <Sparkles className="h-3 w-3" />
@@ -155,7 +155,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
           type="button"
           onClick={togglePanel}
           className={cn(
-            "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] transition-colors",
+            "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[13px] transition-colors",
             intelRailOpen
               ? "border-white/[0.12] bg-white/[0.08] text-foreground"
               : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground"
@@ -168,11 +168,11 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
         {/* ⌘K trigger (icon-only on xs) */}
         <button
           onClick={onCommandOpen}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
         >
           <Command className="h-3 w-3" />
           <span className="hidden sm:inline">
-            <kbd className="font-mono text-[10px]">K</kbd>
+            <kbd className="font-mono text-[12px]">K</kbd>
           </span>
         </button>
 
@@ -186,7 +186,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
           />
           <span
             className={cn(
-              "text-[10px] font-semibold uppercase tracking-wider",
+              "text-[12px] font-semibold uppercase tracking-wider",
               connectionStatus === "live" && "text-status-live",
               connectionStatus === "stale" && "text-status-stale",
               connectionStatus === "error" && "text-status-error"
@@ -202,7 +202,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
           suppressHydrationWarning
         >
           {time ?? "—:—:—"}
-          <span className="ml-1 text-[9px] text-muted-foreground/60">NPT</span>
+          <span className="ml-1 text-[11px] text-muted-foreground/60">NPT</span>
         </time>
       </div>
     </header>

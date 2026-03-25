@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, DollarSign } from "lucide-react";
+import { AlertCircle, DollarSign } from "@/components/icons";
 import { fetchWorldArticles } from "@/lib/api";
 import type { GeopoliticsArticle } from "@repo/shared";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -146,7 +146,7 @@ export default function WorldPage() {
         ))}
       </Tabs>
 
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-[13px] text-muted-foreground">
         Tone score from GDELT: negative = more conflict-oriented coverage,
         positive = more cooperative.
       </p>

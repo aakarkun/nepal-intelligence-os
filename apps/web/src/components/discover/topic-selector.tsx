@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Landmark, TrendingUp, Mountain, Globe, Shield, Heart, Globe as WorldIcon } from "lucide-react";
+import { Landmark, TrendingUp, Mountain, Globe, Shield, Heart, Globe as WorldIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  DiscoverRailPanel,
+  discoverSidebarFooterStrip,
+} from "@/components/discover/discover-rail-panel";
 import type { SignalEventType } from "@repo/shared";
 
 const DISMISSED_KEY = "nepal-intel-topics-dismissed";
@@ -80,49 +84,62 @@ export function TopicSelector({ onSave, onDismiss }: TopicSelectorProps) {
   if (dismissed) return null;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h3 className="font-medium text-foreground">Customise your feed</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Select topics to show first
-          </p>
-        </div>
+    <DiscoverRailPanel
+      title="Feed preferences"
+      leadingDotClass="bg-violet-500"
+      right={
         <button
           type="button"
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="rounded p-1 font-mono text-[14px] leading-none text-[#888] hover:bg-white/[0.06] hover:text-[#e5e5e5]"
           aria-label="Close"
           onClick={handleDismiss}
         >
           ×
         </button>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {TOPICS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => toggle(id)}
+      }
+    >
+      <div className="flex flex-col gap-0">
+        <div className="overflow-hidden rounded-xl">
+          <div
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-              selected.has(id)
-                ? "border-nepal-red bg-nepal-red/15 text-nepal-red"
-                : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+              "space-y-2 overflow-hidden bg-[#181818]/60 px-3 pt-2.5 pb-3",
+              "rounded-t-xl rounded-bl-xl rounded-br-xl"
             )}
           >
-            <Icon className="h-3.5 w-3.5" />
-            {label}
-          </button>
-        ))}
+            <p className="font-mono text-[12px] uppercase tracking-wider text-[#666]">
+              Select topics to prioritise in For You
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {TOPICS.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => toggle(id)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-[12px] uppercase tracking-wide transition-colors",
+                    selected.has(id)
+                      ? "bg-emerald-500/15 text-emerald-400/90"
+                      : "bg-[#0c0c0c]/90 text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
+                  )}
+                >
+                  <Icon className="h-3 w-3" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className={discoverSidebarFooterStrip}>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="h-auto min-h-0 w-full border-0 bg-transparent py-1 font-mono text-[12px] uppercase tracking-wider text-emerald-400/90 hover:bg-white/[0.06] hover:text-emerald-400"
+              onClick={handleSave}
+            >
+              Save
+            </Button>
+          </div>
+        </div>
       </div>
-      <Button
-        variant="secondary"
-        size="sm"
-        className="mt-3 w-full"
-        onClick={handleSave}
-      >
-        Save
-      </Button>
-    </div>
+    </DiscoverRailPanel>
   );
 }

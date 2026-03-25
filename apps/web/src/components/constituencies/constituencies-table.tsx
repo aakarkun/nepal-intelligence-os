@@ -19,7 +19,7 @@ import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PartyMark } from "@/components/party/party-mark";
-import { ArrowUpDown, ChevronDown, ChevronUp, Eye, EyeOff, Search } from "lucide-react";
+import { ArrowUpDown, ChevronDown, ChevronUp, Eye, EyeOff, Search } from "@/components/icons";
 import { useRealtimeStore } from "@/stores/realtime-store";
 
 type Candidate = ConstituencyResult["candidates"][number];
@@ -290,7 +290,7 @@ export function ConstituenciesTable() {
       </div>
 
       <div className="overflow-auto rounded-md border border-white/5 bg-card/10">
-        <table className="min-w-full border-separate border-spacing-0 text-[11px] sm:text-xs">
+        <table className="min-w-full border-separate border-spacing-0 text-[13px] sm:text-xs">
           <thead className="sticky top-0 z-10 bg-background/85 backdrop-blur">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>

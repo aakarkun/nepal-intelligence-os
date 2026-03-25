@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { CheckCircle2, Pin, PinOff, ExternalLink } from "lucide-react";
+import { CheckCircle2, Pin, PinOff, ExternalLink } from "@/components/icons";
 import type { SignalEvent } from "@repo/shared";
 import Link from "next/link";
 import { cn, timeAgo } from "@/lib/utils";
@@ -55,7 +55,7 @@ export function SignalDetail({
             <div className="flex flex-wrap items-center gap-2">
               <span
                 className={cn(
-                  "rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                  "rounded-md border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide",
                   meta.typeBadgeClass
                 )}
               >
@@ -63,25 +63,25 @@ export function SignalDetail({
               </span>
               <span
                 className={cn(
-                  "rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                  "rounded-md border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide",
                   meta.severityBadgeClass
                 )}
               >
                 {event.severity}
               </span>
               {isReviewed && (
-                <span className="rounded-md border border-border/40 bg-background/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="rounded-md border border-border/40 bg-background/20 px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Reviewed
                 </span>
               )}
               {isPinned && (
-                <span className="rounded-md border border-amber-500/25 bg-amber-500/8 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                <span className="rounded-md border border-amber-500/25 bg-amber-500/8 px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-amber-300">
                   Pinned
                 </span>
               )}
             </div>
             <h2 className="mt-3 text-lg font-semibold leading-snug">{event.title}</h2>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
               <span className="font-mono tabular-nums">{timeAgo(event.timestamp)}</span>
               {event.source && <span>via {event.source}</span>}
               {event.url && (
@@ -138,7 +138,7 @@ export function SignalDetail({
 
         {related.length > 0 && (
           <div className="mt-6">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
               Recent from same source
             </div>
             <div className="mt-2 space-y-2">
@@ -148,7 +148,7 @@ export function SignalDetail({
                   className="rounded-md border border-border/40 bg-background/10 p-2"
                 >
                   <div className="text-xs font-medium line-clamp-2">{r.title}</div>
-                  <div className="mt-1 font-mono text-[10px] tabular-nums text-muted-foreground">
+                  <div className="mt-1 font-mono text-[12px] tabular-nums text-muted-foreground">
                     {timeAgo(r.timestamp)}
                   </div>
                 </div>

@@ -13,7 +13,7 @@ import {
   ArrowUpRight,
   MapPinned,
   ChevronDown,
-} from "lucide-react";
+} from "@/components/icons";
 import {
   fetchAnomalies,
   fetchCrisisIncidents,
@@ -377,7 +377,7 @@ function DisastersContent() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="p-5 space-y-1">
-            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            <div className="text-[13px] uppercase tracking-wide text-muted-foreground">
               Earthquakes tracked
             </div>
             <div className="text-2xl font-display font-bold">{summary?.totalIncidents ?? incidents.length}</div>
@@ -388,7 +388,7 @@ function DisastersContent() {
         </Card>
         <Card>
           <CardContent className="p-5 space-y-1">
-            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            <div className="text-[13px] uppercase tracking-wide text-muted-foreground">
               Open anomalies
             </div>
             <div className="text-2xl font-display font-bold">{anomalies.length}</div>
@@ -399,7 +399,7 @@ function DisastersContent() {
         </Card>
         <Card>
           <CardContent className="p-5 space-y-1">
-            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            <div className="text-[13px] uppercase tracking-wide text-muted-foreground">
               Last 24 hours
             </div>
             <div className="text-2xl font-display font-bold">{summary?.last24h ?? 0}</div>
@@ -410,7 +410,7 @@ function DisastersContent() {
         </Card>
         <Card>
           <CardContent className="p-5 space-y-1">
-            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            <div className="text-[13px] uppercase tracking-wide text-muted-foreground">
               Maximum magnitude
             </div>
             <div className="text-lg font-display font-bold">
@@ -672,7 +672,7 @@ function DisastersContent() {
                     <p className="text-sm text-muted-foreground">No station data in current bulletin.</p>
                   )}
                   {floodData.lastUpdated && (
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-[13px] text-muted-foreground">
                       Last updated {formatNepalDateTime(floodData.lastUpdated)}
                     </p>
                   )}
@@ -703,7 +703,7 @@ function DisastersContent() {
                 )}
               >
                 {theater === "nepal" ? "Nepal" : theater === "region" ? "Region" : "Global"}
-                <span className="ml-1.5 font-mono text-[10px] opacity-80">
+                <span className="ml-1.5 font-mono text-[12px] opacity-80">
                   ({theaterCounts[theater]})
                 </span>
               </button>
@@ -717,7 +717,7 @@ function DisastersContent() {
                   <h2 className="font-display text-base font-semibold">
                     Conflict & crisis signals
                   </h2>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[13px] text-muted-foreground">
                     War, fuel/oil shortages, supply-chain and high-impact crisis news
                     {activeTheater !== "global" && ` · ${activeTheater === "nepal" ? "Nepal" : "Region"} only`}
                   </p>
@@ -732,7 +732,7 @@ function DisastersContent() {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <div className="font-medium leading-tight">{event.title}</div>
-                        <div className="mt-1 text-[11px] text-muted-foreground">
+                        <div className="mt-1 text-[13px] text-muted-foreground">
                           {event.source ?? "Unknown source"} · {timeAgo(event.timestamp)}
                         </div>
                       </div>
@@ -757,7 +757,7 @@ function DisastersContent() {
                   <h2 className="font-display text-base font-semibold">
                     Strike & defence balance
                   </h2>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[13px] text-muted-foreground">
                     Reported strikes vs intercepted/defeated per theater (from signals feed)
                   </p>
                 </div>
@@ -774,7 +774,7 @@ function DisastersContent() {
                         {bucket.intercepted}/{bucket.total} intercepted
                       </span>
                     </div>
-                    <div className="mt-1 text-[11px] text-muted-foreground">
+                    <div className="mt-1 text-[13px] text-muted-foreground">
                       {bucket.intercepted === 0
                         ? "No intercepts mentioned in current window."
                         : "Intercepts inferred from language like 'shot down' or 'intercepted'."}
@@ -844,7 +844,7 @@ function AnomalyQueue({ anomalies }: { anomalies: Awaited<ReturnType<typeof fetc
               </Badge>
             </div>
             <div className="mt-1 text-xs text-muted-foreground">{anomaly.details}</div>
-            <div className="mt-2 text-[11px] text-muted-foreground">
+            <div className="mt-2 text-[13px] text-muted-foreground">
               {timeAgo(anomaly.timestamp)}
             </div>
           </div>
@@ -860,7 +860,7 @@ function AnomalyQueue({ anomalies }: { anomalies: Awaited<ReturnType<typeof fetc
           >
             ←
           </button>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-[13px] text-muted-foreground">
             {safePage + 1}/{pageCount}
           </span>
           <button

@@ -3,7 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchFeed } from "@/lib/api";
 import { useMemo } from "react";
-import { dedupeSignalEventsByTitle } from "@/lib/utils";
+import { dedupeSignalEventsByTitle, cn } from "@/lib/utils";
+import {
+  DiscoverRailPanel,
+  discoverSidebarSurface,
+} from "@/components/discover/discover-rail-panel";
 import type { SignalEventEntities } from "@repo/shared";
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
@@ -52,23 +56,27 @@ export function SidebarTrending({
   if (trending.length < MIN_ENTITIES) return null;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <h3 className="text-sm font-medium text-foreground">Trending</h3>
-      <p className="mt-0.5 text-[10px] text-muted-foreground">
-        Based on signals from the last 6 hours
-      </p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {trending.map(({ name, count: n }) => (
-          <button
-            key={name}
-            type="button"
-            onClick={() => onTopicClick?.(name)}
-            className="rounded-full border border-border bg-muted/50 px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:border-nepal-red/50 hover:bg-nepal-red/10"
-          >
-            {name} × {n}
-          </button>
-        ))}
+    <DiscoverRailPanel title="Trending" leadingDotClass="bg-fuchsia-500">
+      <div className={cn(discoverSidebarSurface, "px-3 pt-2.5 pb-3")}>
+        <p className="mb-2 font-mono text-[11px] uppercase tracking-wider text-[#555]">
+          Entities · last 6 hours
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {trending.map(({ name, count: n }) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => onTopicClick?.(name)}
+              className={cn(
+                "rounded-md bg-[#0c0c0c]/90 px-2 py-1 font-mono text-[12px] text-[#ccc] transition-colors",
+                "hover:bg-emerald-500/15 hover:text-emerald-400/90"
+              )}
+            >
+              {name} × {n}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
+    </DiscoverRailPanel>
   );
 }

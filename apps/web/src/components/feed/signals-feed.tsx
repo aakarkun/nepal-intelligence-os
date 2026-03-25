@@ -17,7 +17,7 @@ import {
   Mountain,
   Globe,
   Heart,
-} from "lucide-react";
+} from "@/components/icons";
 import Link from "next/link";
 import { fetchFeed, fetchSocialFeed } from "@/lib/api";
 import { useRealtimeStore } from "@/stores/realtime-store";
@@ -267,7 +267,7 @@ export function SignalsFeed(
                     {event.title}
                   </p>
                   <span
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium flex-shrink-0"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[12px] font-medium flex-shrink-0"
                     style={{
                       backgroundColor: `${config.color}20`,
                       color: config.color,
@@ -295,10 +295,10 @@ export function SignalsFeed(
                   {displayBody}
                 </p>
 
-                <div className="flex items-center gap-3 pl-5.5 text-[10px] text-muted-foreground">
+                <div className="flex items-center gap-3 pl-5.5 text-[12px] text-muted-foreground">
                   <span>{timeAgo(event.timestamp)}</span>
                   {redditMeta && (
-                    <span className="font-mono text-[9px] tabular-nums text-muted-foreground">
+                    <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
                       {redditMeta}
                     </span>
                   )}

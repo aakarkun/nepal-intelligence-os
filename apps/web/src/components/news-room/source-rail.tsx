@@ -11,7 +11,7 @@ export type SourceRailProps = {
 export function SourceRail({ sources, selected, onSelect }: SourceRailProps) {
   return (
     <aside className="rounded-xl border border-border bg-card/30 p-3">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
         Sources
       </div>
       <div className="mt-2 space-y-1">

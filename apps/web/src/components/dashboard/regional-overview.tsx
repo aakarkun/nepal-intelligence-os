@@ -118,15 +118,15 @@ export function RegionalOverview() {
             >
               <div className="flex w-full items-center justify-between gap-2">
                 <span className="font-medium text-foreground">{province.label}</span>
-                <Badge variant="outline" className="border-border/60 text-[10px]">
+                <Badge variant="outline" className="border-border/60 text-[12px]">
                   {province.pct}% reported
                 </Badge>
               </div>
               <div className="mt-1 font-mono text-sm tabular-nums">
                 {province.counted}/{province.constituencies}{" "}
-                <span className="text-muted-foreground text-[11px]">constituencies</span>
+                <span className="text-muted-foreground text-[13px]">constituencies</span>
               </div>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">
+              <p className="mt-0.5 text-[13px] text-muted-foreground">
                 {formatNumber(province.totalVotes)} votes counted
               </p>
             </button>
@@ -164,7 +164,7 @@ export function RegionalOverview() {
               >
                 <div>
                   <div className="font-medium text-foreground">{district.districtName}</div>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                  <p className="mt-0.5 text-[13px] text-muted-foreground">
                     {district.counted}/{district.constituencies} constituencies ·{" "}
                     {formatNumber(district.totalVotes)} votes
                   </p>

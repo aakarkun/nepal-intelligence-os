@@ -31,7 +31,7 @@ export function BriefingStack({ events }: BriefingStackProps) {
   return (
     <aside className="space-y-4">
       <div className="rounded-xl border border-border bg-card/30 p-4">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
           Today&apos;s Brief
         </div>
         <div className="mt-3 space-y-2">
@@ -40,7 +40,7 @@ export function BriefingStack({ events }: BriefingStackProps) {
               <div className="text-sm font-medium leading-snug line-clamp-2">
                 {e.title}
               </div>
-              <div className="mt-1 text-[11px] text-muted-foreground">
+              <div className="mt-1 text-[13px] text-muted-foreground">
                 {e.source ?? "Unknown"} · {timeAgo(e.timestamp)}
               </div>
             </div>
@@ -52,7 +52,7 @@ export function BriefingStack({ events }: BriefingStackProps) {
       </div>
 
       <div className="rounded-xl border border-border bg-card/30 p-4">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
           Trending keywords
         </div>
         <div className="mt-3 flex flex-wrap gap-2">

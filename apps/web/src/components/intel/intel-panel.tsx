@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { X, Loader2, Copy, Check } from "lucide-react";
+import { X, Loader2, Copy, Check } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "@/store";
@@ -170,7 +170,7 @@ export function IntelPanel() {
                 <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed pr-10">
                   {result.brief}
                 </pre>
-                <p className="mt-3 text-[11px] text-muted-foreground">
+                <p className="mt-3 text-[13px] text-muted-foreground">
                   Generated at {formatNepalTime(result.generatedAt)} · {result.dataPoints} data
                   points used
                 </p>

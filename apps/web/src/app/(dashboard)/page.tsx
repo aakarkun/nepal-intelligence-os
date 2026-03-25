@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/components/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDiscoverFeed, filterAndSortFeed, type DiscoverTab, type DiscoverTopicFilter } from "@/hooks/use-discover-feed";
 import { FeedItemCard } from "@/components/discover/feed-item-card";
@@ -42,44 +42,26 @@ const TOPIC_COLORS: Record<DiscoverTopicFilter, string> = {
 function DiscoverSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="h-10 w-48 animate-pulse rounded bg-muted" />
-      <div className="flex gap-2">
-        <div className="h-9 w-24 animate-pulse rounded bg-muted" />
-        <div className="h-9 w-16 animate-pulse rounded bg-muted" />
-        <div className="h-9 w-20 animate-pulse rounded bg-muted" />
-      </div>
-      <div
-        className="animate-shimmer rounded-lg border border-border bg-card p-5"
-        style={{
-          background: "linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%)",
-          backgroundSize: "200% 100%",
-        }}
-      >
-        <div className="flex gap-4">
-          <div className="flex-1 space-y-2">
-            <div className="h-6 w-3/4 rounded bg-white/10" />
-            <div className="h-4 w-1/2 rounded bg-white/10" />
-            <div className="mt-2 h-4 w-full rounded bg-white/10" />
-            <div className="h-4 w-2/3 rounded bg-white/10" />
-          </div>
-          <div className="h-40 w-48 rounded-md bg-white/10" />
+      <div className="flex gap-4">
+        <div className="flex-1 space-y-2">
+          <div className="h-5 w-3/4 rounded bg-white/[0.06]" />
+          <div className="h-3 w-1/2 rounded bg-white/[0.06]" />
+          <div className="mt-2 h-3 w-full rounded bg-white/[0.06]" />
+          <div className="h-3 w-2/3 rounded bg-white/[0.06]" />
         </div>
+        <div className="h-40 w-48 shrink-0 rounded-lg bg-white/[0.06]" />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <div
             key={i}
-            className="animate-shimmer overflow-hidden rounded-lg border border-border bg-card"
-            style={{
-              background: "linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%)",
-              backgroundSize: "200% 100%",
-            }}
+            className="overflow-hidden"
           >
-            <div className="h-32 bg-white/10" />
-            <div className="space-y-2 p-3">
-              <div className="h-4 w-full rounded bg-white/10" />
-              <div className="h-4 w-2/3 rounded bg-white/10" />
-              <div className="h-3 w-1/2 rounded bg-white/10" />
+            <div className="h-32 rounded-lg bg-white/[0.03]" />
+            <div className="space-y-2 px-4 pt-3 pb-4">
+              <div className="h-3 w-full rounded bg-white/[0.06]" />
+              <div className="h-3 w-2/3 rounded bg-white/[0.06]" />
+              <div className="h-2.5 w-1/2 rounded bg-white/[0.06]" />
             </div>
           </div>
         ))}
@@ -145,22 +127,31 @@ export default function DiscoverPage() {
   const gridItems = displayItems.filter((i) => i.id !== heroItem?.id).slice(0, 30);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl gap-6">
-      {/* Center column: Discover feed */}
-      <div className="min-w-0 flex-1 max-w-3xl">
-        <h1 className="font-display text-2xl font-bold tracking-tight md:text-3xl">
-          Discover
-        </h1>
+    <div
+      className={cn(
+        "-mx-4 flex w-full gap-6 px-4 pb-10 antialiased md:-mx-6 md:pl-6 md:pr-0",
+        "min-h-full bg-background text-[#e5e5e5]"
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <div className="border-b border-white/10 pb-4 pt-2">
+          <h1 className="font-mono text-lg uppercase tracking-[0.2em] text-[#e5e5e5]">
+            Discover
+          </h1>
+          <p className="mt-1 font-mono text-[12px] uppercase tracking-wider text-[#888]">
+            Curated signals · Nepal Intelligence OS
+          </p>
+        </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2 overflow-x-auto md:flex-nowrap">
+        <div className="mt-4 flex flex-wrap items-center gap-2 overflow-x-auto md:flex-nowrap">
           <button
             type="button"
             onClick={() => setTab("for-you")}
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              "rounded-md px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
               tab === "for-you" && !topicFilter
-                ? "bg-nepal-red/15 text-nepal-red"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-emerald-500/15 text-emerald-400/90"
+                : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
             )}
           >
             For You
@@ -172,10 +163,10 @@ export default function DiscoverPage() {
               setTopicFilter(null);
             }}
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              "rounded-md px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
               tab === "top"
-                ? "bg-nepal-red/15 text-nepal-red"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-emerald-500/15 text-emerald-400/90"
+                : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
             )}
           >
             Top
@@ -185,10 +176,10 @@ export default function DiscoverPage() {
               <button
                 type="button"
                 className={cn(
-                  "flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-1 rounded-md px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
                   (tab === "topics" || topicFilter != null)
-                    ? "bg-nepal-red/15 text-nepal-red"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-emerald-500/15 text-emerald-400/90"
+                    : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
                 )}
                 style={
                   topicFilter != null && TOPIC_COLORS[topicFilter]
@@ -202,7 +193,11 @@ export default function DiscoverPage() {
                 <ChevronDown className="h-3.5 w-3.5" />
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-48 p-0" align="start" sideOffset={4}>
+            <PopoverContent
+              className="w-48 bg-[#0c0c0c] p-0 text-[#ccc] shadow-xl shadow-black/50"
+              align="start"
+              sideOffset={4}
+            >
               <div className="py-1">
                 <button
                   type="button"
@@ -212,8 +207,10 @@ export default function DiscoverPage() {
                     setTopicsOpen(false);
                   }}
                   className={cn(
-                    "w-full px-3 py-2 text-left text-sm",
-                    !topicFilter ? "bg-nepal-red/10 text-nepal-red" : "hover:bg-muted"
+                    "w-full px-3 py-2 text-left font-mono text-[13px]",
+                    !topicFilter
+                      ? "bg-emerald-500/10 text-emerald-400/90"
+                      : "hover:bg-white/[0.06]"
                   )}
                 >
                   All
@@ -228,13 +225,13 @@ export default function DiscoverPage() {
                       setTopicsOpen(false);
                     }}
                     className={cn(
-                      "w-full px-3 py-2 text-left text-sm",
-                      topicFilter === id ? "" : "hover:bg-muted"
+                      "w-full px-3 py-2 text-left font-mono text-[13px]",
+                      topicFilter === id ? "" : "hover:bg-white/[0.06]"
                     )}
                     style={
                       topicFilter === id && TOPIC_COLORS[id]
                         ? {
-                            backgroundColor: `${TOPIC_COLORS[id]}20`,
+                            backgroundColor: `${TOPIC_COLORS[id]}18`,
                             borderLeft: `3px solid ${TOPIC_COLORS[id]}`,
                           }
                         : undefined
@@ -252,61 +249,71 @@ export default function DiscoverPage() {
           <button
             type="button"
             onClick={refreshAndScrollTop}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-[#181818]/60 px-3 py-1.5 font-mono text-[12px] uppercase tracking-wider text-[#a1a1aa] transition-colors hover:bg-white/[0.06] hover:text-[#e5e5e5]"
           >
-            ↑ {newCountSinceView} new {newCountSinceView === 1 ? "story" : "stories"} — click to refresh
+            ↑ {newCountSinceView} new {newCountSinceView === 1 ? "story" : "stories"} — refresh
           </button>
         )}
 
-        {loading ? (
-          <DiscoverSkeleton />
-        ) : displayItems.length === 0 ? (
-          <div className="mt-8 flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 px-4 py-12 text-center">
-            {topicFilter != null ? (
-              <>
-                <p className="font-medium text-foreground">
-                  No {TOPICS.find((t) => t.id === topicFilter)?.label?.toLowerCase() ?? "topic"} stories right now
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Try another topic or switch to For You.
-                </p>
-              </>
-            ) : (
-              <>
-                <span className="text-2xl" aria-hidden>📡</span>
-                <p className="mt-2 font-medium text-foreground">No signals yet</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  The worker fetches data every few minutes. Check back shortly or visit{" "}
-                  <Link href="/feed" className="text-nepal-red hover:underline">Signals Feed</Link>.
-                </p>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="mt-4 space-y-4">
-            {heroItem && (
-              <FeedItemCard
-                item={heroItem}
-                variant="hero"
-                reactionInitial={reactionsMap[heroItem.id]}
-                onEmailPrompt={() => setEmailModalOpen(true)}
-                onReactionChange={refetchReactions}
-              />
-            )}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {gridItems.map((item) => (
+        <div className="mt-6">
+          {loading ? (
+            <DiscoverSkeleton />
+          ) : displayItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
+              {topicFilter != null ? (
+                <>
+                  <p className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+                    No {TOPICS.find((t) => t.id === topicFilter)?.label?.toLowerCase() ?? "topic"}{" "}
+                    stories right now
+                  </p>
+                  <p className="mt-2 font-mono text-[12px] text-[#666]">
+                    Try another topic or switch to For You.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl opacity-80" aria-hidden>
+                    📡
+                  </span>
+                  <p className="mt-2 font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+                    No signals yet
+                  </p>
+                  <p className="mt-2 max-w-sm font-mono text-[12px] leading-relaxed text-[#666]">
+                    The worker fetches data every few minutes. Check back shortly or visit{" "}
+                    <Link href="/feed" className="text-emerald-400/90 underline-offset-2 hover:underline">
+                      Signals Feed
+                    </Link>
+                    .
+                  </p>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {heroItem && (
                 <FeedItemCard
-                  key={item.id}
-                  item={item}
-                  variant="grid"
-                  reactionInitial={reactionsMap[item.id]}
+                  item={heroItem}
+                  variant="hero"
+                  reactionInitial={reactionsMap[heroItem.id]}
                   onEmailPrompt={() => setEmailModalOpen(true)}
                   onReactionChange={refetchReactions}
                 />
-              ))}
+              )}
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {gridItems.map((item) => (
+                  <FeedItemCard
+                    key={item.id}
+                    item={item}
+                    variant="grid"
+                    reactionInitial={reactionsMap[item.id]}
+                    onEmailPrompt={() => setEmailModalOpen(true)}
+                    onReactionChange={refetchReactions}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <EmailPromptModal open={emailModalOpen} onOpenChange={setEmailModalOpen} />

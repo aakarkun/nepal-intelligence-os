@@ -26,13 +26,13 @@ export default function MapPage() {
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <ElectionDatasetSelector />
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">Layer:</span>
+            <span className="text-[13px] text-muted-foreground uppercase tracking-wider">Layer:</span>
             {(["election", "seismic", "incidents"] as const).map((mode) => (
               <button
                 key={mode}
                 type="button"
                 onClick={() => setLayerMode(mode)}
-                className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                className={`rounded px-2 py-1 text-[13px] font-medium transition-colors ${
                   layerMode === mode
                     ? "bg-nepal-red/20 text-nepal-red"
                     : "text-muted-foreground hover:bg-muted"

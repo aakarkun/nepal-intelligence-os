@@ -18,7 +18,7 @@ import {
   Diff,
   PanelRight,
   Trash2,
-} from "lucide-react";
+} from "@/components/icons";
 import { fetchConstituencies } from "@/lib/api";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { useDispatch } from "react-redux";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Pin, PinOff, CheckCircle2, Copy } from "lucide-react";
+import { Pin, PinOff, CheckCircle2, Copy } from "@/components/icons";
 import type { SignalEvent } from "@repo/shared";
 import { cn, timeAgo } from "@/lib/utils";
 import {
@@ -72,19 +72,19 @@ export function SignalCard({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={cn("rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", typeBadgeClass)}>
+                <span className={cn("rounded-md border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide", typeBadgeClass)}>
                   {titleForType(event.type)}
                 </span>
-                <span className={cn("rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", severityBadgeClass)}>
+                <span className={cn("rounded-md border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide", severityBadgeClass)}>
                   {event.severity}
                 </span>
                 {isReviewed && (
-                  <span className="rounded-md border border-border/40 bg-background/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span className="rounded-md border border-border/40 bg-background/20 px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
                     Reviewed
                   </span>
                 )}
                 {isPinned && (
-                  <span className="rounded-md border border-amber-500/25 bg-amber-500/8 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                  <span className="rounded-md border border-amber-500/25 bg-amber-500/8 px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-amber-300">
                     Pinned
                   </span>
                 )}
@@ -101,14 +101,14 @@ export function SignalCard({
             </div>
 
             <div className="shrink-0 text-right">
-              <div className="font-mono text-[10px] tabular-nums text-muted-foreground">
+              <div className="font-mono text-[12px] tabular-nums text-muted-foreground">
                 {timeAgo(event.timestamp)}
               </div>
             </div>
           </div>
 
           {meta.length > 0 && (
-            <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground">
+            <div className="flex flex-wrap gap-2 text-[12px] text-muted-foreground">
               {meta.slice(0, 2).map((m) => (
                 <span key={m} className="rounded border border-border/40 bg-background/10 px-2 py-0.5">
                   {m}
@@ -124,7 +124,7 @@ export function SignalCard({
                 e.stopPropagation();
                 onMarkReviewed();
               }}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/20 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/20 px-2 py-1 text-[13px] text-muted-foreground hover:text-foreground"
               aria-label="Mark reviewed"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
@@ -136,7 +136,7 @@ export function SignalCard({
                 e.stopPropagation();
                 onTogglePinned();
               }}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/20 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/20 px-2 py-1 text-[13px] text-muted-foreground hover:text-foreground"
               aria-label={isPinned ? "Unpin" : "Pin"}
             >
               {isPinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
@@ -148,7 +148,7 @@ export function SignalCard({
                 e.stopPropagation();
                 onCopyLink();
               }}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/20 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/20 px-2 py-1 text-[13px] text-muted-foreground hover:text-foreground"
               aria-label="Copy link"
             >
               <Copy className="h-3.5 w-3.5" />
