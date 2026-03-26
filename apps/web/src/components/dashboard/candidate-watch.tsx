@@ -8,7 +8,6 @@ import type { ConstituencyResult } from "@repo/shared";
 import { fetchConstituencies } from "@/lib/api";
 import { cn, formatNumber } from "@/lib/utils";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 type VoteLeader = {
@@ -123,34 +122,33 @@ export function CandidateWatch() {
 
   if (isLoading || !constituencies) {
     return (
-      <Card className="animate-pulse">
-        <CardContent className="h-72 p-6" />
-      </Card>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="h-72 animate-pulse rounded-xl bg-white/[0.06]" />
+        <div className="h-72 animate-pulse rounded-xl bg-white/[0.06]" />
+      </div>
     );
   }
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="font-display text-base font-semibold">
-                Vote Leaders
-              </CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Compact leaderboard by current vote total
-              </p>
+      <div className="rounded-xl bg-[#181818]/60 p-3">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <div className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+              Vote leaders
             </div>
-            <Trophy className="h-4 w-4 text-muted-foreground" />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Compact leaderboard by current vote total
+            </p>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
+          <Trophy className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="space-y-2">
           {voteLeaders.map((candidate, index) => (
             <Link
               key={`${candidate.constituencyId}:${candidate.candidateName}`}
               href={`/constituencies/${candidate.constituencyId}`}
-              className="flex items-center gap-3 rounded-md border border-border px-3 py-2 transition-colors hover:bg-muted/30"
+              className="flex items-center gap-3 rounded-lg bg-[#0c0c0c]/60 px-3 py-2 transition-colors hover:bg-white/[0.04]"
             >
               <div className="w-6 text-center font-mono text-xs text-muted-foreground">
                 {index + 1}
@@ -165,7 +163,7 @@ export function CandidateWatch() {
                 {candidateInitials(candidate.candidateName)}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">
+                <div className="truncate text-sm font-medium text-[#e5e5e5]">
                   {candidate.candidateName}
                 </div>
                 <div className="truncate text-xs text-muted-foreground">
@@ -185,33 +183,31 @@ export function CandidateWatch() {
               </Badge>
             </Link>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="font-display text-base font-semibold">
-                Popular Personalities
-              </CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Curated national figures highlighted in our interface style
-              </p>
+      <div className="rounded-xl bg-[#181818]/60 p-3">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <div className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+              Popular personalities
             </div>
-            <div className="flex items-center gap-2">
-              <Flame className="h-4 w-4 text-nepal-red" />
-              <Link
-                href="/constituencies"
-                className="inline-flex items-center gap-1 text-xs font-medium text-nepal-red hover:underline"
-              >
-                Candidate dossiers
-                <ArrowUpRight className="h-3 w-3" />
-              </Link>
-            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Curated national figures highlighted in our interface style
+            </p>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Flame className="h-4 w-4 text-nepal-red" />
+            <Link
+              href="/constituencies"
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-400/90 hover:underline"
+            >
+              Candidate dossiers
+              <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+        <div className="space-y-2">
           {personalityLeaders.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               No clear personality signals yet from the current feed window
@@ -221,7 +217,7 @@ export function CandidateWatch() {
               <Link
                 key={`${candidate.constituencyId}:${candidate.candidateName}:personality`}
                 href={`/constituencies/${candidate.constituencyId}`}
-                className="flex items-center gap-3 rounded-md border border-border px-3 py-2 transition-colors hover:bg-muted/30"
+                className="flex items-center gap-3 rounded-lg bg-[#0c0c0c]/60 px-3 py-2 transition-colors hover:bg-white/[0.04]"
               >
                 <div className="w-6 text-center font-mono text-xs text-muted-foreground">
                   {index + 1}
@@ -239,7 +235,7 @@ export function CandidateWatch() {
                   {candidateInitials(candidate.candidateName)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">
+                  <div className="truncate text-sm font-medium text-[#e5e5e5]">
                     {candidate.candidateName}
                   </div>
                   <div className="truncate text-xs text-muted-foreground">
@@ -258,8 +254,8 @@ export function CandidateWatch() {
               </Link>
             ))
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

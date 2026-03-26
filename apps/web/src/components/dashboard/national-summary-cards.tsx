@@ -3,11 +3,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchNationalSummary } from "@/lib/api";
 import { formatNumber, formatNepalDateTime, timeAgo } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PartyMark } from "@/components/party/party-mark";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { env } from "@/lib/env";
 import type { NationalSummary } from "@repo/shared";
+import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -23,14 +23,14 @@ function StatCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card>
-      <CardHeader className="pb-2 pt-4 px-4">
-        <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+    <div className="overflow-hidden rounded-xl bg-[#181818]/60">
+      <div className="px-4 pt-4 pb-2">
+        <div className="text-xs font-medium uppercase tracking-wider text-[#888]">
           {label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-4 pb-4">{children}</CardContent>
-    </Card>
+        </div>
+      </div>
+      <div className="px-4 pb-4">{children}</div>
+    </div>
   );
 }
 
@@ -48,9 +48,9 @@ export function NationalSummaryCards() {
     return (
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardContent className="h-24 p-4" />
-          </Card>
+          <div key={i} className="overflow-hidden rounded-xl bg-[#181818]/60 animate-pulse">
+            <div className="h-24 p-4" />
+          </div>
         ))}
       </div>
     );

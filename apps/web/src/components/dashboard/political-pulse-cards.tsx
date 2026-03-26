@@ -2,7 +2,18 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, Users, Calendar } from "@/components/icons";
+import type { ReactNode } from "react";
+import { cn, timeAgo } from "@/lib/utils";
+import {
+  discoverSidebarFooterStrip,
+  discoverSidebarSurface,
+} from "@/components/discover/discover-rail-panel";
+import {
+  RailPanelHeader,
+  railShell,
+  railListBody,
+  railCardInset,
+} from "@/components/layout/intel-rail";
 import {
   fetchCabinetEvents,
   fetchParliamentSession,
@@ -13,10 +24,45 @@ import {
   HOR_TOTAL_SEATS,
   HOR_PR_SEATS,
 } from "@repo/shared";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { cn, timeAgo } from "@/lib/utils";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
+
+const POLITICAL_ACCENT_HEX = "#60a5fa";
+const POLITICAL_LEADING_DOT_CLASS = "bg-sky-500";
+
+function PoliticalPulsePanel({
+  title,
+  footer,
+  children,
+}: {
+  title: string;
+  footer?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className={cn(railShell, "h-full flex flex-col")}>
+      <RailPanelHeader title={title} leadingDotClass={POLITICAL_LEADING_DOT_CLASS} />
+      <div className={cn(railListBody, "rounded-b-xl flex-1")}>
+        <div className={cn(railCardInset, "text-[#ccc] flex h-full flex-col")}>
+          {/* Inner surface must fill the available height in the rail body */}
+          <div className="flex h-full flex-col overflow-hidden rounded-xl">
+            <div
+              className={cn(
+                discoverSidebarSurface,
+                "flex flex-1 flex-col px-3 pt-2.5 pb-3"
+              )}
+            >
+              <div className="flex-1 space-y-2">{children}</div>
+            </div>
+            {footer ? (
+              <div className={discoverSidebarFooterStrip}>{footer}</div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function PoliticalPulseCards() {
   const { selectedDatasetId } = useElectionDatasetStore();
@@ -76,17 +122,18 @@ export function PoliticalPulseCards() {
       : `${leadingParty?.partyShortName ?? "Leading"} — ${majorityShort} seats short of majority pending PR allocation`;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      <Card className="border border-border bg-card/80">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">
-              Cabinet Activity
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
+    <div className="grid gap-4 sm:grid-cols-3 sm:auto-rows-fr">
+      <PoliticalPulsePanel
+        title="Cabinet Activity"
+        footer={
+          <Link
+            href="/feed"
+            className="font-mono text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
+          >
+            View all →
+          </Link>
+        }
+      >
           {lastCabinetMeeting ? (
             <p className="text-xs text-muted-foreground">
               Last cabinet meeting: {timeAgo(lastCabinetMeeting.publishedAt)}
@@ -109,25 +156,9 @@ export function PoliticalPulseCards() {
               </li>
             ))}
           </ul>
-          <Link
-            href="/feed"
-            className="inline-block text-xs text-nepal-red hover:underline"
-          >
-            View all →
-          </Link>
-        </CardContent>
-      </Card>
+      </PoliticalPulsePanel>
 
-      <Card className="border border-border bg-card/80">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">
-              Parliamentary Session
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      <PoliticalPulsePanel title="Parliamentary Session">
           {parliamentSession ? (
             <>
               <div className="flex flex-wrap items-center gap-2">
@@ -166,19 +197,9 @@ export function PoliticalPulseCards() {
               Session data unavailable. Parliament scrape runs daily.
             </p>
           )}
-        </CardContent>
-      </Card>
+      </PoliticalPulsePanel>
 
-      <Card className="border border-border bg-card/80">
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <CardTitle className="text-sm font-medium">
-              Coalition Health
-            </CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-2">
+      <PoliticalPulsePanel title="Coalition Health">
           <p className="text-xs text-muted-foreground">
             Majority threshold: {HOR_MAJORITY_THRESHOLD} / {HOR_TOTAL_SEATS}
           </p>
@@ -189,20 +210,20 @@ export function PoliticalPulseCards() {
           <p className="text-xs font-medium">{coalitionLabel}</p>
           <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-nepal-red/80"
+              className="h-full rounded-full opacity-80"
               style={{
                 width: `${Math.min(
                   100,
                   (currentFptpSeats / HOR_MAJORITY_THRESHOLD) * 100
                 )}%`,
+                backgroundColor: POLITICAL_ACCENT_HEX,
               }}
             />
           </div>
           <p className="text-[12px] text-muted-foreground">
             PR seats allocated proportionally after FPTP count.
           </p>
-        </CardContent>
-      </Card>
+      </PoliticalPulsePanel>
     </div>
   );
 }

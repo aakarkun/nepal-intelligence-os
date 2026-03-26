@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useRealtimeStore } from "@/stores/realtime-store";
 import { cn, dedupeSignalEventsByTitle, timeAgo } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchFeed } from "@/lib/api";
 import type { SignalEvent, SignalEventType } from "@repo/shared";
 
@@ -75,13 +74,11 @@ export function LiveEventsMini() {
     electionEvents.length > 0 ? electionEvents.slice(0, 10) : allEvents.slice(0, 10);
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="font-display text-base font-semibold">
-          Live Signals
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="rounded-xl bg-[#181818]/60 p-3">
+      <div className="mb-3 font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+        Live signals
+      </div>
+      <div>
         {events.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
             No live election signals yet
@@ -93,8 +90,8 @@ export function LiveEventsMini() {
                 key={event.id}
                 href="/feed"
                 className={cn(
-                  "flex items-start gap-2 rounded-sm p-1.5 text-left transition-colors",
-                  "hover:bg-muted/40"
+                  "flex items-start gap-2 rounded-lg bg-[#0c0c0c]/40 p-2 text-left transition-colors",
+                  "hover:bg-white/[0.04]"
                 )}
               >
                 <span
@@ -104,7 +101,9 @@ export function LiveEventsMini() {
                   )}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium">{event.title}</p>
+                  <p className="truncate text-xs font-medium text-[#e5e5e5]">
+                    {event.title}
+                  </p>
                   <p className="font-mono text-[12px] tabular-nums text-muted-foreground">
                     {timeAgo(event.timestamp)}
                   </p>
@@ -115,11 +114,11 @@ export function LiveEventsMini() {
         )}
         <Link
           href="/feed"
-          className="mt-3 block text-center text-xs font-medium text-[#dc143c] hover:underline"
+          className="mt-3 block text-center text-xs font-medium text-blue-400/90 hover:underline"
         >
           View all &rarr;
         </Link>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

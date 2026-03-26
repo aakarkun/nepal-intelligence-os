@@ -1,12 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNumber } from "@/lib/utils";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { fetchNationalSummary } from "@/lib/api";
 import { PartyMark } from "@/components/party/party-mark";
 import type { NationalSummary } from "@repo/shared";
+import { cn } from "@/lib/utils";
 
 export function FederalProportionalCard() {
   const { selectedDatasetId, datasets } = useElectionDatasetStore();
@@ -22,9 +22,14 @@ export function FederalProportionalCard() {
 
   if (isLoading || !data) {
     return (
-      <Card className="animate-pulse">
-        <CardContent className="h-40" />
-      </Card>
+      <div className="space-y-3">
+        <div className="h-5 w-2/5 animate-pulse rounded bg-white/[0.06]" />
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-16 animate-pulse rounded-md bg-white/[0.06]" />
+          ))}
+        </div>
+      </div>
     );
   }
 
@@ -33,58 +38,58 @@ export function FederalProportionalCard() {
   );
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-2">
-          <CardTitle className="font-display text-base font-semibold">
-            Federal proportional results
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Party vote totals in the selected dataset
-          </p>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {sorted.slice(0, 9).map((party) => (
-            <div
-              key={party.partyId}
-              className="flex items-center justify-between rounded-md border bg-card px-3 py-2 text-xs"
-            >
-              <div className="flex items-center gap-2">
-                <PartyMark
-                  partyId={party.partyId}
-                  partyName={party.partyName}
-                  partyShortName={party.partyShortName}
-                  partyColor={party.partyColor}
-                  size="sm"
-                />
-                <div>
-                  <div className="font-medium text-foreground leading-tight">
-                    {party.partyShortName || party.partyName}
-                  </div>
-                  <p className="text-[13px] text-muted-foreground">
-                    {formatNumber(party.totalVotes)} votes
-                  </p>
+    <div className="flex h-full flex-col space-y-3">
+      <div className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+        Federal proportional results
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {sorted.slice(0, 9).map((party) => (
+          <div
+            key={party.partyId}
+            className={cn(
+              "flex items-center justify-between rounded-md bg-[#181818]/60 px-3 py-2 text-xs",
+              "transition-colors hover:bg-white/[0.04]"
+            )}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <PartyMark
+                partyId={party.partyId}
+                partyName={party.partyName}
+                partyShortName={party.partyShortName}
+                partyColor={party.partyColor}
+                size="sm"
+              />
+              <div className="min-w-0">
+                <div className="font-medium leading-tight text-[#e5e5e5] truncate">
+                  {party.partyShortName || party.partyName}
                 </div>
-              </div>
-              <div className="text-right">
-                <p className="font-mono text-sm font-semibold tabular-nums">
-                  {party.seatsWon + party.seatsLeading}
+                <p className="text-[12px] text-[#888] truncate">
+                  {formatNumber(party.totalVotes)} votes
                 </p>
-                <p className="text-[13px] text-muted-foreground">seats (won + lead)</p>
               </div>
             </div>
-          ))}
-        </div>
-        {sorted.length > 9 && (
-          <p className="text-[13px] text-muted-foreground">
-            Showing top 9 parties by votes. Use the Parliament and Constituencies views for full
-            board detail.
-          </p>
-        )}
-      </CardContent>
-    </Card>
+            <div className="text-right shrink-0">
+              <p className="font-mono text-sm font-semibold tabular-nums text-[#e5e5e5]">
+                {party.seatsWon + party.seatsLeading}
+              </p>
+              <p className="text-[12px] text-[#555]">seats</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {sorted.length > 9 && (
+        <p className="text-[13px] text-muted-foreground">
+          Showing top 9 parties by votes. Use the Parliament and Constituencies views for full
+          board detail.
+        </p>
+      )}
+
+      <p className="mt-auto text-[13px] text-muted-foreground">
+        Party vote totals in the selected dataset
+      </p>
+    </div>
   );
 }
 

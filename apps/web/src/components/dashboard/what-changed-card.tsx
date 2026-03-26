@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Clock } from "@/components/icons";
 import { fetchConstituencies } from "@/lib/api";
 import { cn, formatNepalDateTime, timeAgo } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import type { ConstituencyResult } from "@repo/shared";
 
@@ -74,21 +73,17 @@ export function WhatChangedCard() {
 
   if (!isCurrentDataset) {
     return (
-      <Card className="h-full">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="font-display text-base font-semibold">
-                What Changed
-              </CardTitle>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Archive mode
-              </p>
+      <div className="h-full rounded-xl bg-[#181818]/60 p-3">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <div className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+              What changed
             </div>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <p className="mt-1 text-xs text-muted-foreground">Archive mode</p>
           </div>
-        </CardHeader>
-        <CardContent>
+          <Clock className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div>
           <p className="py-6 text-center text-sm text-muted-foreground">
             Change tracking is only available for the live dataset. Archived elections render as fixed snapshots for comparison.
           </p>
@@ -97,8 +92,8 @@ export function WhatChangedCard() {
               Snapshot timestamp {formatNepalDateTime(selectedDataset.timestamp)}
             </p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -130,21 +125,17 @@ export function WhatChangedCard() {
     .slice(0, 5);
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="font-display text-base font-semibold">
-              What Changed
-            </CardTitle>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Last 10 min
-            </p>
+    <div className="h-full rounded-xl bg-[#181818]/60 p-3">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <div className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+            What changed
           </div>
-          <Clock className="h-4 w-4 text-muted-foreground" />
+          <p className="mt-1 text-xs text-muted-foreground">Last 10 min</p>
         </div>
-      </CardHeader>
-      <CardContent>
+        <Clock className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div>
         {topDeltas.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
             No significant changes detected yet
@@ -158,12 +149,12 @@ export function WhatChangedCard() {
                   router.push(`/constituencies/${item.constituencyId}`)
                 }
                 className={cn(
-                  "flex w-full items-center justify-between rounded-sm border border-border p-2.5 text-left transition-colors",
-                  "hover:bg-muted/40"
+                  "flex w-full items-center justify-between rounded-lg bg-[#0c0c0c]/60 p-3 text-left transition-colors",
+                  "hover:bg-white/[0.04]"
                 )}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
+                  <p className="truncate text-sm font-medium text-[#e5e5e5]">
                     {item.constituencyName}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -201,7 +192,7 @@ export function WhatChangedCard() {
             {timeAgo(new Date(lastSnapshotTime.current).toISOString())}
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

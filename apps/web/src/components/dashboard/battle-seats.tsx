@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { fetchConstituencies } from "@/lib/api";
 import { cn, formatNumber } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import type { ConstituencyResult } from "@repo/shared";
 
@@ -28,9 +27,7 @@ export function BattleSeats() {
 
   if (isLoading || !constituencies) {
     return (
-      <Card className="animate-pulse">
-        <CardContent className="h-48 p-6" />
-      </Card>
+      <div className="h-48 animate-pulse rounded-xl bg-white/[0.06]" />
     );
   }
 
@@ -40,13 +37,11 @@ export function BattleSeats() {
     .slice(0, 5);
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="font-display text-base font-semibold">
-          Closest Races
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
+    <div className="rounded-xl bg-[#181818]/60 p-3">
+      <div className="mb-3 font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+        Closest races
+      </div>
+      <div className="space-y-2">
         {battleSeats.map((seat) => {
           const sorted = [...seat.candidates].sort(
             (a, b) => b.votes - a.votes
@@ -64,12 +59,12 @@ export function BattleSeats() {
                 router.push(`/constituencies/${seat.constituencyId}`)
               }
               className={cn(
-                "w-full rounded-sm border border-border p-2.5 text-left transition-colors",
-                "hover:bg-muted/40"
+                "w-full rounded-lg bg-[#0c0c0c]/60 p-3 text-left transition-colors",
+                "hover:bg-white/[0.04]"
               )}
             >
               <div className="flex items-center justify-between">
-                <p className="truncate text-sm font-medium">
+                <p className="truncate text-sm font-medium text-[#e5e5e5]">
                   {seat.constituencyName}
                 </p>
                 <span className="ml-2 shrink-0 font-mono text-xs font-bold tabular-nums text-[#dc143c]">
@@ -120,7 +115,7 @@ export function BattleSeats() {
             </button>
           );
         })}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
