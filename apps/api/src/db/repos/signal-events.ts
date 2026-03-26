@@ -3,6 +3,28 @@ import { db } from "../client.js";
 import { signalEvents } from "../schema.js";
 import type { SignalEvent } from "@repo/shared";
 
+function entitiesEqual(a: unknown, b: unknown): boolean {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function rowMatchesEvent(
+  row: typeof signalEvents.$inferSelect,
+  event: SignalEvent
+): boolean {
+  return (
+    row.title === event.title &&
+    (row.body ?? "") === (event.body ?? "") &&
+    row.publishedAt === event.timestamp &&
+    row.type === event.type &&
+    row.severity === event.severity &&
+    (row.source ?? null) === (event.source ?? null) &&
+    (row.url ?? null) === (event.url ?? null) &&
+    entitiesEqual(row.entities, event.entities)
+  );
+}
+
 function rowToEvent(row: typeof signalEvents.$inferSelect): SignalEvent {
   return {
     id: row.id,
@@ -19,6 +41,26 @@ function rowToEvent(row: typeof signalEvents.$inferSelect): SignalEvent {
 }
 
 export async function insertSignalEvent(event: SignalEvent): Promise<void> {
+  const existing = await db
+    .select()
+    .from(signalEvents)
+    .where(eq(signalEvents.id, event.id))
+    .limit(1);
+
+  const existingPublishedAt = existing[0]?.publishedAt ?? null;
+  const newPublishedAtMs = Date.parse(event.timestamp);
+  const existingPublishedAtMs = existingPublishedAt ? Date.parse(existingPublishedAt) : NaN;
+  const publishedAtToStore =
+    existingPublishedAt && Number.isFinite(existingPublishedAtMs) && Number.isFinite(newPublishedAtMs)
+      ? newPublishedAtMs < existingPublishedAtMs
+        ? event.timestamp
+        : existingPublishedAt
+      : event.timestamp;
+
+  if (existing[0] && rowMatchesEvent(existing[0], event)) {
+    return;
+  }
+
   await db.insert(signalEvents).values({
     id: event.id,
     title: event.title,
@@ -32,7 +74,7 @@ export async function insertSignalEvent(event: SignalEvent): Promise<void> {
     province: event.districtId ?? null,
     lat: null,
     lng: null,
-    publishedAt: event.timestamp,
+    publishedAt: publishedAtToStore,
     ingestedAt: new Date().toISOString(),
   }).onConflictDoUpdate({
     target: signalEvents.id,
@@ -41,7 +83,7 @@ export async function insertSignalEvent(event: SignalEvent): Promise<void> {
       body: event.body ?? null,
       type: event.type,
       severity: event.severity,
-      publishedAt: event.timestamp,
+      publishedAt: publishedAtToStore,
     },
   });
 }

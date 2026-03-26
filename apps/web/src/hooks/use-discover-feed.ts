@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   fetchFeed,
   fetchWorldArticles,
@@ -102,43 +102,121 @@ function sortBySeverityThenTime(a: FeedItem, b: FeedItem): number {
   return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
 }
 
-const FEED_LIMIT = 30;
+/** Page size for `/v1/feed` on Discover (initial + each "load more" from API). */
+export const DISCOVER_FEED_PAGE_SIZE = 30;
+const WORLD_LIMIT = 15;
+const CRISIS_SLICE = 10;
 const REFRESH_INTERVAL_MS = 3 * 60 * 1000;
 
+function mergeDiscoverItems(
+  feed: FeedItem[],
+  world: FeedItem[],
+  crisis: FeedItem[]
+): FeedItem[] {
+  const merged: FeedItem[] = [];
+  merged.push(...feed, ...world, ...crisis);
+  const deduped = dedupeEventsByTitle(merged, (i) => new Date(i.publishedAt).getTime());
+  return deduped.sort(sortBySeverityThenTime);
+}
+
 export function useDiscoverFeed() {
-  const [items, setItems] = useState<FeedItem[]>([]);
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [worldItems, setWorldItems] = useState<FeedItem[]>([]);
+  const [crisisItems, setCrisisItems] = useState<FeedItem[]>([]);
+  const [feedNextOffset, setFeedNextOffset] = useState(0);
+  const [feedTotal, setFeedTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [newCountSinceView, setNewCountSinceView] = useState(0);
   const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null);
+  /** For polling: detect newly appeared item ids vs previous merged snapshot. */
+  const lastMergedIdsRef = useRef<Set<string>>(new Set());
+  const feedItemsRef = useRef<FeedItem[]>([]);
+  const worldItemsRef = useRef<FeedItem[]>([]);
+  const crisisItemsRef = useRef<FeedItem[]>([]);
+  useEffect(() => {
+    feedItemsRef.current = feedItems;
+  }, [feedItems]);
+  useEffect(() => {
+    worldItemsRef.current = worldItems;
+  }, [worldItems]);
+  useEffect(() => {
+    crisisItemsRef.current = crisisItems;
+  }, [crisisItems]);
+
+  const items = useMemo(
+    () => mergeDiscoverItems(feedItems, worldItems, crisisItems),
+    [feedItems, worldItems, crisisItems]
+  );
+
+  const hasMoreFeed = feedNextOffset < feedTotal;
 
   const fetchAll = useCallback(async () => {
-    const controller = new AbortController();
-    const signal = controller.signal;
-
     const [feedResult, worldResult, crisisResult] = await Promise.allSettled([
-      fetchFeed(FEED_LIMIT, 0).then((r) => r.events.map(normalizeSignalEvent)),
-      fetchWorldArticles(undefined, 15).then((arr) => arr.map(normalizeWorldArticle)),
+      fetchFeed(DISCOVER_FEED_PAGE_SIZE, 0).then((r) => ({
+        events: r.events.map(normalizeSignalEvent),
+        total: r.total,
+      })),
+      fetchWorldArticles(undefined, WORLD_LIMIT).then((arr) => arr.map(normalizeWorldArticle)),
       fetchCrisisIncidents()
-        .then((arr) => arr.slice(0, 10).map(normalizeCrisisIncident))
+        .then((arr) => arr.slice(0, CRISIS_SLICE).map(normalizeCrisisIncident))
         .catch(() => [] as FeedItem[]),
     ]);
 
-    const merged: FeedItem[] = [];
-    if (feedResult.status === "fulfilled") merged.push(...feedResult.value);
-    if (worldResult.status === "fulfilled") merged.push(...worldResult.value);
-    if (crisisResult.status === "fulfilled") merged.push(...crisisResult.value);
+    const feedEvents =
+      feedResult.status === "fulfilled"
+        ? feedResult.value.events
+        : feedItemsRef.current;
+    const world =
+      worldResult.status === "fulfilled"
+        ? worldResult.value
+        : worldItemsRef.current;
+    const crisis =
+      crisisResult.status === "fulfilled"
+        ? crisisResult.value
+        : crisisItemsRef.current;
 
-    const deduped = dedupeEventsByTitle(
-      merged,
-      (i) => new Date(i.publishedAt).getTime()
-    );
-    const sorted = deduped.sort(sortBySeverityThenTime);
+    if (feedResult.status === "fulfilled") {
+      setFeedItems(feedEvents);
+      setFeedNextOffset(feedResult.value.events.length);
+      setFeedTotal(feedResult.value.total);
+    }
+    if (worldResult.status === "fulfilled") setWorldItems(worldResult.value);
+    if (crisisResult.status === "fulfilled") setCrisisItems(crisisResult.value);
 
-    setItems(sorted);
+    const merged = mergeDiscoverItems(feedEvents, world, crisis);
+
+    if (merged.length > 0) {
+      lastMergedIdsRef.current = new Set(merged.map((m) => m.id));
+    }
     setLastFetchedAt(Date.now());
     setLoading(false);
-    return sorted;
+    return merged;
   }, []);
+
+  const loadMoreFeed = useCallback(async () => {
+    if (loadingMore || feedNextOffset >= feedTotal) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetchFeed(DISCOVER_FEED_PAGE_SIZE, feedNextOffset);
+      const normalized = res.events.map(normalizeSignalEvent);
+      setFeedItems((prev) => {
+        const seen = new Set(prev.map((i) => i.id));
+        const next = [...prev];
+        for (const item of normalized) {
+          if (!seen.has(item.id)) {
+            seen.add(item.id);
+            next.push(item);
+          }
+        }
+        return next;
+      });
+      setFeedNextOffset((prev) => prev + res.events.length);
+      setFeedTotal(res.total);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, feedNextOffset, feedTotal]);
 
   useEffect(() => {
     fetchAll();
@@ -147,29 +225,46 @@ export function useDiscoverFeed() {
   useEffect(() => {
     if (loading) return;
     const t = setInterval(async () => {
-      const controller = new AbortController();
       const [feedResult, worldResult, crisisResult] = await Promise.allSettled([
-        fetchFeed(FEED_LIMIT, 0).then((r) => r.events.map(normalizeSignalEvent)),
-        fetchWorldArticles(undefined, 15).then((arr) => arr.map(normalizeWorldArticle)),
+        fetchFeed(DISCOVER_FEED_PAGE_SIZE, 0).then((r) => ({
+          events: r.events.map(normalizeSignalEvent),
+          total: r.total,
+        })),
+        fetchWorldArticles(undefined, WORLD_LIMIT).then((arr) => arr.map(normalizeWorldArticle)),
         fetchCrisisIncidents()
-          .then((arr) => arr.slice(0, 10).map(normalizeCrisisIncident))
+          .then((arr) => arr.slice(0, CRISIS_SLICE).map(normalizeCrisisIncident))
           .catch(() => [] as FeedItem[]),
       ]);
-      const merged: FeedItem[] = [];
-      if (feedResult.status === "fulfilled") merged.push(...feedResult.value);
-      if (worldResult.status === "fulfilled") merged.push(...worldResult.value);
-      if (crisisResult.status === "fulfilled") merged.push(...crisisResult.value);
-      const deduped = dedupeEventsByTitle(
-      merged,
-      (i) => new Date(i.publishedAt).getTime()
-    );
-      const sorted = deduped.sort(sortBySeverityThenTime);
-      setItems((prev) => {
-        const prevIds = new Set(prev.map((i) => i.id));
-        const newItems = sorted.filter((x) => !prevIds.has(x.id));
-        setNewCountSinceView((n) => n + newItems.length);
-        return sorted;
-      });
+
+      const feedEvents =
+        feedResult.status === "fulfilled"
+          ? feedResult.value.events
+          : feedItemsRef.current;
+      const world =
+        worldResult.status === "fulfilled"
+          ? worldResult.value
+          : worldItemsRef.current;
+      const crisis =
+        crisisResult.status === "fulfilled"
+          ? crisisResult.value
+          : crisisItemsRef.current;
+
+      if (feedResult.status === "fulfilled") {
+        setFeedItems(feedEvents);
+        setFeedNextOffset(feedResult.value.events.length);
+        setFeedTotal(feedResult.value.total);
+      }
+      if (worldResult.status === "fulfilled") setWorldItems(worldResult.value);
+      if (crisisResult.status === "fulfilled") setCrisisItems(crisisResult.value);
+
+      const merged = mergeDiscoverItems(feedEvents, world, crisis);
+
+      if (merged.length > 0) {
+        const prev = lastMergedIdsRef.current;
+        const delta = merged.filter((x) => !prev.has(x.id)).length;
+        if (delta > 0) setNewCountSinceView((n) => n + delta);
+        lastMergedIdsRef.current = new Set(merged.map((m) => m.id));
+      }
       setLastFetchedAt(Date.now());
     }, REFRESH_INTERVAL_MS);
     return () => clearInterval(t);
@@ -177,7 +272,10 @@ export function useDiscoverFeed() {
 
   const refreshAndScrollTop = useCallback(() => {
     setNewCountSinceView(0);
-    fetchAll().then(() => {
+    fetchAll().then((merged) => {
+      if (merged.length > 0) {
+        lastMergedIdsRef.current = new Set(merged.map((m) => m.id));
+      }
       if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
     });
   }, [fetchAll]);
@@ -185,6 +283,9 @@ export function useDiscoverFeed() {
   return {
     items,
     loading,
+    loadingMore,
+    hasMoreFeed,
+    loadMoreFeed,
     newCountSinceView,
     lastFetchedAt,
     refreshAndScrollTop,
@@ -229,7 +330,7 @@ export function filterAndSortFeed(
   }
 
   if (tab === "top") {
-    return list.slice(0, FEED_LIMIT).sort(sortBySeverityThenTime);
+    return [...list].sort(sortBySeverityThenTime);
   }
 
   if (tab === "for-you" && preferredTypes.length > 0) {
@@ -243,5 +344,5 @@ export function filterAndSortFeed(
     });
   }
 
-  return list.slice(0, FEED_LIMIT);
+  return list.sort(sortBySeverityThenTime);
 }

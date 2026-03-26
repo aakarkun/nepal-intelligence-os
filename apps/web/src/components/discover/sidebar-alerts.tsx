@@ -23,7 +23,7 @@ function getTypeInfo(incidentType: "flood" | "protest" | "fire" | "seismic"): Al
     case "fire":
       return { icon: "🔥", label: "Fire" };
     case "seismic":
-      return { icon: "🌍", label: "Seismic" };
+      return { icon: "", label: "Seismic" };
     default:
       return { icon: "⚠️", label: "Alert" };
   }
@@ -39,16 +39,18 @@ const BADGE_STYLES: Record<AlertSeverity, string> = {
 };
 
 export function SidebarAlerts() {
-  const { data: incidents = [] } = useQuery({
+  const { data: incidents = [], isLoading: incidentsLoading } = useQuery({
     queryKey: ["crisis", "incidents", "sidebar"],
     queryFn: () => fetchCrisisIncidents(),
     refetchInterval: 60_000,
   });
-  const { data: earthquakes = [] } = useQuery({
+  const { data: earthquakes = [], isLoading: earthquakesLoading } = useQuery({
     queryKey: ["crisis", "earthquakes", "sidebar"],
     queryFn: () => fetchEarthquakeIncidents(),
     refetchInterval: 60_000,
   });
+
+  const isLoading = incidentsLoading || earthquakesLoading;
 
   const alertItems: {
     id: string;
@@ -78,6 +80,38 @@ export function SidebarAlerts() {
   alertItems.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
   const display = alertItems.slice(0, 5);
   const hasCritical = display.some((a) => a.severity === "danger" || a.severity === "extreme_danger");
+
+  if (isLoading) {
+    return (
+      <DiscoverRailPanel
+        title="Active alerts"
+        leadingDotClass="bg-amber-500"
+        right={null}
+      >
+        <div className="flex flex-col gap-0">
+          <div className="overflow-hidden rounded-xl">
+            <div className={cn("overflow-hidden bg-[#181818]/60", "rounded-t-xl rounded-bl-xl rounded-br-xl")}>
+              {[0, 1].map((idx) => (
+                <div
+                  key={idx}
+                  className={cn(railRow, "flex flex-col gap-1")}
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="h-[18px] w-[70px] rounded bg-white/[0.06]" />
+                    <div className="h-3 w-[160px] rounded bg-white/[0.06]" />
+                  </div>
+                  <div className="h-4 w-[220px] rounded bg-white/[0.06]" />
+                </div>
+              ))}
+            </div>
+            <div className={discoverSidebarFooterStrip}>
+              <div className="h-3 w-28 rounded bg-white/[0.06]" />
+            </div>
+          </div>
+        </div>
+      </DiscoverRailPanel>
+    );
+  }
 
   return (
     <DiscoverRailPanel
@@ -121,7 +155,8 @@ export function SidebarAlerts() {
                         {a.severity.replace("_", " ")}
                       </span>
                       <span className="font-mono text-[11px] text-[#555]">
-                        {a.typeInfo.icon} {a.typeInfo.label} · {timeAgo(a.time)}
+                        {a.typeInfo.icon && `${a.typeInfo.icon} `}
+                        {a.typeInfo.label} · {timeAgo(a.time)}
                       </span>
                     </div>
                     <p className="line-clamp-2 text-[13px] leading-snug text-[#ccc]">{a.title}</p>
@@ -131,7 +166,7 @@ export function SidebarAlerts() {
               <div className={discoverSidebarFooterStrip}>
                 <Link
                   href="/disasters"
-                  className="font-mono text-[12px] uppercase tracking-wider text-emerald-400/90 hover:underline"
+                  className="font-mono text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
                 >
                   View all →
                 </Link>

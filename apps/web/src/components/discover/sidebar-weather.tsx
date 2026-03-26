@@ -94,7 +94,36 @@ export function SidebarWeather() {
       });
   }, []);
 
-  if (hidden || !data?.current || !data?.daily) return null;
+  if (hidden) return null;
+
+  if (!data?.current || !data?.daily) {
+    return (
+      <DiscoverRailPanel title="Weather" leadingDotClass="bg-sky-500">
+        <div className={cn(discoverSidebarSurface, "px-3 pt-2.5 pb-3")}>
+          <p className="mb-1.5 font-mono text-[12px] uppercase tracking-wider text-[#666]">
+            Kathmandu
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="h-9 w-20 rounded bg-white/[0.06]" />
+            <div className="h-4 w-28 rounded bg-white/[0.06]" />
+          </div>
+          <div className="mt-1 h-3 w-full rounded bg-white/[0.06]" />
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 pt-2">
+            {Array.from({ length: 5 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="flex min-w-[3rem] h-[58px] flex-col items-center justify-between text-center"
+              >
+                <div className="h-3 w-10 rounded bg-white/[0.06]" />
+                <div className="h-4 w-6 rounded bg-white/[0.06]" />
+                <div className="h-3 w-20 rounded bg-white/[0.06]" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </DiscoverRailPanel>
+    );
+  }
 
   const cur = data.current;
   const daily = data.daily;

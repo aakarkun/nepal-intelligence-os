@@ -36,21 +36,72 @@ export function computeGoldNprPerTola(
 }
 
 export function SidebarMarket() {
-  const { data: nepse } = useQuery({
+  const { data: nepse, isLoading: nepseLoading } = useQuery({
     queryKey: ["economy", "nepse"],
     queryFn: () => fetchNepseSummary(),
     refetchInterval: 60_000,
   });
-  const { data: forex = [] } = useQuery({
+  const { data: forex = [], isLoading: forexLoading } = useQuery({
     queryKey: ["economy", "forex"],
     queryFn: () => fetchForexRates(),
     refetchInterval: 60_000,
   });
-  const { data: assets = [] } = useQuery({
+  const { data: assets = [], isLoading: assetsLoading } = useQuery({
     queryKey: ["economy", "assets"],
     queryFn: () => fetchMarketAssetQuotes(),
     refetchInterval: 60_000,
   });
+
+  const isLoading = nepseLoading || forexLoading || assetsLoading;
+
+  if (isLoading) {
+    return (
+      <DiscoverRailPanel title="Market pulse" leadingDotClass="bg-cyan-500">
+        <div className="flex flex-col gap-0">
+          <div className="overflow-hidden rounded-xl">
+            <div
+              className={cn(
+                "overflow-hidden bg-[#181818]/60",
+                "rounded-t-xl rounded-bl-xl rounded-br-xl font-mono text-[13px]"
+              )}
+            >
+              <div className="flex justify-between gap-2 px-3 py-1.5">
+                <div className="h-3 w-16 rounded bg-white/[0.06]" />
+                <div className="h-3 w-20 rounded bg-white/[0.06]" />
+              </div>
+              <div className="flex justify-between gap-2 px-3 py-1.5">
+                <div className="h-3 w-20 rounded bg-white/[0.06]" />
+                <div className="h-3 w-24 rounded bg-white/[0.06]" />
+              </div>
+              <div className="flex justify-between gap-2 px-3 py-1.5">
+                <div className="h-3 w-16 rounded bg-white/[0.06]" />
+                <div className="h-3 w-20 rounded bg-white/[0.06]" />
+              </div>
+              <div className="flex justify-between gap-2 px-3 py-1.5">
+                <div className="h-3 w-20 rounded bg-white/[0.06]" />
+                <div className="h-3 w-28 rounded bg-white/[0.06]" />
+              </div>
+              <div className="flex justify-between gap-2 px-3 py-1.5">
+                <div className="h-3 w-24 rounded bg-white/[0.06]" />
+                <div className="h-3 w-24 rounded bg-white/[0.06]" />
+              </div>
+              <p className="px-3 pt-1.5 pb-2 font-mono text-[11px] uppercase tracking-wider text-[#555]">
+                <span className="inline-block h-3 w-20 rounded bg-white/[0.06]" />
+              </p>
+            </div>
+            <div className={discoverSidebarFooterStrip}>
+              <Link
+                href="/economy"
+                className="font-mono text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
+              >
+                View full economy →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </DiscoverRailPanel>
+    );
+  }
 
   const usd = forex.find((f) => f.currencyCode === "USD");
   const inr = forex.find((f) => f.currencyCode === "INR");
@@ -240,7 +291,7 @@ export function SidebarMarket() {
           <div className={discoverSidebarFooterStrip}>
             <Link
               href="/economy"
-              className="font-mono text-[12px] uppercase tracking-wider text-emerald-400/90 hover:underline"
+              className="font-mono text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
             >
               View full economy →
             </Link>

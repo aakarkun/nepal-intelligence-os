@@ -18,7 +18,7 @@ export function SidebarTrending({
 }: {
   onTopicClick?: (topic: string) => void;
 }) {
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["feed", "trending"],
     queryFn: () => fetchFeed(100, 0),
     refetchInterval: 5 * 60 * 1000,
@@ -52,6 +52,25 @@ export function SidebarTrending({
       .slice(0, 8)
       .map(([name, n]) => ({ name, count: n }));
   }, [data?.events]);
+
+  if (isLoading) {
+    return (
+      <DiscoverRailPanel title="Trending" leadingDotClass="bg-fuchsia-500">
+        <div className={cn(discoverSidebarSurface, "px-3 pt-2.5 pb-3")}>
+          <div className="mb-2 h-3 w-36 rounded bg-white/[0.06]" />
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: 7 }).map((_, idx) => (
+              <div
+                // eslint-disable-next-line react/no-array-index-key
+                key={idx}
+                className="h-7 w-24 rounded-md bg-white/[0.06]"
+              />
+            ))}
+          </div>
+        </div>
+      </DiscoverRailPanel>
+    );
+  }
 
   if (trending.length < MIN_ENTITIES) return null;
 

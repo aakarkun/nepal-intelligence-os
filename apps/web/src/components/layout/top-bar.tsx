@@ -134,7 +134,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
         <button
           type="button"
           onClick={toggleLanguage}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+          className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
           title="Toggle news language"
         >
           <span className="font-mono text-[12px] uppercase">
@@ -144,7 +144,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
         {/* AI Briefing (Sparkles) — opens briefing modal */}
         <button
           onClick={openBriefing}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+          className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
           title="Generate briefing"
         >
           <Sparkles className="h-3 w-3" />
@@ -155,7 +155,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
           type="button"
           onClick={togglePanel}
           className={cn(
-            "flex items-center gap-1.5 rounded-md border px-2 py-1 text-[13px] transition-colors",
+            "flex items-center gap-1.5 rounded-full border px-2 py-1 text-[13px] transition-colors",
             intelRailOpen
               ? "border-white/[0.12] bg-white/[0.08] text-foreground"
               : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground"
@@ -168,7 +168,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
         {/* ⌘K trigger (icon-only on xs) */}
         <button
           onClick={onCommandOpen}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+          className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
         >
           <Command className="h-3 w-3" />
           <span className="hidden sm:inline">

@@ -25,6 +25,10 @@ import type { FeedItem } from "@/hooks/use-discover-feed";
 import { useReaction } from "@/hooks/use-reaction";
 import { createWatchlistItem } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import {
+  NepalIntelligenceGradientSurface,
+} from "@/components/discover/nepal-intelligence-gradient-surface";
+import { accentIconPlateBackground } from "@/lib/accent-gradient";
 
 const typeConfig: Record<
   SignalEventType,
@@ -46,6 +50,21 @@ const typeConfig: Record<
 function getTypeConfig(type: string): (typeof typeConfig)[SignalEventType] {
   return typeConfig[type as SignalEventType] ?? typeConfig.news;
 }
+
+/** Same luminous stack as `NepalIntelligenceGradientSurface` demo; only layout/grain varies. */
+const FEED_GRADIENT_PATTERN: Record<SignalEventType, 0 | 1 | 2> = {
+  official: 0,
+  ingest: 1,
+  anomaly: 2,
+  note: 0,
+  news: 1,
+  political: 2,
+  security: 0,
+  economic: 1,
+  disaster: 2,
+  diplomatic: 0,
+  health: 1,
+};
 
 type MeshStyle = {
   backgroundColor: string;
@@ -128,7 +147,8 @@ function buildGradientMesh(baseHex: string, seedKey: string): MeshStyle {
   const palette = [cBright, cMid, cDeep];
 
   // Category-based variety (deterministic per seedKey).
-  const variant = Math.floor(rand() * 4); // 0..3
+  const variantRoll = rand();
+  const variant = variantRoll < 0.55 ? 0 : variantRoll < 0.75 ? 1 : variantRoll < 0.9 ? 2 : 3; // biased
 
   // Off-center bloom to feel “lit from within”.
   const bloomX = 26 + rand() * 48; // 26..74
@@ -138,6 +158,24 @@ function buildGradientMesh(baseHex: string, seedKey: string): MeshStyle {
 
   // Higher-luminance but still soft/premium.
   const baseBgAlpha = 0.06 + rand() * 0.025;
+
+  // Variant 0: “soft luminous field” (large diffused blob lighting)
+  // This matches the airy, premium gradient panel feel.
+  if (variant === 0) {
+    const topBloom = `radial-gradient(circle at ${bloomX.toFixed(1)}% ${bloomY.toFixed(
+      1
+    )}%, ${rgba(base, 0.30)} 0%, transparent 60%)`;
+    const whiteBloom = `radial-gradient(circle at 50% 10%, rgba(255,255,255,0.42) 0%, transparent 60%)`;
+    const sideBloomA = `radial-gradient(ellipse at 15% 45%, ${rgba(base, 0.18)} 0%, transparent 72%)`;
+    const sideBloomB = `radial-gradient(ellipse at 85% 35%, ${rgba(base, 0.14)} 0%, transparent 76%)`;
+    const glaze = `linear-gradient(180deg, ${rgba(base, 0.18)} 0%, rgba(0,0,0,0) 58%)`;
+    const edge = `linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.02) 98%)`;
+
+    return {
+      backgroundColor: rgba(base, baseBgAlpha),
+      backgroundImage: [whiteBloom, topBloom, sideBloomA, sideBloomB, glaze, edge].join(", "),
+    };
+  }
 
   const anchors = [
     { x: Math.floor(10 + rand() * 80), y: Math.floor(10 + rand() * 80) },
@@ -304,10 +342,10 @@ function MoreMenu({
         <MoreHorizontal className={iconClassName} />
       </Button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] rounded-md bg-[#181818] py-1 shadow-lg shadow-black/40">
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0c] p-1 shadow-xl shadow-black/50">
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#ccc] hover:bg-white/[0.06]"
+            className="flex w-full items-center gap-2 rounded-none px-4 py-2 text-left text-sm text-[#ccc] transition-colors hover:rounded-xl hover:bg-white/[0.06]"
             onClick={() => {
               onShare();
               setOpen(false);
@@ -318,7 +356,7 @@ function MoreMenu({
           </button>
           <button
             type="button"
-            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#ccc] hover:bg-white/[0.06]"
+            className="flex w-full items-center gap-2 rounded-none px-4 py-2 text-left text-sm text-[#ccc] transition-colors hover:rounded-xl hover:bg-white/[0.06]"
             onClick={() => {
               onWatch();
               setOpen(false);
@@ -332,7 +370,7 @@ function MoreMenu({
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-[#ccc] hover:bg-white/[0.06]"
+              className="flex w-full items-center gap-2 rounded-none px-4 py-2 text-left text-sm text-[#ccc] transition-colors hover:rounded-xl hover:bg-white/[0.06]"
               onClick={() => setOpen(false)}
             >
               <ExternalLink className="h-3.5 w-3.5" />
@@ -366,7 +404,8 @@ export function FeedItemCard({
   onReactionChange,
 }: FeedItemCardBaseProps) {
   const config = getTypeConfig(item.type);
-  const mesh = buildGradientMesh(config.color, item.type);
+  const gradientPattern =
+    FEED_GRADIENT_PATTERN[item.type as SignalEventType] ?? 0;
   const { count, liked, loading, toggle, setFromBatch } = useReaction(item.id, item.title, {
     initial: reactionInitial,
     onEmailPrompt,
@@ -439,7 +478,7 @@ export function FeedItemCard({
           <div className="flex flex-wrap items-center gap-2">
             {item.sourceCount != null && item.sourceCount > 0 && (
               <span
-                className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide"
+                className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide"
                 style={{
                   color: config.color,
                 }}
@@ -467,29 +506,32 @@ export function FeedItemCard({
         </div>
         <div className="flex-shrink-0 sm:w-48">
           <div className="relative h-36 w-full overflow-hidden rounded-lg sm:h-40 sm:w-48">
-            <div
-              aria-hidden
+            <NepalIntelligenceGradientSurface
+              accentHex={config.color}
+              pattern={gradientPattern}
+              mode="demo"
               className="absolute inset-0"
-              style={{
-                backgroundColor: mesh.backgroundColor,
-                backgroundImage: mesh.backgroundImage,
-                filter: "blur(26px)",
-                transform: "scale(1.18)",
-              }}
             />
 
             {item.imageUrl ? (
               <img
                 src={item.imageUrl}
                 alt=""
-                className="relative h-full w-full object-cover opacity-92 transition-opacity group-hover:opacity-97"
+                className="relative z-10 h-full w-full object-cover opacity-92 transition-opacity group-hover:opacity-97"
               />
             ) : (
-              <div className="relative flex h-full w-full items-center justify-center">
-                <config.icon
-                  className="h-10 w-10 drop-shadow-[0_1px_1px_rgba(0,0,0,0.12)]"
-                  style={{ color: config.color }}
-                />
+              <div className="relative z-10 flex h-full w-full items-center justify-center">
+                <div
+                  className="inline-flex items-center justify-center rounded-full p-3 sm:p-3.5"
+                  style={{
+                    backgroundColor: accentIconPlateBackground(config.color),
+                  }}
+                >
+                  <config.icon
+                    className="h-7 w-7 sm:h-8 sm:w-8"
+                    style={{ color: config.color }}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -504,29 +546,32 @@ export function FeedItemCard({
         className="relative h-32 w-full flex-shrink-0 overflow-hidden rounded-lg"
         aria-hidden
       >
-        <div
-          aria-hidden
+        <NepalIntelligenceGradientSurface
+          accentHex={config.color}
+          pattern={gradientPattern}
+          mode="demo"
           className="absolute inset-0"
-          style={{
-            backgroundColor: mesh.backgroundColor,
-            backgroundImage: mesh.backgroundImage,
-            filter: "blur(26px)",
-            transform: "scale(1.18)",
-          }}
         />
 
         {item.imageUrl ? (
           <img
             src={item.imageUrl}
             alt=""
-            className="relative h-full w-full object-cover opacity-92 transition-opacity group-hover:opacity-97"
+            className="relative z-10 h-full w-full object-cover opacity-92 transition-opacity group-hover:opacity-97"
           />
         ) : (
-          <div className="relative flex h-full w-full items-center justify-center">
-            <config.icon
-              className="h-8 w-8 drop-shadow-[0_1px_1px_rgba(0,0,0,0.12)]"
-              style={{ color: config.color }}
-            />
+          <div className="relative z-10 flex h-full w-full items-center justify-center">
+            <div
+              className="flex h-11 w-11 items-center justify-center rounded-full"
+              style={{
+                backgroundColor: accentIconPlateBackground(config.color),
+              }}
+            >
+              <config.icon
+                className="h-6 w-6"
+                style={{ color: config.color }}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -542,7 +587,7 @@ export function FeedItemCard({
         </p>
         {item.sourceCount != null && item.sourceCount > 1 && (
           <span
-            className="font-mono text-[11px] font-medium uppercase tracking-wide"
+            className="inline-flex items-center rounded-full bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide"
             style={{ color: config.color }}
           >
             {item.sourceCount} sources

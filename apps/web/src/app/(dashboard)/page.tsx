@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ChevronDown } from "@/components/icons";
+import { Check, ChevronDown } from "@/components/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useDiscoverFeed, filterAndSortFeed, type DiscoverTab, type DiscoverTopicFilter } from "@/hooks/use-discover-feed";
 import { FeedItemCard } from "@/components/discover/feed-item-card";
@@ -39,6 +39,45 @@ const TOPIC_COLORS: Record<DiscoverTopicFilter, string> = {
   world: "#a78bfa",
 };
 
+type AccentColorName = "purple" | "green" | "red" | "rose" | "blue";
+
+const ACCENT_COLOR: AccentColorName = "blue";
+
+const ACCENT_STYLES: Record<
+  AccentColorName,
+  {
+    selected: string;
+    selectedText: string;
+    hoverLink: string;
+  }
+> = {
+  blue: {
+    selected: "bg-blue-500/15 text-blue-400/90",
+    selectedText: "text-blue-400/90",
+    hoverLink: "text-blue-400/90",
+  },
+  green: {
+    selected: "bg-green-500/15 text-green-400/90",
+    selectedText: "text-green-400/90",
+    hoverLink: "text-green-400/90",
+  },
+  purple: {
+    selected: "bg-purple-500/15 text-purple-400/90",
+    selectedText: "text-purple-400/90",
+    hoverLink: "text-purple-400/90",
+  },
+  red: {
+    selected: "bg-red-500/15 text-red-400/90",
+    selectedText: "text-red-400/90",
+    hoverLink: "text-red-400/90",
+  },
+  rose: {
+    selected: "bg-rose-500/15 text-rose-400/90",
+    selectedText: "text-rose-400/90",
+    hoverLink: "text-rose-400/90",
+  },
+};
+
 function DiscoverSkeleton() {
   return (
     <div className="space-y-4">
@@ -71,8 +110,17 @@ function DiscoverSkeleton() {
 }
 
 export default function DiscoverPage() {
-  const { items, loading, newCountSinceView, refreshAndScrollTop } = useDiscoverFeed();
+  const {
+    items,
+    loading,
+    loadingMore,
+    hasMoreFeed,
+    loadMoreFeed,
+    newCountSinceView,
+    refreshAndScrollTop,
+  } = useDiscoverFeed();
   const { language } = useLanguage();
+  const accent = ACCENT_STYLES[ACCENT_COLOR];
   const [tab, setTab] = useState<DiscoverTab>("for-you");
   const [topicFilter, setTopicFilter] = useState<DiscoverTopicFilter | null>(null);
   const [topicsOpen, setTopicsOpen] = useState(false);
@@ -80,12 +128,17 @@ export default function DiscoverPage() {
   const [trendingKeyword, setTrendingKeyword] = useState<string | null>(null);
   const [reactionsMap, setReactionsMap] = useState<Record<string, ReactionStatus>>({});
   const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(30);
 
   useEffect(() => {
     setPreferredTypes(getPreferredTopics());
   }, []);
 
-  const displayItems = useMemo(() => {
+  useEffect(() => {
+    setVisibleCount(30);
+  }, [tab, topicFilter, trendingKeyword]);
+
+  const filteredFull = useMemo(() => {
     const effectiveTab = topicFilter != null ? "topics" : tab;
     const languageFilteredItems = items.filter((i) =>
       shouldShowByLanguage(language, [i.title, i.summary, i.source])
@@ -104,8 +157,22 @@ export default function DiscoverPage() {
           (i.summary?.toLowerCase().includes(k) ?? false)
       );
     }
-    return list.slice(0, 30);
+    return list;
   }, [items, tab, topicFilter, preferredTypes, trendingKeyword, language]);
+
+  const displayItems = useMemo(
+    () => filteredFull.slice(0, visibleCount),
+    [filteredFull, visibleCount]
+  );
+
+  const showLoadMore = visibleCount < filteredFull.length || hasMoreFeed;
+
+  const handleLoadMore = useCallback(async () => {
+    if (hasMoreFeed && visibleCount >= filteredFull.length) {
+      await loadMoreFeed();
+    }
+    setVisibleCount((c) => c + 30);
+  }, [hasMoreFeed, visibleCount, filteredFull.length, loadMoreFeed]);
 
   const displayItemIds = useMemo(() => displayItems.map((i) => i.id), [displayItems]);
   const displayItemIdsKey = displayItemIds.join(",");
@@ -124,7 +191,7 @@ export default function DiscoverPage() {
   }, [displayItemIdsKey, loading]);
 
   const heroItem = displayItems.find((i) => i.severity === "critical") ?? displayItems[0];
-  const gridItems = displayItems.filter((i) => i.id !== heroItem?.id).slice(0, 30);
+  const gridItems = displayItems.filter((i) => i.id !== heroItem?.id);
 
   return (
     <div
@@ -148,9 +215,9 @@ export default function DiscoverPage() {
             type="button"
             onClick={() => setTab("for-you")}
             className={cn(
-              "rounded-md px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
+              "rounded-full px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
               tab === "for-you" && !topicFilter
-                ? "bg-emerald-500/15 text-emerald-400/90"
+                ? accent.selected
                 : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
             )}
           >
@@ -163,9 +230,9 @@ export default function DiscoverPage() {
               setTopicFilter(null);
             }}
             className={cn(
-              "rounded-md px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
+              "rounded-full px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
               tab === "top"
-                ? "bg-emerald-500/15 text-emerald-400/90"
+                ? accent.selected
                 : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
             )}
           >
@@ -176,16 +243,11 @@ export default function DiscoverPage() {
               <button
                 type="button"
                 className={cn(
-                  "flex items-center gap-1 rounded-md px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
+                  "flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
                   (tab === "topics" || topicFilter != null)
-                    ? "bg-emerald-500/15 text-emerald-400/90"
+                    ? accent.selected
                     : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
                 )}
-                style={
-                  topicFilter != null && TOPIC_COLORS[topicFilter]
-                    ? { borderLeft: `3px solid ${TOPIC_COLORS[topicFilter]}` }
-                    : undefined
-                }
               >
                 {topicFilter != null
                   ? TOPICS.find((t) => t.id === topicFilter)?.label ?? "Topics"
@@ -194,11 +256,11 @@ export default function DiscoverPage() {
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-48 bg-[#0c0c0c] p-0 text-[#ccc] shadow-xl shadow-black/50"
+              className="w-56 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0c] p-1 text-[#ccc] shadow-xl shadow-black/50"
               align="start"
               sideOffset={4}
             >
-              <div className="py-1">
+              <div className="flex flex-col">
                 <button
                   type="button"
                   onClick={() => {
@@ -207,13 +269,18 @@ export default function DiscoverPage() {
                     setTopicsOpen(false);
                   }}
                   className={cn(
-                    "w-full px-3 py-2 text-left font-mono text-[13px]",
+                    "flex w-full items-center justify-between gap-3 rounded-none px-3 py-2 text-left font-mono text-[13px] transition-colors",
                     !topicFilter
-                      ? "bg-emerald-500/10 text-emerald-400/90"
-                      : "hover:bg-white/[0.06]"
+                      ? cn("rounded-xl", accent.selected)
+                      : "hover:rounded-xl hover:bg-white/[0.06]"
                   )}
                 >
-                  All
+                  <span>All</span>
+                  {!topicFilter ? (
+                    <Check className={cn("h-4 w-4", accent.selectedText)} />
+                  ) : (
+                    <span className="h-4 w-4 inline-block" />
+                  )}
                 </button>
                 {TOPICS.map(({ id, label }) => (
                   <button
@@ -225,19 +292,18 @@ export default function DiscoverPage() {
                       setTopicsOpen(false);
                     }}
                     className={cn(
-                      "w-full px-3 py-2 text-left font-mono text-[13px]",
-                      topicFilter === id ? "" : "hover:bg-white/[0.06]"
+                      "flex w-full items-center justify-between gap-3 rounded-none px-3 py-2 text-left font-mono text-[13px] transition-colors",
+                      topicFilter === id
+                        ? cn("rounded-xl", accent.selected)
+                        : "hover:rounded-xl hover:bg-white/[0.06]"
                     )}
-                    style={
-                      topicFilter === id && TOPIC_COLORS[id]
-                        ? {
-                            backgroundColor: `${TOPIC_COLORS[id]}18`,
-                            borderLeft: `3px solid ${TOPIC_COLORS[id]}`,
-                          }
-                        : undefined
-                    }
                   >
-                    {label}
+                    <span>{label}</span>
+                    {topicFilter === id ? (
+                      <Check className={cn("h-4 w-4", accent.selectedText)} />
+                    ) : (
+                      <span className="h-4 w-4 inline-block" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -280,7 +346,10 @@ export default function DiscoverPage() {
                   </p>
                   <p className="mt-2 max-w-sm font-mono text-[12px] leading-relaxed text-[#666]">
                     The worker fetches data every few minutes. Check back shortly or visit{" "}
-                    <Link href="/feed" className="text-emerald-400/90 underline-offset-2 hover:underline">
+                    <Link
+                      href="/feed"
+                      className={cn(accent.hoverLink, "underline-offset-2 hover:underline")}
+                    >
                       Signals Feed
                     </Link>
                     .
@@ -311,6 +380,22 @@ export default function DiscoverPage() {
                   />
                 ))}
               </div>
+              {showLoadMore && (
+                <div className="flex justify-center pt-6">
+                  <button
+                    type="button"
+                    onClick={() => void handleLoadMore()}
+                    disabled={loadingMore}
+                    className={cn(
+                      "rounded-md border border-white/10 bg-white/[0.04] px-5 py-2 font-mono text-[12px] uppercase tracking-wider text-[#a1a1aa] transition-colors",
+                      "hover:bg-white/[0.08] hover:text-[#e5e5e5]",
+                      loadingMore && "pointer-events-none opacity-50"
+                    )}
+                  >
+                    {loadingMore ? "Loading…" : "Load more"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

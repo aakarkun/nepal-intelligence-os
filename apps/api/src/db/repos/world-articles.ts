@@ -18,7 +18,30 @@ function rowToArticle(row: typeof worldArticles.$inferSelect): GeopoliticsArticl
   };
 }
 
+function rowMatchesArticle(
+  row: typeof worldArticles.$inferSelect,
+  article: GeopoliticsArticle
+): boolean {
+  return (
+    row.title === article.title &&
+    (row.url ?? "") === (article.url ?? "") &&
+    (row.source ?? "") === (article.source ?? "") &&
+    (row.panel ?? null) === (article.panel ?? null) &&
+    (row.publishedAt ?? "") === article.publishedAt &&
+    (row.imageUrl ?? null) === (article.imageUrl ?? null)
+  );
+}
+
 export async function upsertWorldArticle(article: GeopoliticsArticle): Promise<void> {
+  const existing = await db
+    .select()
+    .from(worldArticles)
+    .where(eq(worldArticles.id, article.id))
+    .limit(1);
+  if (existing[0] && rowMatchesArticle(existing[0], article)) {
+    return;
+  }
+
   await db.insert(worldArticles).values({
     id: article.id,
     title: article.title,
