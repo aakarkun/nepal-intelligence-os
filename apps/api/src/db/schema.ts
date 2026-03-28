@@ -296,6 +296,117 @@ export const anomalies = pgTable(
   ]
 );
 
+export const parties = pgTable("parties", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  shortName: text("short_name").notNull(),
+  ideology: text("ideology"),
+  formedYear: integer("formed_year"),
+  chairperson: text("chairperson"),
+  parliamentaryLeader: text("parliamentary_leader"),
+  officialWebsite: text("official_website"),
+  socialMedia: jsonb("social_media"),
+  manifestoUrl: text("manifesto_url"),
+  colorHex: text("color_hex"),
+  isGoverning: boolean("is_governing").notNull().default(false),
+  seatsUpdatedAt: text("seats_updated_at"),
+  fptpSeats: integer("fptp_seats").notNull().default(0),
+  prSeats: integer("pr_seats").notNull().default(0),
+  totalSeats: integer("total_seats").notNull().default(0),
+});
+
+export const mps = pgTable(
+  "mps",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    partyId: text("party_id")
+      .notNull()
+      .references(() => parties.id, { onDelete: "cascade" }),
+    ministryRole: text("ministry_role"),
+    committeeAssignments: jsonb("committee_assignments"),
+    billsSponsored: integer("bills_sponsored").notNull().default(0),
+    contactEmail: text("contact_email"),
+    socialMedia: jsonb("social_media"),
+    photoUrl: text("photo_url"),
+    constituency: text("constituency"),
+    electionType: text("election_type"),
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [index("idx_mps_party_id").on(t.partyId)]
+);
+
+export const politicalEvents = pgTable(
+  "political_events",
+  {
+    id: text("id").primaryKey(),
+    eventType: text("event_type").notNull(),
+    title: text("title").notNull(),
+    summary: text("summary"),
+    fullContent: text("full_content"),
+    sourceName: text("source_name"),
+    sourceUrl: text("source_url"),
+    partyIds: jsonb("party_ids"),
+    mpIds: jsonb("mp_ids"),
+    ministry: text("ministry"),
+    billNumber: text("bill_number"),
+    billStatus: text("bill_status"),
+    tags: jsonb("tags"),
+    publishedAt: text("published_at").notNull(),
+    fetchedAt: text("fetched_at").notNull(),
+    isVerified: boolean("is_verified").notNull().default(false),
+    importanceScore: integer("importance_score").notNull().default(0),
+  },
+  (t) => [
+    index("idx_political_events_published_at").on(t.publishedAt),
+    index("idx_political_events_event_type").on(t.eventType),
+  ]
+);
+
+export const newsFeedSources = pgTable(
+  "news_feed_sources",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    rssUrl: text("rss_url").notNull(),
+    websiteUrl: text("website_url"),
+    language: text("language").default("en"),
+    category: text("category"),
+    isActive: boolean("is_active").notNull().default(true),
+    lastPolledAt: text("last_polled_at"),
+    pollIntervalMinutes: integer("poll_interval_minutes").notNull().default(30),
+  },
+  (t) => [uniqueIndex("idx_news_feed_sources_rss_url").on(t.rssUrl)]
+);
+
+export const legislativeBills = pgTable(
+  "legislative_bills",
+  {
+    id: text("id").primaryKey(),
+    billNumber: text("bill_number").notNull(),
+    title: text("title").notNull(),
+    status: text("status").notNull(),
+    introducedBy: text("introduced_by"),
+    introducedAt: text("introduced_at"),
+    updatedAt: text("updated_at").notNull(),
+    sourceUrl: text("source_url"),
+    partyId: text("party_id").references(() => parties.id, { onDelete: "set null" }),
+    rawExcerpt: text("raw_excerpt"),
+  },
+  (t) => [
+    uniqueIndex("idx_legislative_bills_bill_number").on(t.billNumber),
+    index("idx_legislative_bills_status").on(t.status),
+  ]
+);
+
+export const politicalWeeklyDigest = pgTable("political_weekly_digest", {
+  id: text("id").primaryKey().default("current"),
+  content: text("content").notNull(),
+  periodStart: text("period_start").notNull(),
+  periodEnd: text("period_end").notNull(),
+  generatedAt: text("generated_at").notNull(),
+});
+
 export const workerState = pgTable("worker_state", {
   id: text("id").primaryKey().default("singleton"),
   lastNepseRunAt: bigint("last_nepse_run_at", { mode: "number" }),
@@ -310,6 +421,10 @@ export const workerState = pgTable("worker_state", {
   lastGdeltRunAt: bigint("last_gdelt_run_at", { mode: "number" }),
   lastUnRssRunAt: bigint("last_un_rss_run_at", { mode: "number" }),
   lastUsgsRunAt: bigint("last_usgs_run_at", { mode: "number" }),
+  lastPoliticalRssRunAt: bigint("last_political_rss_run_at", { mode: "number" }),
+  lastParliamentBillsRunAt: bigint("last_parliament_bills_run_at", { mode: "number" }),
+  lastGazetteRunAt: bigint("last_gazette_run_at", { mode: "number" }),
+  lastWeeklyDigestRunAt: bigint("last_weekly_digest_run_at", { mode: "number" }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

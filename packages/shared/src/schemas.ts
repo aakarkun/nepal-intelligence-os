@@ -498,6 +498,131 @@ export type MarketPortalSnapshot = z.infer<typeof MarketPortalSnapshotSchema>;
 
 // ─── SSE Messages ────────────────────────────────────────────────────────────
 
+// ─── Political Pulse (governance intelligence) ───────────────────────────────
+
+export const PoliticalEventTypeSchema = z.enum([
+  "bill_registered",
+  "bill_passed",
+  "bill_rejected",
+  "cabinet_decision",
+  "parliament_sitting",
+  "policy_announcement",
+  "appointment",
+  "news",
+  "law_enacted",
+]);
+
+export const LegislativeBillStatusSchema = z.enum([
+  "registered",
+  "committee",
+  "passed_hor",
+  "passed_na",
+  "enacted",
+  "rejected",
+]);
+
+export const PoliticalPulseEventSchema = z.object({
+  id: z.string(),
+  eventType: z.string(),
+  title: z.string(),
+  summary: z.string().nullable(),
+  fullContent: z.string().nullable(),
+  sourceName: z.string().nullable(),
+  sourceUrl: z.string().nullable(),
+  partyIds: z.array(z.string()),
+  mpIds: z.array(z.string()),
+  ministry: z.string().nullable(),
+  billNumber: z.string().nullable(),
+  billStatus: z.string().nullable(),
+  tags: z.array(z.string()),
+  publishedAt: z.string(),
+  fetchedAt: z.string(),
+  isVerified: z.boolean(),
+  importanceScore: z.number().int(),
+});
+
+export const LegislativeBillRowSchema = z.object({
+  id: z.string(),
+  billNumber: z.string(),
+  title: z.string(),
+  status: z.string(),
+  introducedBy: z.string().nullable(),
+  introducedAt: z.string().nullable(),
+  updatedAt: z.string(),
+  sourceUrl: z.string().nullable(),
+  partyId: z.string().nullable(),
+  rawExcerpt: z.string().nullable(),
+});
+
+export const PartyIntelRowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  shortName: z.string(),
+  ideology: z.string().nullable(),
+  formedYear: z.number().nullable(),
+  chairperson: z.string().nullable(),
+  parliamentaryLeader: z.string().nullable(),
+  officialWebsite: z.string().nullable(),
+  socialMedia: z.record(z.string()).nullable().optional(),
+  manifestoUrl: z.string().nullable(),
+  colorHex: z.string().nullable(),
+  isGoverning: z.boolean(),
+  seatsUpdatedAt: z.string().nullable(),
+  fptpSeats: z.number().int(),
+  prSeats: z.number().int(),
+  totalSeats: z.number().int(),
+});
+
+export const MpIntelRowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  partyId: z.string(),
+  ministryRole: z.string().nullable(),
+  committeeAssignments: z.array(z.string()),
+  billsSponsored: z.number().int(),
+  contactEmail: z.string().nullable(),
+  socialMedia: z.record(z.string()).nullable().optional(),
+  photoUrl: z.string().nullable(),
+  constituency: z.string().nullable(),
+  electionType: z.string().nullable(),
+});
+
+export const PoliticalWeeklyDigestSchema = z.object({
+  content: z.string(),
+  periodStart: z.string(),
+  periodEnd: z.string(),
+  generatedAt: z.string(),
+});
+
+export const PoliticalPulseStatsSchema = z.object({
+  totalBillsTracked: z.number().int(),
+  lawsEnacted: z.number().int(),
+  cabinetDecisions: z.number().int(),
+  newsItems: z.number().int(),
+  billsPassedThisMonth: z.number().int(),
+  lastEventAt: z.string().nullable(),
+});
+
+export const PartyActivitySchema = z.object({
+  party: PartyIntelRowSchema,
+  billsSponsoredSession: z.number().int(),
+  lastMajorAction: z.string().nullable(),
+  lastMajorActionAt: z.string().nullable(),
+  activeMpsThisWeek: z.array(
+    z.object({ mpId: z.string(), name: z.string(), mentionCount: z.number().int() })
+  ),
+});
+
+export const CabinetMinisterWatchSchema = z.object({
+  mp: MpIntelRowSchema,
+  ministryLabel: z.string(),
+  latestDecisions: z.array(
+    z.object({ title: z.string(), publishedAt: z.string(), sourceUrl: z.string().nullable() })
+  ),
+  billsUnderMinistry: z.number().int(),
+  daysSinceLastAnnouncement: z.number().int().nullable(),
+});
+
 export const SSEMessageSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("snapshot"),
@@ -557,3 +682,11 @@ export type MarketAssetQuote = z.infer<typeof MarketAssetQuoteSchema>;
 export type NepseMarketStatus = z.infer<typeof NepseMarketStatusSchema>;
 export type NepseSummary = z.infer<typeof NepseSummarySchema>;
 export type SSEMessage = z.infer<typeof SSEMessageSchema>;
+export type PoliticalPulseEvent = z.infer<typeof PoliticalPulseEventSchema>;
+export type LegislativeBillRow = z.infer<typeof LegislativeBillRowSchema>;
+export type PartyIntelRow = z.infer<typeof PartyIntelRowSchema>;
+export type MpIntelRow = z.infer<typeof MpIntelRowSchema>;
+export type PoliticalWeeklyDigest = z.infer<typeof PoliticalWeeklyDigestSchema>;
+export type PoliticalPulseStats = z.infer<typeof PoliticalPulseStatsSchema>;
+export type PartyActivity = z.infer<typeof PartyActivitySchema>;
+export type CabinetMinisterWatch = z.infer<typeof CabinetMinisterWatchSchema>;

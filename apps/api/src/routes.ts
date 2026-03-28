@@ -82,6 +82,11 @@ import {
 } from "./intel-brief";
 import { getCircuitBreaker } from "./lib/circuit-breaker";
 import * as workerStateRepo from "./db/repos/worker-state.js";
+import * as politicalPulseRepo from "./db/repos/political-pulse.js";
+import {
+  PoliticalPulseEventSchema,
+  LegislativeBillRowSchema,
+} from "@repo/shared";
 
 function requireWorkerSecret(c: { req: { header: (n: string) => string | undefined } }): boolean {
   const secret = process.env.WORKER_SECRET;
@@ -352,6 +357,8 @@ api.patch("/worker-state", async (c) => {
     "lastNepseRunAt", "lastCoingeckoRunAt", "lastMetalsRunAt", "lastNrbRunAt",
     "lastNewsRunAt", "lastRssNepalRunAt", "lastParliamentRunAt", "lastDhmRunAt",
     "lastGdacsRunAt", "lastGdeltRunAt", "lastUnRssRunAt", "lastUsgsRunAt",
+    "lastPoliticalRssRunAt", "lastParliamentBillsRunAt", "lastGazetteRunAt",
+    "lastWeeklyDigestRunAt",
   ] as const;
   for (const k of keys) {
     if (body[k] !== undefined && typeof body[k] === "number") partial[k] = body[k];
@@ -401,6 +408,170 @@ api.get("/politics/cabinet-events", async (c) => {
 api.get("/politics/parliament-session", async (c) => {
   const session = await getParliamentSession();
   return c.json(session ?? null);
+});
+
+// ─── Political Pulse (governance intelligence) ───────────────────────────────
+
+api.get("/political-pulse/events", async (c) => {
+  const typeParam = c.req.query("type");
+  const types = typeParam
+    ? typeParam.split(",").map((s) => s.trim()).filter(Boolean)
+    : undefined;
+  const category = c.req.query("category") ?? undefined;
+  const partyId = c.req.query("party_id") ?? undefined;
+  const from = c.req.query("from") ?? undefined;
+  const to = c.req.query("to") ?? undefined;
+  const q = c.req.query("q") ?? undefined;
+  const page = Number(c.req.query("page") ?? 1);
+  const limit = Number(c.req.query("limit") ?? 20);
+  const result = await politicalPulseRepo.listPoliticalEvents({
+    types,
+    category: category ?? undefined,
+    partyId,
+    from,
+    to,
+    q,
+    page,
+    limit,
+  });
+  return c.json(result);
+});
+
+api.get("/political-pulse/events/:id", async (c) => {
+  const event = await politicalPulseRepo.getPoliticalEventById(c.req.param("id"));
+  if (!event) return c.json({ error: "Not found" }, 404);
+  return c.json(event);
+});
+
+api.get("/political-pulse/bills", async (c) => {
+  const statusParam = c.req.query("status");
+  const status = statusParam
+    ? statusParam.split(",").map((s) => s.trim()).filter(Boolean)
+    : undefined;
+  const partyId = c.req.query("party_id") ?? undefined;
+  const bills = await politicalPulseRepo.listLegislativeBills({ status, partyId });
+  const counts = await politicalPulseRepo.getLegislativeBillCounts();
+  return c.json({ bills, countsByStatus: counts });
+});
+
+api.get("/political-pulse/parties", async (c) => {
+  const parties = await politicalPulseRepo.listParties();
+  return c.json(parties);
+});
+
+api.get("/political-pulse/parties/:id/activity", async (c) => {
+  const activity = await politicalPulseRepo.getPartyActivity(c.req.param("id"));
+  if (!activity) return c.json({ error: "Party not found" }, 404);
+  return c.json(activity);
+});
+
+api.get("/political-pulse/summary/weekly", async (c) => {
+  const digest = await politicalPulseRepo.getWeeklyDigest();
+  return c.json(digest ?? null);
+});
+
+api.get("/political-pulse/stats", async (c) => {
+  const stats = await politicalPulseRepo.getPoliticalPulseStats();
+  return c.json(stats);
+});
+
+api.get("/political-pulse/cabinet-watch", async (c) => {
+  const watch = await politicalPulseRepo.listCabinetWatch();
+  return c.json(watch);
+});
+
+api.get("/political-pulse/news-sources", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const sources = await politicalPulseRepo.getActiveNewsFeedSources();
+  return c.json(sources);
+});
+
+api.get("/political-pulse/exists", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const url = c.req.query("url");
+  if (!url) {
+    return c.json({ error: "Missing url" }, 400);
+  }
+  const exists = await politicalPulseRepo.eventExistsBySourceUrl(url);
+  return c.json({ exists });
+});
+
+api.post("/political-pulse/admin/trigger-fetch", async (c) => {
+  const secret = c.req.header("X-Admin-Secret");
+  if (process.env.ADMIN_SECRET && secret !== process.env.ADMIN_SECRET) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  await workerStateRepo.updateWorkerState({ lastPoliticalRssRunAt: 0 });
+  return c.json({
+    ok: true,
+    message: "RSS interval bypass scheduled — worker will fetch on next cycle if running.",
+  });
+});
+
+const IngestPoliticalEventSchema = PoliticalPulseEventSchema.extend({
+  fetchedAt: z.string().optional(),
+});
+
+api.post("/ingest/political-pulse/event", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json();
+  const parsed = IngestPoliticalEventSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  await politicalPulseRepo.insertPoliticalEvent(parsed.data);
+  return c.json({ ok: true });
+});
+
+const IngestLegislativeBillSchema = LegislativeBillRowSchema;
+
+api.post("/ingest/political-pulse/bill", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json();
+  const parsed = IngestLegislativeBillSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  await politicalPulseRepo.upsertLegislativeBill(parsed.data);
+  return c.json({ ok: true });
+});
+
+const WeeklyDigestIngestSchema = z.object({
+  content: z.string().min(1),
+  periodStart: z.string(),
+  periodEnd: z.string(),
+  generatedAt: z.string(),
+});
+
+api.post("/ingest/political-pulse/weekly-digest", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json();
+  const parsed = WeeklyDigestIngestSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  await politicalPulseRepo.upsertWeeklyDigest(parsed.data);
+  return c.json({ ok: true });
+});
+
+api.post("/ingest/political-pulse/news-source/:id/polled", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = (await c.req.json().catch(() => ({}))) as { at?: string };
+  const at = typeof body.at === "string" ? body.at : new Date().toISOString();
+  await politicalPulseRepo.updateNewsFeedSourcePoll(c.req.param("id"), at);
+  return c.json({ ok: true });
 });
 
 api.get("/world/articles", async (c) => {

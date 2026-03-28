@@ -7,7 +7,7 @@ import { NationalSummaryCards } from "@/components/dashboard/national-summary-ca
 import { PartyStandings } from "@/components/dashboard/party-standings";
 import { RegionalOverview } from "@/components/dashboard/regional-overview";
 import { LiveEventsMini } from "@/components/dashboard/live-events-mini";
-import { PoliticalPulseCards } from "@/components/dashboard/political-pulse-cards";
+import { GovernancePulseSection } from "@/components/dashboard/governance-pulse-section";
 import { ElectionDatasetSelector } from "@/components/election-dataset-selector";
 import { fetchNationalSummary } from "@/lib/api";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
@@ -46,7 +46,7 @@ export default function PoliticalPulsePage() {
       </div>
 
       <div className="space-y-4">
-        <PoliticalPulseCards />
+        <GovernancePulseSection />
 
         <div className={railShell}>
           <RailPanelHeader title="Historical election data" leadingDotClass="bg-sky-500" />

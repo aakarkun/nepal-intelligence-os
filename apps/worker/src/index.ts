@@ -36,6 +36,7 @@ import { fetchNepseSummary, getNepalDayOfWeek, getNptDateString, isNepalMarketOp
 import { fetchMarketPortalSnapshot } from "./sources/market-portal";
 import { fetchFloodAlerts } from "./sources/flood";
 import { fetchParliamentSession } from "./sources/parliament";
+import { runPoliticalPulseJobs } from "./sources/political-jobs";
 import { fetchWorldArticles } from "./sources/gdelt-world";
 import { postParliamentSession, postWorldArticles } from "./ingest-client";
 import { getCircuitBreaker } from "./lib/circuit-breaker";
@@ -88,6 +89,8 @@ type LiveWorkerState = {
   lastCycleCompletedAt?: string;
   lastNepseRunAt?: number;
   lastNepseRunDate?: string;
+  lastParliamentBillsRunAt?: number;
+  lastGazetteRunAt?: number;
   lastMarketAssetsFetchedAt?: string;
   lastMarketAssetQuotes?: Array<{
     assetCode: string;
@@ -129,6 +132,8 @@ async function readLiveWorkerState(): Promise<LiveWorkerState> {
       lastGdeltRunAt?: number | null;
       lastUnRssRunAt?: number | null;
       lastUsgsRunAt?: number | null;
+      lastParliamentBillsRunAt?: number | null;
+      lastGazetteRunAt?: number | null;
     };
     return {
       lastNepseRunAt: row.lastNepseRunAt ?? undefined,
@@ -143,6 +148,8 @@ async function readLiveWorkerState(): Promise<LiveWorkerState> {
       lastGdeltRunAt: row.lastGdeltRunAt ?? undefined,
       lastUnRssRunAt: row.lastUnRssRunAt ?? undefined,
       lastUsgsRunAt: row.lastUsgsRunAt ?? undefined,
+      lastParliamentBillsRunAt: row.lastParliamentBillsRunAt ?? undefined,
+      lastGazetteRunAt: row.lastGazetteRunAt ?? undefined,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -169,6 +176,9 @@ async function writeLiveWorkerState(state: LiveWorkerState): Promise<void> {
     if (state.lastGdeltRunAt != null) body.lastGdeltRunAt = state.lastGdeltRunAt;
     if (state.lastUnRssRunAt != null) body.lastUnRssRunAt = state.lastUnRssRunAt;
     if (state.lastUsgsRunAt != null) body.lastUsgsRunAt = state.lastUsgsRunAt;
+    if (state.lastParliamentBillsRunAt != null)
+      body.lastParliamentBillsRunAt = state.lastParliamentBillsRunAt;
+    if (state.lastGazetteRunAt != null) body.lastGazetteRunAt = state.lastGazetteRunAt;
     await fetch(`${base}/v1/worker-state`, {
       method: "PATCH",
       headers,
@@ -1049,6 +1059,10 @@ async function runLiveCycle(): Promise<void> {
     runLiveWorld(),
     runLiveEconomy(state),
     ...(runNepse ? [runLiveNepse()] : []),
+    runPoliticalPulseJobs({
+      lastParliamentBillsRunAt: state.lastParliamentBillsRunAt ?? null,
+      lastGazetteRunAt: state.lastGazetteRunAt ?? null,
+    }),
   ]);
   const nowMs = Date.now();
   const nextState: LiveWorkerState = {

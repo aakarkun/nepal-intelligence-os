@@ -17,6 +17,13 @@ import type {
   MarketAssetQuote,
   NepseSummary,
   MarketPortalSnapshot,
+  PoliticalPulseEvent,
+  PartyIntelRow,
+  PoliticalPulseStats,
+  PoliticalWeeklyDigest,
+  PartyActivity,
+  CabinetMinisterWatch,
+  LegislativeBillRow,
 } from "@repo/shared";
 
 export type ElectionDataset = {
@@ -227,6 +234,54 @@ export function fetchNepseHistory(limit = 500): Promise<NepseSnapshotHistoryRow[
 
 export function fetchElectionDatasets(): Promise<ElectionDataset[]> {
   return fetchJSON("/v1/election-datasets");
+}
+
+export function fetchPoliticalPulseEvents(params?: {
+  category?: string;
+  partyId?: string;
+  from?: string;
+  to?: string;
+  q?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ events: PoliticalPulseEvent[]; total: number }> {
+  const q = new URLSearchParams();
+  if (params?.category) q.set("category", params.category);
+  if (params?.partyId) q.set("party_id", params.partyId);
+  if (params?.from) q.set("from", params.from);
+  if (params?.to) q.set("to", params.to);
+  if (params?.q) q.set("q", params.q);
+  if (params?.page != null) q.set("page", String(params.page));
+  if (params?.limit != null) q.set("limit", String(params.limit));
+  const qs = q.toString();
+  return fetchJSON(`/v1/political-pulse/events${qs ? `?${qs}` : ""}`);
+}
+
+export function fetchPoliticalPulseParties(): Promise<PartyIntelRow[]> {
+  return fetchJSON("/v1/political-pulse/parties");
+}
+
+export function fetchPoliticalPulseBills(): Promise<{
+  bills: LegislativeBillRow[];
+  countsByStatus: Record<string, number>;
+}> {
+  return fetchJSON("/v1/political-pulse/bills");
+}
+
+export function fetchPoliticalPulseStats(): Promise<PoliticalPulseStats> {
+  return fetchJSON("/v1/political-pulse/stats");
+}
+
+export function fetchPoliticalPulseWeeklyDigest(): Promise<PoliticalWeeklyDigest | null> {
+  return fetchJSON<PoliticalWeeklyDigest | null>("/v1/political-pulse/summary/weekly");
+}
+
+export function fetchPartyActivity(partyId: string): Promise<PartyActivity> {
+  return fetchJSON(`/v1/political-pulse/parties/${encodeURIComponent(partyId)}/activity`);
+}
+
+export function fetchCabinetWatch(): Promise<CabinetMinisterWatch[]> {
+  return fetchJSON("/v1/political-pulse/cabinet-watch");
 }
 
 export type IntelBriefType = "daily" | "economic" | "crisis" | "custom";

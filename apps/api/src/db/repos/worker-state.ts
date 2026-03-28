@@ -16,6 +16,10 @@ export type WorkerStateRow = {
   lastGdeltRunAt: number | null;
   lastUnRssRunAt: number | null;
   lastUsgsRunAt: number | null;
+  lastPoliticalRssRunAt: number | null;
+  lastParliamentBillsRunAt: number | null;
+  lastGazetteRunAt: number | null;
+  lastWeeklyDigestRunAt: number | null;
   updatedAt: Date | string;
 };
 
@@ -40,6 +44,10 @@ export async function getWorkerState(): Promise<WorkerStateRow | null> {
     lastGdeltRunAt: toNum(r.lastGdeltRunAt),
     lastUnRssRunAt: toNum(r.lastUnRssRunAt),
     lastUsgsRunAt: toNum(r.lastUsgsRunAt),
+    lastPoliticalRssRunAt: toNum(r.lastPoliticalRssRunAt),
+    lastParliamentBillsRunAt: toNum(r.lastParliamentBillsRunAt),
+    lastGazetteRunAt: toNum(r.lastGazetteRunAt),
+    lastWeeklyDigestRunAt: toNum(r.lastWeeklyDigestRunAt),
     updatedAt: r.updatedAt,
   };
 }
@@ -58,5 +66,12 @@ export async function updateWorkerState(partial: Partial<Omit<WorkerStateRow, "i
   if (partial.lastGdeltRunAt !== undefined) set.lastGdeltRunAt = partial.lastGdeltRunAt;
   if (partial.lastUnRssRunAt !== undefined) set.lastUnRssRunAt = partial.lastUnRssRunAt;
   if (partial.lastUsgsRunAt !== undefined) set.lastUsgsRunAt = partial.lastUsgsRunAt;
+  if (partial.lastPoliticalRssRunAt !== undefined)
+    set.lastPoliticalRssRunAt = partial.lastPoliticalRssRunAt;
+  if (partial.lastParliamentBillsRunAt !== undefined)
+    set.lastParliamentBillsRunAt = partial.lastParliamentBillsRunAt;
+  if (partial.lastGazetteRunAt !== undefined) set.lastGazetteRunAt = partial.lastGazetteRunAt;
+  if (partial.lastWeeklyDigestRunAt !== undefined)
+    set.lastWeeklyDigestRunAt = partial.lastWeeklyDigestRunAt;
   await db.update(workerState).set(set as typeof workerState.$inferInsert).where(eq(workerState.id, "singleton"));
 }
