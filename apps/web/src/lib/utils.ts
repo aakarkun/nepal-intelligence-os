@@ -6,6 +6,32 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Applies alpha (0–1) to #rgb / #rrggbb / #rrggbbaa hex colors. Other CSS color
+ * strings fall back to color-mix with transparent.
+ */
+export function hexColorWithAlpha(color: string, alpha: number): string {
+  const a = Math.max(0, Math.min(1, alpha));
+  const byte = Math.round(a * 255)
+    .toString(16)
+    .padStart(2, "0");
+  const c = color.trim();
+  const shortHex = /^#([0-9a-f]{3})$/i.exec(c);
+  if (shortHex) {
+    const s = shortHex[1];
+    return `#${s[0]}${s[0]}${s[1]}${s[1]}${s[2]}${s[2]}${byte}`;
+  }
+  const fullHex = /^#([0-9a-f]{6})$/i.exec(c);
+  if (fullHex) {
+    return `#${fullHex[1]}${byte}`;
+  }
+  const withAlpha = /^#([0-9a-f]{6})([0-9a-f]{2})$/i.exec(c);
+  if (withAlpha) {
+    return `#${withAlpha[1]}${byte}`;
+  }
+  return `color-mix(in srgb, ${c} ${Math.round(a * 100)}%, transparent)`;
+}
+
 export function formatNumber(n: number): string {
   return new Intl.NumberFormat("en-NP").format(n);
 }
