@@ -9,7 +9,7 @@ const CLASSIFIER_PROMPT = `You are a Nepal political event classifier. Given thi
   "event_type": "bill_registered|bill_passed|cabinet_decision|policy_announcement|appointment|news",
   "summary": "two sentence plain English summary",
   "parties_mentioned": ["party names"],
-  "mps_mentioned": ["MP names"],
+  "mps_mentioned": ["<full names of any MPs, ministers, or politicians mentioned>"],
   "ministry": "ministry name or null",
   "bill_number": "bill reference or null",
   "bill_status": "registered|committee|passed|enacted|rejected|null",
@@ -76,6 +76,53 @@ function resolvePartyIds(names: string[]): string[] {
   return Array.from(out);
 }
 
+/** Cabinet / HoR MPs we track in Political Pulse (seed ids). */
+const CABINET_MP_RESOLVERS: Array<{ id: string; needles: string[] }> = [
+  { id: "mp-rsp-balen", needles: ["balendra shah", "balen shah", "balen"] },
+  { id: "mp-rsp-wagle", needles: ["swarnim wagle"] },
+  { id: "mp-rsp-khanal", needles: ["shishir khanal"] },
+  { id: "mp-rsp-paudel", needles: ["khadka raj paudel", "khadka raj", "ganesh paudel"] },
+  { id: "mp-rsp-pokharel", needles: ["sasmit pokharel"] },
+  { id: "mp-rsp-rawal", needles: ["pratibha rawal"] },
+  { id: "mp-rsp-shrestha", needles: ["biraj bhakta shrestha", "biraj shrestha"] },
+  { id: "mp-rsp-chaudhary", needles: ["gita chaudhary"] },
+  { id: "mp-rsp-gautam", needles: ["sobita gautam"] },
+  { id: "mp-rsp-badi", needles: ["sita badi"] },
+  { id: "mp-rsp-lamsal", needles: ["sunil lamsal"] },
+  { id: "mp-rsp-mehata", needles: ["nisha mehata"] },
+];
+
+function resolveMentionedMpIds(raw: string[]): string[] {
+  const out = new Set<string>();
+  for (const rawName of raw) {
+    const n = rawName.toLowerCase().trim();
+    if (!n) continue;
+    for (const { id, needles } of CABINET_MP_RESOLVERS) {
+      for (const needle of needles) {
+        if (n.includes(needle) || (needle.length >= 4 && needle.includes(n))) {
+          out.add(id);
+          break;
+        }
+      }
+    }
+  }
+  return Array.from(out);
+}
+
+function resolveMentionedMpIdsFromArticleText(blob: string): string[] {
+  const lower = blob.toLowerCase();
+  const out = new Set<string>();
+  for (const { id, needles } of CABINET_MP_RESOLVERS) {
+    for (const needle of needles) {
+      if (lower.includes(needle)) {
+        out.add(id);
+        break;
+      }
+    }
+  }
+  return Array.from(out);
+}
+
 function parseJsonObject(text: string): ClassifierJson | null {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
@@ -97,6 +144,9 @@ export async function classifyNepalArticle(input: {
   const key = process.env.ANTHROPIC_API_KEY?.trim();
   const id = `evt-${await hashUrl(input.link)}`;
 
+  const blobText = `${input.title}\n${input.content}`;
+  const mpIdsFromText = resolveMentionedMpIdsFromArticleText(blobText);
+
   if (!key) {
     return {
       id,
@@ -107,7 +157,7 @@ export async function classifyNepalArticle(input: {
       sourceName: input.sourceName,
       sourceUrl: input.link,
       partyIds: [],
-      mpIds: [],
+      mpIds: mpIdsFromText,
       ministry: null,
       billNumber: null,
       billStatus: null,
@@ -154,6 +204,9 @@ Article Content: ${input.content.slice(0, 12000)}`;
       throw new Error("Classifier JSON parse failed");
     }
     const partyIds = resolvePartyIds(parsed.parties_mentioned ?? []);
+    const fromClassifier = resolveMentionedMpIds(parsed.mps_mentioned ?? []);
+    const fromArticle = resolveMentionedMpIdsFromArticleText(blobText);
+    const mpIds = Array.from(new Set([...fromClassifier, ...fromArticle, ...mpIdsFromText]));
     return {
       id,
       eventType: mapEventType(parsed.event_type),
@@ -163,7 +216,7 @@ Article Content: ${input.content.slice(0, 12000)}`;
       sourceName: input.sourceName,
       sourceUrl: input.link,
       partyIds,
-      mpIds: [],
+      mpIds,
       ministry: parsed.ministry,
       billNumber: parsed.bill_number,
       billStatus: parsed.bill_status ?? null,

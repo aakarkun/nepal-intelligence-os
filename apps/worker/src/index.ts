@@ -134,6 +134,7 @@ async function readLiveWorkerState(): Promise<LiveWorkerState> {
       lastUsgsRunAt?: number | null;
       lastParliamentBillsRunAt?: number | null;
       lastGazetteRunAt?: number | null;
+      lastMinisterBioRunAt?: number | null;
     };
     return {
       lastNepseRunAt: row.lastNepseRunAt ?? undefined,
@@ -150,6 +151,7 @@ async function readLiveWorkerState(): Promise<LiveWorkerState> {
       lastUsgsRunAt: row.lastUsgsRunAt ?? undefined,
       lastParliamentBillsRunAt: row.lastParliamentBillsRunAt ?? undefined,
       lastGazetteRunAt: row.lastGazetteRunAt ?? undefined,
+      lastMinisterBioRunAt: row.lastMinisterBioRunAt ?? undefined,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -1062,6 +1064,7 @@ async function runLiveCycle(): Promise<void> {
     runPoliticalPulseJobs({
       lastParliamentBillsRunAt: state.lastParliamentBillsRunAt ?? null,
       lastGazetteRunAt: state.lastGazetteRunAt ?? null,
+      lastMinisterBioRunAt: state.lastMinisterBioRunAt ?? null,
     }),
   ]);
   const nowMs = Date.now();

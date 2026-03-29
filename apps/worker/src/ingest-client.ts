@@ -180,6 +180,15 @@ export async function postPoliticalEvent(
   return post(apiUrl, ENDPOINTS.politicalPulseEvent, event);
 }
 
+export async function postMinisterBio(
+  apiUrl: string,
+  mpId: string,
+  payload: { bioText: string | null; bioSource: string; bioFetchedAt: string }
+): Promise<boolean> {
+  const endpoint = `/v1/ingest/political-pulse/mp/${encodeURIComponent(mpId)}/bio`;
+  return post(apiUrl, endpoint, payload);
+}
+
 export async function postLegislativeBill(
   apiUrl: string,
   bill: LegislativeBillRow
