@@ -18,6 +18,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const intelRailOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
   const pathname = usePathname();
   const isEconomyRoute = pathname.startsWith("/economy");
+  const isWorldRoute = pathname.startsWith("/world");
+  /** Inline document-flow intel column on these routes; avoid stacking a fixed overlay rail. */
+  const inlineIntelRailRoute = isEconomyRoute || isWorldRoute;
   const [commandOpen, setCommandOpen] = useState(false);
 
   useEffect(() => {
@@ -39,7 +42,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <SidebarInset
             className={cn(
               "flex min-h-svh flex-col transition-[margin] duration-100 ease-out bg-transparent",
-              intelRailOpen && !isEconomyRoute ? "md:mr-[var(--intel-rail-width)]" : "md:mr-0"
+              intelRailOpen && !inlineIntelRailRoute ? "md:mr-[var(--intel-rail-width)]" : "md:mr-0"
             )}
           >
             <TopBar onCommandOpen={() => setCommandOpen(true)} />
@@ -49,7 +52,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </SidebarInset>
         </SidebarProvider>
       </ShellHeaderProvider>
-      {!isEconomyRoute && <IntelRail />}
+      {!inlineIntelRailRoute && <IntelRail />}
       <Ticker />
       <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
       <IntelPanel />

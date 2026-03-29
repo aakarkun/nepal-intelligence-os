@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Diff, PanelRight, Trash2 } from "@/components/icons";
+import { Diff, PanelRight, TableProperties, Trash2 } from "@/components/icons";
 import { flattenNavItems } from "@/components/layout/nav-config";
 import { fetchConstituencies } from "@/lib/api";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";

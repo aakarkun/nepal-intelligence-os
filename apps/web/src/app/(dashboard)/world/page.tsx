@@ -10,7 +10,7 @@ import { fetchWorldArticles } from "@/lib/api";
 import { env } from "@/lib/env";
 import { getWorldFixtureArticles } from "@/lib/world-fixture";
 import type { GeopoliticsArticle } from "@repo/shared";
-import { IntelRailSections, FlatRailPanelHeader, railRowFlat } from "@/components/layout/intel-rail";
+import { FlatRailPanelHeader, IntelRailSections, railRowFlat } from "@/components/layout/intel-rail";
 import { discoverShellClass } from "@/components/discover/discover-rail-tokens";
 import { cn, timeAgo } from "@/lib/utils";
 
@@ -125,6 +125,7 @@ export default function WorldPage() {
         "-mx-4 px-4 pb-10 md:-mx-6 md:px-6 min-h-full bg-transparent text-[#e5e5e5] antialiased"
       )}
     >
+      {/* Same pattern as Economy / Discover: intel rail is a flex column in document flow, not the fixed shell overlay. */}
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1 space-y-4">
           <nav className="flex justify-start" role="tablist" aria-label="Global desk panels">
