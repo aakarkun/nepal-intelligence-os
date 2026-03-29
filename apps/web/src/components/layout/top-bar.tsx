@@ -145,25 +145,33 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
           <TooltipContent side="bottom">Command palette (⌘K)</TooltipContent>
         </Tooltip>
 
-        {/* LIVE indicator */}
-        <div className="flex items-center gap-1.5">
-          <span
-            className={cn(
-              "inline-block h-2 w-2 rounded-full animate-pulse-live",
-              status.color
-            )}
-          />
-          <span
-            className={cn(
-              "text-[12px] font-semibold uppercase tracking-wider",
-              connectionStatus === "live" && "text-status-live",
-              connectionStatus === "stale" && "text-status-stale",
-              connectionStatus === "error" && "text-status-error"
-            )}
-          >
-            {status.label}
-          </span>
-        </div>
+        {/* LIVE indicator — SSE stream only; World articles etc. use REST (see tooltip). */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex cursor-default items-center gap-1.5">
+              <span
+                className={cn(
+                  "inline-block h-2 w-2 rounded-full animate-pulse-live",
+                  status.color
+                )}
+              />
+              <span
+                className={cn(
+                  "text-[12px] font-semibold uppercase tracking-wider",
+                  connectionStatus === "live" && "text-status-live",
+                  connectionStatus === "stale" && "text-status-stale",
+                  connectionStatus === "error" && "text-status-error"
+                )}
+              >
+                {status.label}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[20rem] text-left">
+            Realtime signal stream (SSE). Other data (e.g. World desk articles from the API) can
+            still load when this shows OFFLINE.
+          </TooltipContent>
+        </Tooltip>
 
         {/* Nepal time */}
         <time

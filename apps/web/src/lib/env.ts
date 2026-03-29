@@ -19,4 +19,7 @@ export const env = {
     process.env.NEXT_PUBLIC_SSE_STALE_SECONDS ?? "90",
     10
   ) || 90,
+  /** Dev-only: show sample World desk rows without worker/GDELT ingest. */
+  NEXT_PUBLIC_WORLD_ARTICLE_FIXTURE:
+    process.env.NEXT_PUBLIC_WORLD_ARTICLE_FIXTURE === "true",
 } as const;
