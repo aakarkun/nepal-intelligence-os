@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { api } from "./routes";
 import { createSSEResponse, startHeartbeat } from "./sse";
 import { seedFromFixturesIfEmpty } from "./seed";
+import { ensureHor2082OfficialSummary } from "./seed-hor-2082.js";
 import { ensurePoliticalPulseSeed } from "./seed-political-pulse.js";
 import { runMigrations } from "./db/migrate.js";
 import { closeDb } from "./db/client.js";
@@ -27,9 +28,10 @@ const port = Number(process.env.API_PORT) || 3001;
 await runMigrations();
 console.log("[api] migrations complete");
 
-await hydrateElectionFromDb();
 await seedFromFixturesIfEmpty();
+await ensureHor2082OfficialSummary();
 await ensurePoliticalPulseSeed();
+await hydrateElectionFromDb();
 await hydrateOperationalCacheFromDb();
 
 process.on("SIGTERM", async () => {

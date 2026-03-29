@@ -5,6 +5,7 @@
  * market assets, nepse summary, market portal snapshot, crisis summary, earthquake incidents, flood metadata).
  */
 
+import { ConstituencyResultSchema, HOR_2082_OFFICIAL_DATASET_ID } from "@repo/shared";
 import type {
   NationalSummary,
   ConstituencyResult,
@@ -37,6 +38,7 @@ import * as sourceHealthRepo from "./db/repos/source-health.js";
 import * as anomaliesRepo from "./db/repos/anomalies.js";
 import * as crisisRepo from "./db/repos/crisis-incidents.js";
 import * as constituencyRepo from "./db/repos/constituency-results.js";
+import type { ConstituencyResultRow } from "./db/repos/constituency-results.js";
 import * as nationalSummariesRepo from "./db/repos/national-summaries.js";
 import * as snapshotsRepo from "./db/repos/snapshots.js";
 import * as nepseSnapshotsRepo from "./db/repos/nepse-snapshots.js";
@@ -132,6 +134,8 @@ function buildDatasetMeta(
 }
 
 const electionDatasets = new Map<string, ElectionDataset>();
+/** Secondary `national_summaries.dataset_id` / client selection → canonical merged id (HoR 2082). */
+const datasetIdAliases = new Map<string, string>();
 let currentElectionDatasetId: string | null = null;
 
 let floodSeasonInactive = false;
@@ -166,9 +170,20 @@ function ensureElectionDataset(
   return dataset;
 }
 
+function resolveDatasetId(datasetId: string): string {
+  let id = datasetId;
+  const seen = new Set<string>();
+  while (datasetIdAliases.has(id) && !seen.has(id)) {
+    seen.add(id);
+    id = datasetIdAliases.get(id)!;
+  }
+  return id;
+}
+
 function getDataset(datasetId?: string | null): ElectionDataset | undefined {
-  const id = datasetId ?? currentElectionDatasetId;
-  if (!id) return undefined;
+  const raw = datasetId ?? currentElectionDatasetId;
+  if (!raw) return undefined;
+  const id = resolveDatasetId(raw);
   return electionDatasets.get(id);
 }
 
@@ -525,6 +540,7 @@ export async function updateConstituencyResult(result: ConstituencyResult): Prom
     status: result.status ?? null,
     dataset: dataset.meta.id,
     updatedAt: result.lastUpdate,
+    payload: result as unknown as Record<string, unknown>,
   });
 }
 
@@ -648,10 +664,176 @@ export function resetElectionData(datasetId?: string): void {
   if (!datasetId) {
     currentElectionDatasetId = null;
     electionDatasets.clear();
+    datasetIdAliases.clear();
     return;
   }
   electionDatasets.delete(datasetId);
   if (currentElectionDatasetId === datasetId) currentElectionDatasetId = null;
+}
+
+const HOR_2082_UNIFIED_LABEL = "Election 2026";
+
+function mergeConstituencyMaps(
+  target: Map<string, ConstituencyResult>,
+  incoming: Map<string, ConstituencyResult>
+): void {
+  for (const [cid, cr] of incoming) {
+    const existing = target.get(cid);
+    if (!existing) {
+      target.set(cid, cr);
+      continue;
+    }
+    if (cr.candidates.length > existing.candidates.length) {
+      target.set(cid, cr);
+    } else if (
+      cr.candidates.length === existing.candidates.length &&
+      cr.totalVotes > existing.totalVotes
+    ) {
+      target.set(cid, cr);
+    }
+  }
+}
+
+function pickBetterNationalSummary(a: NationalSummary, b: NationalSummary): NationalSummary {
+  if (a.horBreakdown === "2082" && b.horBreakdown !== "2082") return a;
+  if (b.horBreakdown === "2082" && a.horBreakdown !== "2082") return b;
+  if (a.partyResults.length !== b.partyResults.length) {
+    return a.partyResults.length >= b.partyResults.length ? a : b;
+  }
+  return new Date(a.timestamp).getTime() >= new Date(b.timestamp).getTime() ? a : b;
+}
+
+/**
+ * HoR 2082 “derived” snapshots and the official HoR 2082 row often appear as two
+ * `national_summaries.dataset_id` values; merge them into {@link HOR_2082_OFFICIAL_DATASET_ID}
+ * so the UI shows one dataset.
+ */
+function shouldMergeIntoHor2082Canon(id: string, ds: ElectionDataset): boolean {
+  if (id === HOR_2082_OFFICIAL_DATASET_ID) return false;
+  const s = ds.nationalSummary;
+  const L = (ds.meta.label ?? "").toLowerCase();
+  const sn = (s.sourceName ?? "").toLowerCase();
+
+  const is2082 =
+    s.horBreakdown === "2082" ||
+    L.includes("2082") ||
+    sn.includes("2082") ||
+    ((L.includes("2026") || L.includes("constituency")) && L.includes("derived"));
+
+  if (!is2082) return false;
+
+  const isHorFinal =
+    s.sourceId === "hor-official" ||
+    L.includes("house of representatives") ||
+    sn.includes("house of representatives");
+  const isDerived =
+    s.sourceId === "derived" ||
+    s.sourceId === "constituency-db" ||
+    L.includes("derived from constituency") ||
+    sn.includes("derived from constituency");
+
+  return isHorFinal || isDerived;
+}
+
+function mergeHor2082ElectionDatasetsInMemory(): void {
+  datasetIdAliases.clear();
+  const CANON = HOR_2082_OFFICIAL_DATASET_ID;
+  const toMerge: string[] = [];
+  for (const [id, ds] of electionDatasets) {
+    if (shouldMergeIntoHor2082Canon(id, ds)) toMerge.push(id);
+  }
+  if (toMerge.length === 0) return;
+
+  const hasCanon = electionDatasets.has(CANON);
+
+  if (hasCanon) {
+    const canon = electionDatasets.get(CANON)!;
+    const merged = new Map(canon.constituencyResults);
+    let best = canon.nationalSummary;
+
+    for (const id of toMerge) {
+      const ds = electionDatasets.get(id)!;
+      best = pickBetterNationalSummary(best, ds.nationalSummary);
+      mergeConstituencyMaps(merged, ds.constituencyResults);
+      electionDatasets.delete(id);
+      datasetIdAliases.set(id, CANON);
+    }
+
+    canon.nationalSummary = best;
+    canon.constituencyResults = merged;
+    canon.meta = {
+      ...canon.meta,
+      id: CANON,
+      label: HOR_2082_UNIFIED_LABEL,
+      sourceId: best.sourceId ?? canon.meta.sourceId,
+      sourceName: best.sourceName ?? canon.meta.sourceName,
+      timestamp: best.timestamp ?? canon.meta.timestamp,
+    };
+  } else {
+    const merged = new Map<string, ConstituencyResult>();
+    let best: NationalSummary | undefined;
+    let bestTs = "";
+    for (const id of toMerge) {
+      const ds = electionDatasets.get(id)!;
+      best = best ? pickBetterNationalSummary(best, ds.nationalSummary) : ds.nationalSummary;
+      if (ds.meta.timestamp > bestTs) bestTs = ds.meta.timestamp;
+      mergeConstituencyMaps(merged, ds.constituencyResults);
+      electionDatasets.delete(id);
+      datasetIdAliases.set(id, CANON);
+    }
+    if (!best) return;
+    electionDatasets.set(CANON, {
+      meta: {
+        id: CANON,
+        label: HOR_2082_UNIFIED_LABEL,
+        sourceId: best.sourceId,
+        sourceName: best.sourceName,
+        timestamp: best.timestamp ?? bestTs,
+      },
+      nationalSummary: best,
+      constituencyResults: merged,
+    });
+  }
+
+  if (currentElectionDatasetId && datasetIdAliases.has(currentElectionDatasetId)) {
+    currentElectionDatasetId = resolveDatasetId(currentElectionDatasetId);
+  }
+}
+
+function constituencyDbRowToResult(row: ConstituencyResultRow): ConstituencyResult {
+  if (row.payload != null && typeof row.payload === "object") {
+    const parsed = ConstituencyResultSchema.safeParse(row.payload);
+    if (parsed.success) return parsed.data;
+  }
+
+  const constituencyId = row.id.includes("::") ? row.id.split("::").slice(1).join("::") : row.id;
+  const resolved = resolveParty(row.party);
+  return {
+    constituencyId,
+    constituencyName: row.name,
+    districtName: row.district ?? undefined,
+    provinceId: row.province ?? 0,
+    status: (row.status as ConstituencyResult["status"]) ?? "counting",
+    totalVotes: row.totalVotes ?? 0,
+    lastUpdate: row.updatedAt,
+    candidates:
+      row.leadingCandidate && row.party
+        ? [
+            {
+              candidateId: "",
+              candidateName: row.leadingCandidate,
+              partyId: resolved.partyId,
+              partyName: row.party,
+              partyColor: resolved.partyColor,
+              /** DB row only stores constituency `totalVotes` + leader; no per-candidate table. */
+              votes: row.totalVotes ?? 0,
+            },
+          ]
+        : [],
+    sourceId: undefined,
+    sourceName: undefined,
+    sourceFetchedAt: row.updatedAt,
+  };
 }
 
 /** Load election datasets and constituency results from DB into in-memory store (e.g. after API restart). */
@@ -678,38 +860,57 @@ export async function hydrateElectionFromDb(): Promise<void> {
     const rowsForDataset = allConstituencyRows.filter((r) => r.dataset === datasetId);
     for (const row of rowsForDataset) {
       const constituencyId = row.id.includes("::") ? row.id.split("::").slice(1).join("::") : row.id;
-      const resolved = resolveParty(row.party);
-      const cr: ConstituencyResult = {
-        constituencyId,
-        constituencyName: row.name,
-        districtName: row.district ?? undefined,
-        provinceId: row.province ?? 0,
-        status: (row.status as ConstituencyResult["status"]) ?? "counting",
-        totalVotes: row.totalVotes ?? 0,
-        lastUpdate: row.updatedAt,
-        candidates:
-          row.leadingCandidate && row.party
-            ? [
-                {
-                  candidateId: "",
-                  candidateName: row.leadingCandidate,
-                  partyId: resolved.partyId,
-                  partyName: row.party,
-                  partyColor: resolved.partyColor,
-                  votes: 0,
-                },
-              ]
-            : [],
-        sourceId: undefined,
-        sourceName: undefined,
-        sourceFetchedAt: row.updatedAt,
-      };
-      dataset.constituencyResults.set(constituencyId, cr);
+      dataset.constituencyResults.set(constituencyId, constituencyDbRowToResult(row));
     }
     electionDatasets.set(datasetId, dataset);
   }
+
+  /** Datasets that only exist in `constituency_results` (no `national_summaries` row) were previously dropped. */
+  const datasetIdsFromRows = new Set(allConstituencyRows.map((r) => r.dataset));
+  for (const datasetId of datasetIdsFromRows) {
+    if (electionDatasets.has(datasetId)) continue;
+    const rowsForDataset = allConstituencyRows.filter((r) => r.dataset === datasetId);
+    if (rowsForDataset.length === 0) continue;
+    const summaryPayload = await nationalSummariesRepo.getNationalSummary(datasetId);
+    const maxTs = rowsForDataset.reduce(
+      (a, b) => (new Date(b.updatedAt) > new Date(a) ? b.updatedAt : a),
+      rowsForDataset[0].updatedAt
+    );
+    const nationalSummary: NationalSummary =
+      summaryPayload ??
+      ({
+        ...emptySummary(),
+        timestamp: maxTs,
+        totalSeats: rowsForDataset.length,
+        totalConstituencies: rowsForDataset.length,
+        countedConstituencies: rowsForDataset.filter((r) => r.status === "final").length,
+        sourceId: "constituency-db",
+        sourceName: "Constituency results",
+      } as NationalSummary);
+    const baseMeta = buildDatasetMeta(
+      nationalSummary.sourceId,
+      nationalSummary.sourceName,
+      nationalSummary.timestamp ?? maxTs
+    );
+    const dataset: ElectionDataset = {
+      meta: { ...baseMeta, id: datasetId },
+      nationalSummary,
+      constituencyResults: new Map<string, ConstituencyResult>(),
+    };
+    for (const row of rowsForDataset) {
+      const constituencyId = row.id.includes("::") ? row.id.split("::").slice(1).join("::") : row.id;
+      dataset.constituencyResults.set(constituencyId, constituencyDbRowToResult(row));
+    }
+    electionDatasets.set(datasetId, dataset);
+  }
+
+  mergeHor2082ElectionDatasetsInMemory();
+
   if (summaryMetaList.length > 0) {
-    currentElectionDatasetId = summaryMetaList[0].datasetId;
+    const first = summaryMetaList[0].datasetId;
+    currentElectionDatasetId = resolveDatasetId(first);
+  } else if (electionDatasets.size > 0) {
+    currentElectionDatasetId = electionDatasets.keys().next().value ?? null;
   }
 }
 

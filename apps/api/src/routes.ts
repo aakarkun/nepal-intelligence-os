@@ -358,7 +358,7 @@ api.patch("/worker-state", async (c) => {
     "lastNewsRunAt", "lastRssNepalRunAt", "lastParliamentRunAt", "lastDhmRunAt",
     "lastGdacsRunAt", "lastGdeltRunAt", "lastUnRssRunAt", "lastUsgsRunAt",
     "lastPoliticalRssRunAt", "lastParliamentBillsRunAt", "lastGazetteRunAt",
-    "lastWeeklyDigestRunAt",
+    "lastWeeklyDigestRunAt", "lastMinisterBioRunAt",
   ] as const;
   for (const k of keys) {
     if (body[k] !== undefined && typeof body[k] === "number") partial[k] = body[k];
@@ -480,6 +480,26 @@ api.get("/political-pulse/cabinet-watch", async (c) => {
   return c.json(watch);
 });
 
+api.get("/political-pulse/ministers/:id/bio", async (c) => {
+  const r = await politicalPulseRepo.getMinisterBioResponse(c.req.param("id"));
+  if (!r) return c.json({ error: "Not found" }, 404);
+  return c.json(r);
+});
+
+api.get("/political-pulse/ministers/:id/news", async (c) => {
+  const news = await politicalPulseRepo.listMinisterRelatedNews(c.req.param("id"), 20);
+  return c.json({ news });
+});
+
+api.get("/political-pulse/ministers/bio-stale-queue", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const limit = Number(c.req.query("limit") ?? 12);
+  const ministers = await politicalPulseRepo.listStaleCabinetMinistersForBio(limit);
+  return c.json({ ministers });
+});
+
 api.get("/political-pulse/news-sources", async (c) => {
   if (!requireWorkerSecret(c)) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -561,6 +581,25 @@ api.post("/ingest/political-pulse/weekly-digest", async (c) => {
     return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
   }
   await politicalPulseRepo.upsertWeeklyDigest(parsed.data);
+  return c.json({ ok: true });
+});
+
+const MpBioIngestSchema = z.object({
+  bioText: z.string().nullable(),
+  bioSource: z.string().default("wikipedia"),
+  bioFetchedAt: z.string(),
+});
+
+api.post("/ingest/political-pulse/mp/:id/bio", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json();
+  const parsed = MpBioIngestSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  await politicalPulseRepo.upsertMinisterBioFromWorker(c.req.param("id"), parsed.data);
   return c.json({ ok: true });
 });
 

@@ -27,9 +27,9 @@ const PARTY_ROWS = [
     name: "Nepali Congress",
     shortName: "NC",
     colorHex: "#3f653b",
-    fptpSeats: 19,
+    fptpSeats: 18,
     prSeats: 20,
-    totalSeats: 39,
+    totalSeats: 38,
   },
   {
     id: "party-uml",
