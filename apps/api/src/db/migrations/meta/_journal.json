@@ -36,6 +36,20 @@
       "when": 1774100000000,
       "tag": "0004_political_pulse",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1774200000000,
+      "tag": "0005_mps_bio",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774300000000,
+      "tag": "0006_constituency_payload",
+      "breakpoints": true
     }
   ]
 }

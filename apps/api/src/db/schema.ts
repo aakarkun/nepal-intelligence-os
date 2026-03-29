@@ -1,6 +1,7 @@
 import {
   pgTable,
   text,
+  varchar,
   integer,
   doublePrecision,
   boolean,
@@ -249,6 +250,8 @@ export const constituencyResults = pgTable(
     totalVotes: integer("total_votes"),
     percentReported: doublePrecision("percent_reported"),
     status: text("status"),
+    /** Full {@link ConstituencyResult} when ingested; enables multi-candidate UI after hydrate. */
+    payload: jsonb("payload"),
     dataset: text("dataset").notNull().default("current"),
     updatedAt: text("updated_at").notNull(),
   },
@@ -332,6 +335,10 @@ export const mps = pgTable(
     constituency: text("constituency"),
     electionType: text("election_type"),
     createdAt: text("created_at").notNull(),
+    bioText: text("bio_text"),
+    bioSource: varchar("bio_source", { length: 50 }).default("wikipedia"),
+    bioFetchedAt: timestamp("bio_fetched_at", { withTimezone: true }),
+    tags: text("tags").array(),
   },
   (t) => [index("idx_mps_party_id").on(t.partyId)]
 );
@@ -425,6 +432,7 @@ export const workerState = pgTable("worker_state", {
   lastParliamentBillsRunAt: bigint("last_parliament_bills_run_at", { mode: "number" }),
   lastGazetteRunAt: bigint("last_gazette_run_at", { mode: "number" }),
   lastWeeklyDigestRunAt: bigint("last_weekly_digest_run_at", { mode: "number" }),
+  lastMinisterBioRunAt: bigint("last_minister_bio_run_at", { mode: "number" }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -13,6 +13,8 @@ export type ConstituencyResultRow = {
   totalVotes: number | null;
   percentReported: number | null;
   status: string | null;
+  /** Full result JSON when available (multi-candidate breakdown). */
+  payload?: unknown | null;
   dataset: string;
   updatedAt: string;
 };
@@ -71,6 +73,7 @@ export async function getConstituencyResults(opts?: {
     totalVotes: r.totalVotes,
     percentReported: r.percentReported,
     status: r.status,
+    payload: r.payload ?? null,
     dataset: r.dataset,
     updatedAt: r.updatedAt,
   }));

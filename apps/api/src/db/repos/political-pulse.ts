@@ -6,6 +6,8 @@ import {
   gte,
   ilike,
   inArray,
+  isNull,
+  lt,
   lte,
   or,
   sql,
@@ -30,6 +32,7 @@ import type {
   PoliticalPulseStats,
   PoliticalWeeklyDigest,
 } from "@repo/shared";
+import { fetchWikipediaMinisterExtract } from "@repo/shared";
 
 function parseStringArray(v: unknown): string[] {
   if (v == null) return [];
@@ -564,4 +567,135 @@ export async function updateNewsFeedSourcePoll(id: string, at: string): Promise<
     .update(newsFeedSources)
     .set({ lastPolledAt: at })
     .where(eq(newsFeedSources.id, id));
+}
+
+const BIO_CACHE_MS = 30 * 24 * 60 * 60 * 1000;
+const pendingBioFetches = new Set<string>();
+
+function bioFetchedAtToMs(v: unknown): number {
+  if (v == null) return 0;
+  if (v instanceof Date) return v.getTime();
+  const d = new Date(String(v));
+  return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+/** True if we already fetched (or attempted) within the cache window — including empty bio after a failed lookup. */
+function isBioFetchFresh(row: typeof mps.$inferSelect): boolean {
+  const t = bioFetchedAtToMs(row.bioFetchedAt);
+  if (!t) return false;
+  return Date.now() - t < BIO_CACHE_MS;
+}
+
+export type MinisterBioApiResponse = {
+  id: string;
+  name: string;
+  bio: string | null;
+  bioSource: string | null;
+  bioFetchedAt: string | null;
+  loading: boolean;
+};
+
+export async function getMinisterBioResponse(mpId: string): Promise<MinisterBioApiResponse | null> {
+  const rows = await db.select().from(mps).where(eq(mps.id, mpId)).limit(1);
+  const row = rows[0];
+  if (!row) return null;
+
+  const fetchedIso = row.bioFetchedAt
+    ? new Date(bioFetchedAtToMs(row.bioFetchedAt)).toISOString()
+    : null;
+
+  if (isBioFetchFresh(row)) {
+    return {
+      id: row.id,
+      name: row.name,
+      bio: row.bioText ?? null,
+      bioSource: row.bioSource ?? null,
+      bioFetchedAt: fetchedIso,
+      loading: false,
+    };
+  }
+
+  if (!pendingBioFetches.has(mpId)) {
+    pendingBioFetches.add(mpId);
+    void (async () => {
+      try {
+        const extract = await fetchWikipediaMinisterExtract(row.id, row.name);
+        await db
+          .update(mps)
+          .set({
+            bioText: extract,
+            bioSource: "wikipedia",
+            bioFetchedAt: new Date(),
+          })
+          .where(eq(mps.id, mpId));
+      } finally {
+        pendingBioFetches.delete(mpId);
+      }
+    })();
+  }
+
+  return {
+    id: row.id,
+    name: row.name,
+    bio: null,
+    bioSource: null,
+    bioFetchedAt: null,
+    loading: true,
+  };
+}
+
+export async function upsertMinisterBioFromWorker(
+  mpId: string,
+  payload: { bioText: string | null; bioSource: string; bioFetchedAt: string }
+): Promise<void> {
+  await db
+    .update(mps)
+    .set({
+      bioText: payload.bioText,
+      bioSource: payload.bioSource,
+      bioFetchedAt: new Date(payload.bioFetchedAt),
+    })
+    .where(eq(mps.id, mpId));
+}
+
+export async function listStaleCabinetMinistersForBio(
+  limit: number
+): Promise<Array<{ id: string; name: string }>> {
+  const cutoff = new Date(Date.now() - BIO_CACHE_MS);
+  const rows = await db
+    .select({ id: mps.id, name: mps.name })
+    .from(mps)
+    .where(
+      and(
+        sql`${mps.ministryRole} is not null`,
+        or(isNull(mps.bioFetchedAt), lt(mps.bioFetchedAt, cutoff))
+      )
+    )
+    .orderBy(asc(mps.name))
+    .limit(Math.min(64, Math.max(1, limit)));
+
+  return rows.map((r) => ({ id: r.id, name: r.name }));
+}
+
+export async function listMinisterRelatedNews(
+  mpId: string,
+  limit: number
+): Promise<PoliticalPulseEvent[]> {
+  const mRow = await db.select().from(mps).where(eq(mps.id, mpId)).limit(1);
+  const mp = mRow[0];
+  if (!mp) return [];
+
+  const safeName = mp.name.replace(/\s*\([^)]*\)\s*/g, "").trim();
+  const pattern = `%${safeName.replace(/%/g, "\\%")}%`;
+  const jsonMatch = sql`${politicalEvents.mpIds}::jsonb @> ${JSON.stringify([mpId])}::jsonb`;
+  const whereClause = or(jsonMatch, ilike(politicalEvents.title, pattern), ilike(politicalEvents.summary, pattern))!;
+
+  const evs = await db
+    .select()
+    .from(politicalEvents)
+    .where(whereClause)
+    .orderBy(desc(politicalEvents.publishedAt))
+    .limit(Math.min(50, Math.max(1, limit)));
+
+  return evs.map(rowToEvent);
 }
