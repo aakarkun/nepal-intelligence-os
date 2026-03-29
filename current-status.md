@@ -1,21 +1,21 @@
 # Nepal Intelligence OS — Current Status
 
-**Last updated:** 2026-03-15
+**Last updated:** 2026-03-30
 
 ## Overview
 
-Nepal Intelligence OS (YETI-OS) is a Bun monorepo for election monitoring and national intelligence. The API uses **PostgreSQL** (Drizzle ORM); election data (national summaries, constituency results) is **persisted in the DB** and hydrated on startup. Election scrape is **off by default** (finalized); worker runs news, economy, crisis, and other ingest on a schedule.
+Nepal Intelligence OS (YETI-OS) is a Bun monorepo for election monitoring and national intelligence. The API uses **PostgreSQL** (Drizzle ORM); election data (national summaries, constituency results) is **persisted in the DB** and hydrated on startup. Election scrape is **off by default** (finalized); worker runs news, economy, crisis, political pulse, minister bio enrichment, and other ingest on a schedule.
 
 ## Repo layout
 
 ```
 apps/
-  web/       Next.js 14 — dashboard, map, constituencies, feed, News Room, Economy, Crisis
-  api/       Hono on Bun — REST + SSE, ingest endpoints, election datasets, crisis/economy APIs
-  worker/    Replay (fixtures) + Live (Ekantipur + news + crisis + economy ingest)
+  web/       Next.js 14 — dashboard, map, constituencies, parliament, feed, News Room, Economy, Crisis, Political Pulse, Discover-style shells
+  api/       Hono on Bun — REST + SSE, ingest endpoints, election datasets, crisis/economy APIs, HoR / political-pulse payloads
+  worker/    Replay (fixtures) + Live (Ekantipur + news + crisis + economy + political jobs + minister bio)
 
 packages/
-  shared/    Zod schemas, types (election, signals, source health, crisis, economy)
+  shared/    Zod schemas, types (election, signals, HoR 2082 helpers, seat/PR utilities, source health, crisis, economy)
 
 docs/
   plans/     Design and implementation plans (see below)
@@ -23,28 +23,33 @@ docs/
 
 ## What’s done
 
-- **PostgreSQL + Drizzle:** API uses Postgres for reactions, signal events, worker state, source health, anomalies, crisis/flood/cabinet/parliament, and **election data** (national summaries, constituency results). Migrations run on API startup.
-- **Election data in DB:** Ingest `/ingest/summary` and `/ingest/snapshot` persist to `national_summaries` and `constituency_results`. API hydrates from DB on startup; seed from fixtures when DB is empty.
+- **PostgreSQL + Drizzle:** API uses Postgres for reactions, signal events, worker state, source health, anomalies, crisis/flood/cabinet/parliament, **election data**, **MP biography fields**, and **extended constituency payload**. Migrations run on API startup.
+- **Election data in DB:** Ingest `/ingest/summary` and `/ingest/snapshot` persist to `national_summaries` and `constituency_results`. API hydrates from DB on startup; seed from fixtures when DB is empty. **Unified HoR (Election 2026)** labeling and helpers live in `packages/shared` with API store alignment.
+- **HoR 2082 seed:** `seed-hor-2082` and related routes support loading proportional and FPTP-oriented election breakdowns for parliament and dashboards.
 - **Election scrape finalized:** Worker does not run ECN/election scrape by default (`SCRAPE_ELECTION` off). Set `SCRAPE_ELECTION=true` only when re-scraping is needed.
 - **NEPSE UX:** No "0.00 (-) Market closed" spam; worker does not post fallback summary/signals; Market Pulse and Economy show NEPSE only when real index data exists.
 - **Election live ingest (when enabled):**
-  - Ekantipur Scrapling crawl now posts live national summary and constituency snapshots into the API.
+  - Ekantipur Scrapling crawl can post live national summary and constituency snapshots into the API.
   - Archived election data is preserved as a separate dataset instead of being overwritten by live ingest.
   - Dataset selector is wired through the Situation Room, map, parliament, constituencies, and dossier views.
   - Map province and district clicks open a right-side geography drawer with linked constituency data.
 - **Signals and source hygiene:**
   - News Room and Signals Feed are separated more clearly.
   - Reddit and GDELT remain disabled by default to avoid IP/rate-limit issues.
-  - Worker live scheduling now persists the last completed cycle so restarts do not immediately scrape again.
+  - Worker live scheduling persists the last completed cycle so restarts do not immediately scrape again.
+- **Signals ops console:** Feed queue UI aligns with Discover shell patterns (rail headers, tab strip, pill filters); cards use border-forward selection and simplified severity chrome.
 - **Crisis module:**
-  - Typed USGS earthquake ingestion now powers `/disasters`.
+  - Typed USGS earthquake ingestion powers `/disasters`.
   - API exposes crisis summary and earthquake incident endpoints.
 - **Economy module:**
-  - Typed NRB forex ingestion now powers `/economy`.
+  - Typed NRB forex ingestion powers `/economy`.
   - Gold, Silver, and Bitcoin quotes are ingested separately on a slower cadence.
-  - Economy page now renders direct-source FX and asset data instead of only keyword-matched headlines.
+  - Economy page renders direct-source FX and asset data instead of only keyword-matched headlines.
+- **Parliament & constituencies:** Seat map modes, proportional HoR breakdown, party detail panels, and refreshed constituency table/dossier; dynamic page titles via **shell header** overrides on nested routes.
+- **Web shell:** **Collapsible app sidebar** (replaces legacy nav rail), **route-derived title and description** in the top bar (breadcrumbs where appropriate), shared **Discover-style** surfaces on disasters/world/economy/political-pulse pages.
+- **Dashboard:** Home includes hero and **minister profile** blocks with API-backed bio hooks where configured.
+- **Worker — political:** Minister Wikipedia/bio pipeline (`political-minister-bio`) extends political jobs and ingest client for new payloads.
 - **Env and Docker:** One root `.env.example` with [API], [Worker], [Web]; per-app `.env.example`; Docker Compose runs db + api + worker (web runs locally). See `docs/DOCKER.md`, `docs/HOSTING_PLAN.md`.
-- **UI:** Top-bar module pills, softened card styling.
 
 ## What’s next (from plans)
 
