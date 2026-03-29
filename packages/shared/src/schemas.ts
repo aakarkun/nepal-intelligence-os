@@ -89,7 +89,28 @@ export const PartyResultSchema = z.object({
   seatsWon: z.number().int().min(0),
   seatsLeading: z.number().int().min(0),
   totalVotes: z.number().int().min(0),
+  /** FPTP (constituency) seats when HoR breakdown is available. */
+  fptpSeats: z.number().int().min(0).optional(),
+  /** Proportional representation seats when HoR breakdown is available. */
+  prSeats: z.number().int().min(0).optional(),
+  /** HoR proportional (PR) ballot votes when published (distinct from FPTP totals). */
+  prVotes: z.number().int().min(0).optional(),
 });
+
+/** Aggregate PR ballot metadata (stored in national_summary JSON with party-level prVotes). */
+export const HorProportionalMetaSchema = z.object({
+  totalVotesCast: z.number().int().min(0),
+  prSeatCap: z.number().int().min(0),
+  partiesInTally: z.number().int().min(0).optional(),
+  /** National threshold for PR seat allocation (percent of valid PR votes). */
+  thresholdPercent: z.number().min(0).max(100).optional(),
+  /** Combined PR votes for parties not listed individually in partyResults. */
+  otherPartiesVotes: z.number().int().min(0).optional(),
+  lastUpdated: z.string().optional(),
+  countingStatus: z.enum(["in_progress", "completed"]).optional(),
+});
+
+export type HorProportionalMeta = z.infer<typeof HorProportionalMetaSchema>;
 
 export const NationalSummarySchema = z.object({
   totalSeats: z.number().int(),
@@ -101,6 +122,10 @@ export const NationalSummarySchema = z.object({
   sourceId: z.string().optional(),
   sourceName: z.string().optional(),
   sourceFetchedAt: z.string().datetime().optional(),
+  /** Present when party results include stored FPTP + PR (e.g. final HoR 2082). */
+  horBreakdown: z.enum(["2082"]).optional(),
+  /** HoR proportional ballot totals and caps when PR vote data is available. */
+  horProportional: HorProportionalMetaSchema.optional(),
 });
 
 export const CabinetEventTypeSchema = z.enum([
