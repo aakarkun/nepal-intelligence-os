@@ -719,7 +719,8 @@ async function runLiveFlood(): Promise<void> {
 
 const PARLIAMENT_DAILY_MS = 24 * 60 * 60 * 1000;
 let lastParliamentRunAt: number | null = null;
-const WORLD_INTERVAL_MS = 30 * 60 * 1000;
+/** Aligned with GDELT_MIN_INTERVAL (15m) — world desk ingests GDELT + RSS; 30m was too sparse for fresh rows. */
+const WORLD_INTERVAL_MS = 15 * 60 * 1000;
 let lastWorldRunAt: number | null = null;
 
 async function runLiveParliament(): Promise<void> {
@@ -794,14 +795,14 @@ async function runLiveWorld(): Promise<void> {
   }
   lastWorldRunAt = nowMs;
   const now = new Date().toISOString();
-  const cb = getCircuitBreaker("gdelt", 3);
-  if (await consumeResetIfRequested("gdelt")) cb.reset();
+  const cb = getCircuitBreaker("world", 3);
+  if (await consumeResetIfRequested("world")) cb.reset();
   if (cb.isOpen()) {
     const state = cb.getState();
-    console.warn(`[live] Source gdelt suspended after ${state.failures} failures`);
+    console.warn(`[live] Source world suspended after ${state.failures} failures`);
     await postSourceHealth(API_URL, {
       sourceId: "world:gdelt",
-      sourceName: "GDELT / UN RSS",
+      sourceName: "World desk (GDELT + RSS)",
       lastUpdate: now,
       errorRate: 1,
       status: "error",
@@ -821,7 +822,7 @@ async function runLiveWorld(): Promise<void> {
     }
     await postSourceHealth(API_URL, {
       sourceId: "world:gdelt",
-      sourceName: "GDELT / UN RSS",
+      sourceName: "World desk (GDELT + RSS)",
       lastUpdate: now,
       errorRate: 0,
       status: "live",
@@ -834,7 +835,7 @@ async function runLiveWorld(): Promise<void> {
     console.warn("[live] World articles ingest failed:", message);
     await postSourceHealth(API_URL, {
       sourceId: "world:gdelt",
-      sourceName: "GDELT / UN RSS",
+      sourceName: "World desk (GDELT + RSS)",
       lastUpdate: now,
       errorRate: 1,
       status: "error",
