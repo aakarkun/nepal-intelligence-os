@@ -8,7 +8,7 @@ import { useState, useEffect, type ReactNode } from "react";
 
 function LoadingFallback() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background font-mono text-sm text-muted-foreground">
+    <div className="flex min-h-screen items-center justify-center bg-background font-sans text-sm text-muted-foreground">
       <span>Loading…</span>
     </div>
   );

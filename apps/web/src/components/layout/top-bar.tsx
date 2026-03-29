@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Command, PanelRight, Sparkles } from "@/components/icons";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { TopBarHeading } from "@/components/layout/top-bar-heading";
 import { cn } from "@/lib/utils";
 import { formatNepalTime } from "@/lib/utils";
 import { useRealtimeStore } from "@/stores/realtime-store";
@@ -12,15 +13,6 @@ import { useFilterStore } from "@/stores/filter-store";
 import { setBriefingPanelOpen, toggleIntelRail } from "@/store/slices/uiSlice";
 import { useLanguage } from "@/providers/language-provider";
 import type { RootState } from "@/store";
-const MODULES = [
-  { id: "discover", label: "Discover", href: "/", ready: true },
-  { id: "parliament", label: "Parliament", href: "/parliament", ready: true },
-  { id: "economy", label: "Economy", href: "/economy", ready: true },
-  { id: "crisis", label: "Crisis", href: "/disasters", ready: true },
-  { id: "world", label: "World", href: "/world", ready: true },
-  { id: "media", label: "Media", href: "/news-room", ready: false },
-] as const;
-
 const STATUS_CONFIG = {
   live: { color: "bg-status-live", label: "LIVE" },
   stale: { color: "bg-status-stale", label: "STALE" },
@@ -85,96 +77,73 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
   const status = STATUS_CONFIG[connectionStatus];
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b border-white/[0.06] bg-background/95 px-3 backdrop-blur-sm sm:px-4">
-      {/* Left — Logo */}
-      <Link
-        href="/"
-        className="flex items-center gap-2 font-display text-xs font-semibold tracking-tight text-foreground transition-colors hover:text-nepal-red sm:text-sm"
-      >
-        Nepal Intelligence OS
-      </Link>
-
-      {/* Center — Module pills (hidden on very small screens) */}
-      <nav className="hidden items-center gap-1 md:flex">
-        {MODULES.map((mod) => {
-          const isActive =
-            mod.href === "/" ? pathname === "/" : pathname.startsWith(mod.href);
-
-          return mod.ready ? (
-            <Link
-              key={mod.id}
-              href={mod.href}
+    <header className="sticky top-0 z-50 flex min-h-12 shrink-0 items-center justify-between gap-3 border-b border-white/[0.06] bg-transparent px-3 py-2 sm:px-4">
+      <TopBarHeading />
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        {/* Language toggle */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+            >
+              <span className="font-sans text-[12px] uppercase">
+                {language === "en" ? "EN" : "NP"}
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Toggle news language</TooltipContent>
+        </Tooltip>
+        {/* AI Briefing (Sparkles) — opens briefing modal */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={openBriefing}
+              className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+            >
+              <Sparkles className="h-3 w-3" />
+              <span className="hidden xs:inline sm:inline">Briefing</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Generate briefing</TooltipContent>
+        </Tooltip>
+        {/* Panel rail toggle — show/hide right sidebar */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={togglePanel}
               className={cn(
-                "relative rounded-md px-3 py-1 text-xs font-medium transition-colors",
-                isActive
-                  ? "bg-nepal-red/15 text-nepal-red"
-                  : "text-muted-foreground hover:text-foreground"
+                "flex items-center gap-1.5 rounded-full border px-2 py-1 text-[13px] transition-colors",
+                intelRailOpen
+                  ? "border-white/[0.12] bg-white/[0.08] text-foreground"
+                  : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground"
               )}
             >
-              {mod.label}
-            </Link>
-          ) : (
-            <span
-              key={mod.id}
-              className="relative rounded-md px-3 py-1 text-xs font-medium cursor-not-allowed text-muted-foreground/50"
-              title="Soon"
-            >
-              {mod.label}
-              <span className="absolute -right-1 -top-1 rounded-full bg-muted px-1 text-[11px] leading-tight text-muted-foreground">
-                Soon
-              </span>
-            </span>
-          );
-        })}
-      </nav>
-
-      {/* Right — Language, Briefing, Panel toggle, Command, Status, Clock */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Language toggle */}
-        <button
-          type="button"
-          onClick={toggleLanguage}
-          className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
-          title="Toggle news language"
-        >
-          <span className="font-mono text-[12px] uppercase">
-            {language === "en" ? "EN" : "NP"}
-          </span>
-        </button>
-        {/* AI Briefing (Sparkles) — opens briefing modal */}
-        <button
-          onClick={openBriefing}
-          className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
-          title="Generate briefing"
-        >
-          <Sparkles className="h-3 w-3" />
-          <span className="hidden xs:inline sm:inline">Briefing</span>
-        </button>
-        {/* Panel rail toggle — show/hide right sidebar */}
-        <button
-          type="button"
-          onClick={togglePanel}
-          className={cn(
-            "flex items-center gap-1.5 rounded-full border px-2 py-1 text-[13px] transition-colors",
-            intelRailOpen
-              ? "border-white/[0.12] bg-white/[0.08] text-foreground"
-              : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground"
-          )}
-          title="Toggle right panel"
-        >
-          <PanelRight className="h-3 w-3" />
-          <span className="hidden xs:inline sm:inline">Panel</span>
-        </button>
+              <PanelRight className="h-3 w-3" />
+              <span className="hidden xs:inline sm:inline">Panel</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Toggle right panel</TooltipContent>
+        </Tooltip>
         {/* ⌘K trigger (icon-only on xs) */}
-        <button
-          onClick={onCommandOpen}
-          className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
-        >
-          <Command className="h-3 w-3" />
-          <span className="hidden sm:inline">
-            <kbd className="font-mono text-[12px]">K</kbd>
-          </span>
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={onCommandOpen}
+              className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+            >
+              <Command className="h-3 w-3" />
+              <span className="hidden sm:inline">
+                <kbd className="font-sans text-[12px]">K</kbd>
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Command palette (⌘K)</TooltipContent>
+        </Tooltip>
 
         {/* LIVE indicator */}
         <div className="flex items-center gap-1.5">
@@ -198,7 +167,7 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
 
         {/* Nepal time */}
         <time
-          className="hidden min-w-[5rem] text-right font-mono text-xs tabular-nums text-muted-foreground sm:inline"
+          className="hidden min-w-[5rem] text-right font-sans text-xs tabular-nums text-muted-foreground sm:inline"
           suppressHydrationWarning
         >
           {time ?? "—:—:—"}
