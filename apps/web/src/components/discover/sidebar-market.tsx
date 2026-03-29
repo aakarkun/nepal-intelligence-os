@@ -8,7 +8,6 @@ import {
   DiscoverRailPanel,
   discoverSidebarFooterStrip,
 } from "@/components/discover/discover-rail-panel";
-import { cn } from "@/lib/utils";
 
 const NEPAL_TZ = "Asia/Kathmandu";
 
@@ -57,47 +56,38 @@ export function SidebarMarket() {
   if (isLoading) {
     return (
       <DiscoverRailPanel title="Market pulse" leadingDotClass="bg-cyan-500">
-        <div className="flex flex-col gap-0">
-          <div className="overflow-hidden rounded-xl">
-            <div
-              className={cn(
-                "overflow-hidden bg-[#181818]/60",
-                "rounded-t-xl rounded-bl-xl rounded-br-xl font-mono text-[13px]"
-              )}
-            >
-              <div className="flex justify-between gap-2 px-3 py-1.5">
-                <div className="h-3 w-16 rounded bg-white/[0.06]" />
-                <div className="h-3 w-20 rounded bg-white/[0.06]" />
-              </div>
-              <div className="flex justify-between gap-2 px-3 py-1.5">
-                <div className="h-3 w-20 rounded bg-white/[0.06]" />
-                <div className="h-3 w-24 rounded bg-white/[0.06]" />
-              </div>
-              <div className="flex justify-between gap-2 px-3 py-1.5">
-                <div className="h-3 w-16 rounded bg-white/[0.06]" />
-                <div className="h-3 w-20 rounded bg-white/[0.06]" />
-              </div>
-              <div className="flex justify-between gap-2 px-3 py-1.5">
-                <div className="h-3 w-20 rounded bg-white/[0.06]" />
-                <div className="h-3 w-28 rounded bg-white/[0.06]" />
-              </div>
-              <div className="flex justify-between gap-2 px-3 py-1.5">
-                <div className="h-3 w-24 rounded bg-white/[0.06]" />
-                <div className="h-3 w-24 rounded bg-white/[0.06]" />
-              </div>
-              <p className="px-3 pt-1.5 pb-2 font-mono text-[11px] uppercase tracking-wider text-[#555]">
-                <span className="inline-block h-3 w-20 rounded bg-white/[0.06]" />
-              </p>
-            </div>
-            <div className={discoverSidebarFooterStrip}>
-              <Link
-                href="/economy"
-                className="font-mono text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
-              >
-                View full economy →
-              </Link>
-            </div>
+        <div className="divide-y divide-white/[0.06] font-sans text-[13px]">
+          <div className="flex justify-between gap-2 py-1.5">
+            <div className="h-3 w-16 rounded bg-white/[0.06]" />
+            <div className="h-3 w-20 rounded bg-white/[0.06]" />
           </div>
+          <div className="flex justify-between gap-2 py-1.5">
+            <div className="h-3 w-20 rounded bg-white/[0.06]" />
+            <div className="h-3 w-24 rounded bg-white/[0.06]" />
+          </div>
+          <div className="flex justify-between gap-2 py-1.5">
+            <div className="h-3 w-16 rounded bg-white/[0.06]" />
+            <div className="h-3 w-20 rounded bg-white/[0.06]" />
+          </div>
+          <div className="flex justify-between gap-2 py-1.5">
+            <div className="h-3 w-20 rounded bg-white/[0.06]" />
+            <div className="h-3 w-28 rounded bg-white/[0.06]" />
+          </div>
+          <div className="flex justify-between gap-2 py-1.5">
+            <div className="h-3 w-24 rounded bg-white/[0.06]" />
+            <div className="h-3 w-24 rounded bg-white/[0.06]" />
+          </div>
+          <p className="py-2 font-sans text-[11px] uppercase tracking-wider text-[#555]">
+            <span className="inline-block h-3 w-20 rounded bg-white/[0.06]" />
+          </p>
+        </div>
+        <div className={discoverSidebarFooterStrip}>
+          <Link
+            href="/economy"
+            className="font-sans text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
+          >
+            View full economy →
+          </Link>
         </div>
       </DiscoverRailPanel>
     );
@@ -139,16 +129,9 @@ export function SidebarMarket() {
 
   return (
     <DiscoverRailPanel title="Market pulse" leadingDotClass="bg-cyan-500">
-      <div className="flex flex-col gap-0">
-        <div className="overflow-hidden rounded-xl">
-          <div
-            className={cn(
-              "overflow-hidden bg-[#181818]/60",
-              "rounded-t-xl rounded-bl-xl rounded-br-xl font-mono text-[13px]"
-            )}
-          >
+      <div className="divide-y divide-white/[0.06] font-sans text-[13px]">
         {hasRealNepse && (
-          <div className="flex justify-between gap-2 px-3 py-1.5">
+          <div className="flex justify-between gap-2 py-1.5">
             <span className="text-[#888]">NEPSE</span>
             <span className="tabular-nums text-[#e5e5e5]">
               {nepse!.index.toLocaleString()}
@@ -170,7 +153,7 @@ export function SidebarMarket() {
           </div>
         )}
         {usd != null && (
-          <div className="flex justify-between gap-2 px-3 py-1.5">
+          <div className="flex justify-between gap-2 py-1.5">
             <span className="text-[#888]">USD/NPR</span>
             <span className="tabular-nums text-[#e5e5e5]">
               {usd.buy?.toFixed(2) ?? "—"}
@@ -189,7 +172,7 @@ export function SidebarMarket() {
           </div>
         )}
         {inr != null && (
-          <div className="flex justify-between gap-2 px-3 py-1.5">
+          <div className="flex justify-between gap-2 py-1.5">
             <span className="text-[#888]">INR/NPR</span>
             <span className="tabular-nums text-[#e5e5e5]">
               {inr.buy?.toFixed(2) ?? "—"}
@@ -208,7 +191,7 @@ export function SidebarMarket() {
           </div>
         )}
         {aud != null && (
-          <div className="flex justify-between gap-2 px-3 py-1.5">
+          <div className="flex justify-between gap-2 py-1.5">
             <span className="text-[#888]">AUD/NPR</span>
             <span className="tabular-nums text-[#e5e5e5]">
               {aud.buy?.toFixed(2) ?? "—"}
@@ -227,7 +210,7 @@ export function SidebarMarket() {
           </div>
         )}
         {btc != null && (
-          <div className="flex justify-between gap-2 px-3 py-1.5">
+          <div className="flex justify-between gap-2 py-1.5">
             <span className="text-[#888]">BTC/USD</span>
             <span className="tabular-nums text-[#e5e5e5]">
               ${btc.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -246,7 +229,7 @@ export function SidebarMarket() {
           </div>
         )}
         {gold != null && (
-          <div className="flex justify-between gap-2 px-3 py-1.5">
+          <div className="flex justify-between gap-2 py-1.5">
             <span className="text-[#888]">
               {gold.currency === "NPR" ? "XAU/NPR (tola)" : "XAU/USD"}
             </span>
@@ -275,7 +258,7 @@ export function SidebarMarket() {
           </div>
         )}
         {goldNprPerTola != null && gold?.currency !== "NPR" && (
-          <div className="flex justify-between gap-2 px-3 py-1.5">
+          <div className="flex justify-between gap-2 py-1.5">
             <span className="text-[#888]">XAU/NPR (tola)</span>
             <span className="tabular-nums text-[#e5e5e5]">
               रु {goldNprPerTola.toLocaleString("en-NP", { maximumFractionDigits: 0 })}
@@ -283,20 +266,18 @@ export function SidebarMarket() {
           </div>
         )}
         {updatedAt && (
-          <p className="px-3 pt-1.5 pb-2 font-mono text-[11px] uppercase tracking-wider text-[#555]">
+          <p className="py-2 font-sans text-[11px] uppercase tracking-wider text-[#555]">
             Updated {timeAgo(updatedAt)}
           </p>
         )}
-          </div>
-          <div className={discoverSidebarFooterStrip}>
-            <Link
-              href="/economy"
-              className="font-mono text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
-            >
-              View full economy →
-            </Link>
-          </div>
-        </div>
+      </div>
+      <div className={discoverSidebarFooterStrip}>
+        <Link
+          href="/economy"
+          className="font-sans text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
+        >
+          View full economy →
+        </Link>
       </div>
     </DiscoverRailPanel>
   );

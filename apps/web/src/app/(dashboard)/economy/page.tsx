@@ -18,14 +18,12 @@ import { buildNepseSparkSeries } from "@/lib/nepse-index-spark";
 import { dedupeSignalEventsByTitle, timeAgo, timeAgoFlexible } from "@/lib/utils";
 import {
   IntelRailSections,
-  RailPanelHeader,
   RailPanelAsOf,
-  railCardInset,
-  railListBody,
-  railPagination,
-  railRow,
-  railShell,
+  FlatRailPanelHeader,
+  railPaginationFlat,
+  railRowFlat,
 } from "@/components/layout/intel-rail";
+import { discoverShellClass } from "@/components/discover/discover-rail-tokens";
 import { cn } from "@/lib/utils";
 import type { MarketAssetQuote } from "@repo/shared";
 
@@ -108,10 +106,16 @@ function IntelDelta({
 }) {
   const size = className ?? "text-[13px]";
   if (change === null || change === 0)
-    return <span className={cn(size, "font-mono text-[#555]")}>0.00</span>;
+    return <span className={cn(size, "font-sans tabular-nums text-[#555]")}>0.00</span>;
   const isPos = change > 0;
   return (
-    <span className={cn(size, "font-mono", isPos ? "text-emerald-400/80" : "text-rose-400/80")}>
+    <span
+      className={cn(
+        size,
+        "font-sans tabular-nums",
+        isPos ? "text-emerald-400/80" : "text-rose-400/80"
+      )}
+    >
       {isPos ? "+" : ""}
       {change.toFixed(2)}
     </span>
@@ -131,7 +135,7 @@ function LiveIndicator({ dataUpdatedAt }: { dataUpdatedAt: number }) {
   const live = online && dataUpdatedAt > 0;
 
   return (
-    <div className="flex items-center gap-2 font-mono text-[12px] tracking-wider">
+    <div className="flex items-center gap-2 font-sans text-[12px] tracking-wider">
       <span className={cn("h-1.5 w-1.5 rounded-sm", live ? "bg-emerald-500 animate-pulse" : "bg-rose-500")} />
       <span className={live ? "text-emerald-500/80" : "text-rose-500/80"}>{label}</span>
     </div>
@@ -160,8 +164,15 @@ const FX_ROWS_PER_PAGE = 8;
 /** Intelligence Signals: same page size as FX for consistent rail UX. */
 const SIGNALS_ROWS_PER_PAGE = 8;
 
+/** Metric tiles — sole surface inside border shell (no extra tinted well behind them). */
+const economyTileClass =
+  "rounded-xl bg-white/[0.05] p-3";
+
+/** Body under {@link discoverShellClass}: no fill, no outer inset — mesh shows through. */
+const economyPanelBodyClass = "min-w-0";
+
 const fxRowCellBg =
-  "bg-[#181818]/60 transition-colors duration-150 group-hover:bg-white/[0.06]";
+  "bg-white/[0.03] transition-colors duration-150 group-hover:bg-white/[0.08]";
 
 function formatNprTurnover(n: number): string {
   if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
@@ -321,18 +332,9 @@ export default function EconomyPage() {
   );
 
   return (
-    <div className={cn("-mx-4 px-4 pb-10 md:-mx-6 md:px-6 min-h-full bg-background text-[#e5e5e5] antialiased")}>
+    <div className={cn("-mx-4 px-4 pb-10 md:-mx-6 md:px-6 min-h-full bg-transparent text-[#e5e5e5] antialiased")}>
       
-      {/* Header */}
-      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between border-b border-white/10 pb-4 pt-2">
-        <div>
-          <h1 className="font-mono text-lg uppercase tracking-[0.2em] text-[#e5e5e5]">
-            Macroeconomic Intelligence
-          </h1>
-          <p className="mt-1 font-mono text-[12px] uppercase tracking-wider text-[#888]">
-            Nepal Rastra Bank · NEPSE · Global Commodities
-          </p>
-        </div>
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-2">
         <LiveIndicator
           dataUpdatedAt={Math.max(
             forexUpdatedAt ?? 0,
@@ -346,18 +348,23 @@ export default function EconomyPage() {
         <div className="min-w-0 flex-1 space-y-4">
           
           {/* Top Indicators Strip */}
-          <div className={railShell}>
-            <RailPanelHeader title="Market snapshot" leadingDotClass="bg-emerald-500" />
-            <div className={cn(railListBody, "rounded-b-xl")}>
-              <div className={cn("flex flex-wrap gap-2", railCardInset)}>
+          <div className={discoverShellClass}>
+            <FlatRailPanelHeader title="Market snapshot" leadingDotClass="bg-emerald-500" />
+            <div className={cn(economyPanelBodyClass, "px-2 pb-2")}>
+              <div className="flex flex-wrap gap-2">
                 {/* NEPSE */}
-                <div className="flex min-w-[140px] flex-1 flex-col justify-between rounded-xl bg-[#181818]/60 p-3">
+                <div
+                  className={cn(
+                    "flex min-w-[140px] flex-1 flex-col justify-between",
+                    economyTileClass
+                  )}
+                >
                   <div>
-                    <div className="mb-1 text-[13px] font-mono uppercase tracking-wider text-[#888]">
-                      NEPSE Index
+                    <div className="mb-1 text-[13px] font-sans uppercase tracking-wider text-[#888]">
+                      <span className="font-mono normal-case">NEPSE</span> Index
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-[22px] font-mono leading-none text-[#e5e5e5]">
+                      <span className="text-[22px] font-sans tabular-nums leading-none text-[#e5e5e5]">
                         {nepse?.index
                           ? nepse.index.toLocaleString(undefined, { minimumFractionDigits: 2 })
                           : "—"}
@@ -373,7 +380,7 @@ export default function EconomyPage() {
                         Boolean(nepse.timestamp)) && (
                         <div className="mt-1.5 space-y-0.5 border-t border-white/[0.06] pt-1.5">
                           {nepse.changePercent != null && (
-                            <p className="font-mono text-[12px] leading-tight text-[#888]">
+                            <p className="font-sans text-[12px] leading-tight text-[#888]">
                               DAY{" "}
                               <span className="text-[#a1a1aa]">
                                 {nepse.changePercent >= 0 ? "+" : ""}
@@ -382,14 +389,14 @@ export default function EconomyPage() {
                             </p>
                           )}
                           {nepse.marketStatus && (
-                            <p className="font-mono text-[12px] uppercase tracking-wider text-[#555]">
+                            <p className="font-sans text-[12px] uppercase tracking-wider text-[#555]">
                               {nepse.marketStatus === "open"
                                 ? "Market open"
                                 : "Market closed"}
                             </p>
                           )}
                           {nepse.totalTurnover != null && nepse.totalTurnover > 0 && (
-                            <p className="font-mono text-[12px] text-[#555]">
+                            <p className="font-sans text-[12px] text-[#555]">
                               Turnover NPR {formatNprTurnover(nepse.totalTurnover)}
                               {nepse.sourceName ? (
                                 <span className="text-[#666]"> · {nepse.sourceName}</span>
@@ -397,7 +404,7 @@ export default function EconomyPage() {
                             </p>
                           )}
                           {nepse.timestamp && (
-                            <p className="font-mono text-[12px] text-[#555]">
+                            <p className="font-sans text-[12px] text-[#555]">
                               Snapshot {timeAgo(nepse.timestamp)}
                               {nepse.dataAsOf ? (
                                 <span className="text-[#666]"> · {nepse.dataAsOf}</span>
@@ -406,7 +413,7 @@ export default function EconomyPage() {
                           )}
                           {nepse.advancingIssues != null &&
                             nepse.decliningIssues != null && (
-                              <p className="font-mono text-[12px] text-[#555]">
+                              <p className="font-sans text-[12px] text-[#555]">
                                 ↑ {nepse.advancingIssues} adv · ↓{" "}
                                 {nepse.decliningIssues} dec
                               </p>
@@ -439,31 +446,35 @@ export default function EconomyPage() {
                   return (
                     <div
                       key={code}
-                      className="flex min-w-[120px] flex-1 flex-col justify-between rounded-xl bg-[#181818]/60 p-3"
+                      className={cn(
+                        "flex min-w-[120px] flex-1 flex-col justify-between",
+                        economyTileClass
+                      )}
                     >
                       <div>
-                        <div className="mb-1 text-[13px] font-mono uppercase tracking-wider text-[#888]">
-                          {code}/NPR
+                        <div className="mb-1 text-[13px] font-sans uppercase tracking-wider text-[#888]">
+                          <span className="font-mono normal-case">{code}</span>/NPR
                         </div>
                         <div className="flex items-baseline gap-2">
-                          <span className="text-[22px] font-mono leading-none text-[#e5e5e5]">
+                          <span className="text-[22px] font-sans tabular-nums leading-none text-[#e5e5e5]">
                             {rate ? rate.buy.toFixed(2) : "—"}
                           </span>
                           {rate && <IntelDelta change={rate.changeBuy} className="text-[14px]" />}
                         </div>
                         {rate && (
                           <div className="mt-1.5 space-y-0.5 border-t border-white/[0.06] pt-1.5">
-                            <p className="font-mono text-[12px] leading-tight text-[#888]">
+                            <p className="font-sans text-[12px] leading-tight text-[#888]">
                               Sell{" "}
                               <span className="text-[#a1a1aa]">{rate.sell.toFixed(2)}</span>
                             </p>
                             {rate.unit !== 1 && (
-                              <p className="font-mono text-[12px] text-[#555]">
-                                Per {rate.unit} {rate.currencyCode}
+                              <p className="font-sans text-[12px] text-[#555]">
+                                Per {rate.unit}{" "}
+                                <span className="font-mono">{rate.currencyCode}</span>
                               </p>
                             )}
                             {nrbAgo && (
-                              <p className="font-mono text-[12px] text-[#555]">
+                              <p className="font-sans text-[12px] text-[#555]">
                                 NRB bulletin {nrbAgo}
                               </p>
                             )}
@@ -483,41 +494,41 @@ export default function EconomyPage() {
             <div className="min-w-0 space-y-4 xl:col-span-9">
               
               {/* Strategic Commodities */}
-              <div className={railShell}>
-                <RailPanelHeader
+              <div className={discoverShellClass}>
+                <FlatRailPanelHeader
                   title="Strategic Commodities"
                   leadingDotClass="bg-amber-500"
                   right={
                     strategicLatestTs ? (
-                      <span className="max-w-[min(100%,14rem)] text-right font-mono text-[12px] leading-none">
+                      <span className="max-w-[min(100%,14rem)] text-right font-sans text-[12px] leading-none">
                         <span className="uppercase tracking-[0.12em] text-[#666]">Updated</span>{" "}
                         <span className="text-[#a1a1aa]">{timeAgo(strategicLatestTs)}</span>
                       </span>
                     ) : (
-                      <span className="font-mono text-[12px] text-[#555]">—</span>
+                      <span className="font-sans text-[12px] text-[#555]">—</span>
                     )
                   }
                 />
-                <div className="flex flex-wrap bg-[#0c0c0c] px-3 py-1.5 font-mono text-[12px] leading-snug text-[#666]">
-                  <span>
-                    <span className="text-[#555]">Sources</span>
-                    <span className="text-[#666]">
-                      {" · "}CoinGecko · Gold API · FENEGOSIDA · 24h % CoinGecko
+                <div className={economyPanelBodyClass}>
+                  <div className="border-b border-white/[0.06] px-2 py-1.5 font-sans text-[12px] leading-snug text-[#666]">
+                    <span>
+                      <span className="text-[#555]">Sources</span>
+                      <span className="text-[#666]">
+                        {" · "}CoinGecko · Gold API · FENEGOSIDA · 24h % CoinGecko
+                      </span>
                     </span>
-                  </span>
-                </div>
-                <div className={cn(railListBody, "rounded-b-xl")}>
-                  <div className={cn("grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-2", railCardInset)}>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 px-2 pb-2 pt-2 sm:grid-cols-4 sm:gap-2">
                     {REF_ASSETS.map((code) => {
                       const quote = globalRefQuotes.find((q) => q.assetCode === code);
                       return (
-                        <div key={code} className="rounded-xl bg-[#181818]/60 p-3">
-                          <div className="mb-1 text-[12px] font-mono uppercase tracking-wider text-[#888]">
-                            {quote?.assetName ?? code}
+                        <div key={code} className={economyTileClass}>
+                          <div className="mb-1 text-[12px] font-sans uppercase tracking-wider text-[#888]">
+                            {quote?.assetName ?? <span className="font-mono normal-case">{code}</span>}
                           </div>
                           <div className="flex flex-col gap-1">
                             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                              <span className="font-mono text-lg tabular-nums text-[#e5e5e5]">
+                              <span className="text-lg font-sans tabular-nums text-[#e5e5e5]">
                                 {quote
                                   ? quote.price.toLocaleString("en-US", {
                                       maximumFractionDigits: code === "BTC" ? 0 : 2,
@@ -535,7 +546,7 @@ export default function EconomyPage() {
                                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                   {quote.change != null && <IntelDelta change={quote.change} />}
                                   {quote.changePercent != null && (
-                                    <span className="font-mono text-[12px] text-[#888]">
+                                    <span className="font-sans text-[12px] text-[#888]">
                                       ({quote.changePercent >= 0 ? "+" : ""}
                                       {quote.changePercent.toFixed(2)}% 24h)
                                     </span>
@@ -543,7 +554,7 @@ export default function EconomyPage() {
                                 </div>
                               )}
                             {quote && (
-                              <div className="mt-2 space-y-0.5 border-t border-white/[0.06] pt-2 font-mono text-[11px] leading-tight text-[#555]">
+                              <div className="mt-2 space-y-0.5 border-t border-white/[0.06] pt-2 font-sans text-[11px] leading-tight text-[#555]">
                                 <div className="text-[#888]">{strategicCommoditySource(quote)}</div>
                                 <div>{timeAgo(quote.timestamp)}</div>
                               </div>
@@ -558,15 +569,16 @@ export default function EconomyPage() {
 
               {/* Portal market panels */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className={cn(railShell, "min-w-0 md:col-span-2")}>
-                <RailPanelHeader
+              <div className={cn(discoverShellClass, "min-w-0 md:col-span-2")}>
+                <FlatRailPanelHeader
                   title="Main indices"
                   leadingDotClass="bg-cyan-500"
                   right={<RailPanelAsOf date={marketPortal?.mainIndicesAsOf} />}
                 />
+                <div className={economyPanelBodyClass}>
                 {(marketPortal?.mainIndicesTurnoverNpr != null ||
                   marketPortal?.nepseConfidence != null) && (
-                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 bg-[#0c0c0c] px-3 py-1.5 font-mono text-[12px] text-[#666]">
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-b border-white/[0.06] px-2 py-1.5 font-sans text-[12px] text-[#666]">
                     {marketPortal?.mainIndicesTurnoverNpr != null && (
                       <span>
                         Turnover NPR {formatNprTurnover(marketPortal.mainIndicesTurnoverNpr)}
@@ -586,19 +598,18 @@ export default function EconomyPage() {
                     )}
                   </div>
                 )}
-                <div className={cn(railListBody, "rounded-b-xl")}>
-                  <div className={cn("px-1 pb-1 pt-0", railCardInset)}>
-                    <div className="overflow-hidden rounded-xl border border-white/[0.06]">
+                <div className="px-2 pb-2 pt-1">
+                    <div className="overflow-hidden rounded-lg">
                       <table className="w-full min-w-[320px] border-separate border-spacing-0 text-left">
-                        <thead className="bg-[#0c0c0c]">
+                        <thead className="bg-white/[0.04]">
                           <tr className="border-b border-white/[0.06]">
-                            <th className="px-3 py-2 font-mono text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
+                            <th className="px-3 py-2 font-sans text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
                               Index
                             </th>
-                            <th className="px-3 py-2 text-right font-mono text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
+                            <th className="px-3 py-2 text-right font-sans text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
                               Close
                             </th>
-                            <th className="px-3 py-2 text-right font-mono text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
+                            <th className="px-3 py-2 text-right font-sans text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
                               Pt
                             </th>
                           </tr>
@@ -606,12 +617,12 @@ export default function EconomyPage() {
                         <tbody>
                           {(marketPortal?.mainIndices ?? []).map((row) => (
                             <tr key={row.name} className="group">
-                              <td className={cn("px-3 py-2 font-mono text-[13px] text-[#ccc]", fxRowCellBg)}>
+                              <td className={cn("px-3 py-2 font-sans text-[13px] text-[#ccc]", fxRowCellBg)}>
                                 {row.name}
                               </td>
                               <td
                                 className={cn(
-                                  "px-3 py-2 text-right font-mono text-[13px] text-[#e5e5e5]",
+                                  "px-3 py-2 text-right font-sans text-[13px] text-[#e5e5e5]",
                                   fxRowCellBg
                                 )}
                               >
@@ -626,7 +637,7 @@ export default function EconomyPage() {
                             <tr>
                               <td
                                 colSpan={3}
-                                className="px-3 py-6 text-center font-mono text-[13px] text-[#555]"
+                                className="px-3 py-6 text-center font-sans text-[13px] text-[#555]"
                               >
                                 NO DATA
                               </td>
@@ -635,21 +646,21 @@ export default function EconomyPage() {
                         </tbody>
                       </table>
                     </div>
-                  </div>
+                </div>
                 </div>
               </div>
 
-              <div className={cn(railShell, "min-w-0 md:col-span-2")}>
-                <RailPanelHeader
+              <div className={cn(discoverShellClass, "min-w-0 md:col-span-2")}>
+                <FlatRailPanelHeader
                   title="Sub-indices"
                   leadingDotClass="bg-violet-500"
                   right={<RailPanelAsOf date={marketPortal?.subIndicesAsOf} />}
                 />
-                <div className={cn(railListBody, "rounded-b-xl")}>
-                  <div className={cn("px-1 pb-1 pt-0", railCardInset)}>
-                    <div className="overflow-x-auto overflow-hidden rounded-xl border border-white/[0.06]">
+                <div className={economyPanelBodyClass}>
+                  <div className="px-2 pb-2 pt-1">
+                    <div className="overflow-x-auto overflow-hidden rounded-lg">
                       <table className="w-full min-w-[900px] border-separate border-spacing-0 text-left">
-                        <thead className="bg-[#0c0c0c]">
+                        <thead className="bg-white/[0.04]">
                           <tr className="border-b border-white/[0.06]">
                             {[
                               "Sub-index",
@@ -666,7 +677,7 @@ export default function EconomyPage() {
                               <th
                                 key={h}
                                 className={cn(
-                                  "whitespace-nowrap px-2 py-2 font-mono text-[11px] font-normal uppercase tracking-wider text-[#a1a1aa]",
+                                  "whitespace-nowrap px-2 py-2 font-sans text-[11px] font-normal uppercase tracking-wider text-[#a1a1aa]",
                                   i === 0 ? "text-left" : "text-right"
                                 )}
                               >
@@ -678,35 +689,35 @@ export default function EconomyPage() {
                         <tbody>
                           {(marketPortal?.subIndices ?? []).map((row) => (
                             <tr key={row.name} className="group">
-                              <td className={cn("max-w-[140px] truncate px-2 py-1.5 font-mono text-[12px] text-[#ccc]", fxRowCellBg)}>
+                              <td className={cn("max-w-[140px] truncate px-2 py-1.5 font-sans text-[12px] text-[#ccc]", fxRowCellBg)}>
                                 {row.name}
                               </td>
-                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-mono text-[12px] text-[#ccc]", fxRowCellBg)}>
+                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-sans text-[12px] text-[#ccc]", fxRowCellBg)}>
                                 {row.open.toLocaleString()}
                               </td>
-                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-mono text-[12px] text-[#ccc]", fxRowCellBg)}>
+                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-sans text-[12px] text-[#ccc]", fxRowCellBg)}>
                                 {row.high.toLocaleString()}
                               </td>
-                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-mono text-[12px] text-[#ccc]", fxRowCellBg)}>
+                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-sans text-[12px] text-[#ccc]", fxRowCellBg)}>
                                 {row.low.toLocaleString()}
                               </td>
-                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-mono text-[12px] text-[#e5e5e5]", fxRowCellBg)}>
+                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-sans text-[12px] text-[#e5e5e5]", fxRowCellBg)}>
                                 {row.close.toLocaleString()}
                               </td>
-                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-mono text-[12px] text-[#888]", fxRowCellBg)}>
+                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-sans text-[12px] text-[#888]", fxRowCellBg)}>
                                 {formatNprTurnover(row.turnover)}
                               </td>
-                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-mono text-[12px]", fxRowCellBg)}>
+                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-sans text-[12px]", fxRowCellBg)}>
                                 <IntelDelta change={row.pointChange} className="text-[12px]" />
                               </td>
-                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-mono text-[12px] text-[#888]", fxRowCellBg)}>
+                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-sans text-[12px] text-[#888]", fxRowCellBg)}>
                                 {row.changePercent >= 0 ? "+" : ""}
                                 {row.changePercent.toFixed(2)}%
                               </td>
-                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-mono text-[12px] text-[#555]", fxRowCellBg)}>
+                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-sans text-[12px] text-[#555]", fxRowCellBg)}>
                                 {row.week52High.toLocaleString()}
                               </td>
-                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-mono text-[12px] text-[#555]", fxRowCellBg)}>
+                              <td className={cn("whitespace-nowrap px-2 py-1.5 text-right font-sans text-[12px] text-[#555]", fxRowCellBg)}>
                                 {row.week52Low.toLocaleString()}
                               </td>
                             </tr>
@@ -715,7 +726,7 @@ export default function EconomyPage() {
                             <tr>
                               <td
                                 colSpan={10}
-                                className="px-3 py-6 text-center font-mono text-[13px] text-[#555]"
+                                className="px-3 py-6 text-center font-sans text-[13px] text-[#555]"
                               >
                                 NO DATA
                               </td>
@@ -728,25 +739,25 @@ export default function EconomyPage() {
                 </div>
               </div>
 
-              <div className={cn(railShell, "min-w-0")}>
-                <RailPanelHeader
+              <div className={cn(discoverShellClass, "min-w-0")}>
+                <FlatRailPanelHeader
                   title="Gold & silver"
                   leadingDotClass="bg-yellow-600"
                   right={<RailPanelAsOf date={marketPortal?.metalsAsOf} />}
                 />
-                <div className={cn(railListBody, "rounded-b-xl")}>
-                  <div className={cn("px-1 pb-1 pt-0", railCardInset)}>
-                    <div className="overflow-hidden rounded-xl border border-white/[0.06]">
+                <div className={economyPanelBodyClass}>
+                  <div className="px-2 pb-2 pt-1">
+                    <div className="overflow-hidden rounded-lg">
                       <table className="w-full border-separate border-spacing-0 text-left">
-                        <thead className="bg-[#0c0c0c]">
+                        <thead className="bg-white/[0.04]">
                           <tr className="border-b border-white/[0.06]">
-                            <th className="px-3 py-2 font-mono text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
+                            <th className="px-3 py-2 font-sans text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
                               Name
                             </th>
-                            <th className="px-3 py-2 text-right font-mono text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
+                            <th className="px-3 py-2 text-right font-sans text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
                               NPR
                             </th>
-                            <th className="px-3 py-2 text-right font-mono text-[12px] font-normal tracking-wider text-[#a1a1aa] normal-case">
+                            <th className="px-3 py-2 text-right font-sans text-[12px] font-normal tracking-wider text-[#a1a1aa] normal-case">
                               Change (NPR)
                             </th>
                           </tr>
@@ -754,10 +765,10 @@ export default function EconomyPage() {
                         <tbody>
                           {(marketPortal?.metals ?? []).map((row) => (
                             <tr key={row.name}>
-                              <td className={cn("px-3 py-2 font-mono text-[13px] text-[#ccc]", fxRowCellBg)}>
+                              <td className={cn("px-3 py-2 font-sans text-[13px] text-[#ccc]", fxRowCellBg)}>
                                 {row.name}
                               </td>
-                              <td className={cn("px-3 py-2 text-right font-mono text-[13px] text-[#e5e5e5]", fxRowCellBg)}>
+                              <td className={cn("px-3 py-2 text-right font-sans text-[13px] text-[#e5e5e5]", fxRowCellBg)}>
                                 {row.price.toLocaleString("en-IN")}
                               </td>
                               <td className={cn("px-3 py-2 text-right", fxRowCellBg)}>
@@ -769,7 +780,7 @@ export default function EconomyPage() {
                             <tr>
                               <td
                                 colSpan={3}
-                                className="px-3 py-6 text-center font-mono text-[13px] text-[#555]"
+                                className="px-3 py-6 text-center font-sans text-[13px] text-[#555]"
                               >
                                 NO DATA
                               </td>
@@ -778,26 +789,26 @@ export default function EconomyPage() {
                         </tbody>
                       </table>
                     </div>
-                  </div>
+                </div>
                 </div>
               </div>
 
-              <div className={cn(railShell, "min-w-0")}>
-                <RailPanelHeader
+              <div className={cn(discoverShellClass, "min-w-0")}>
+                <FlatRailPanelHeader
                   title="Retail fuel (Nepal)"
                   leadingDotClass="bg-rose-500"
                   right={<RailPanelAsOf date={marketPortal?.oilAsOf} />}
                 />
-                <div className={cn(railListBody, "rounded-b-xl")}>
-                  <div className={cn("px-1 pb-1 pt-0", railCardInset)}>
-                    <div className="overflow-hidden rounded-xl border border-white/[0.06]">
+                <div className={economyPanelBodyClass}>
+                  <div className="px-2 pb-2 pt-1">
+                    <div className="overflow-hidden rounded-lg">
                       <table className="w-full border-separate border-spacing-0 text-left">
-                        <thead className="bg-[#0c0c0c]">
+                        <thead className="bg-white/[0.04]">
                           <tr className="border-b border-white/[0.06]">
-                            <th className="px-3 py-2 font-mono text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
+                            <th className="px-3 py-2 font-sans text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
                               Product
                             </th>
-                            <th className="px-3 py-2 text-right font-mono text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
+                            <th className="px-3 py-2 text-right font-sans text-[12px] font-normal uppercase tracking-wider text-[#a1a1aa]">
                               Price
                             </th>
                           </tr>
@@ -805,10 +816,10 @@ export default function EconomyPage() {
                         <tbody>
                           {(marketPortal?.oil ?? []).map((row) => (
                             <tr key={row.name}>
-                              <td className={cn("px-3 py-2 font-mono text-[13px] text-[#ccc]", fxRowCellBg)}>
+                              <td className={cn("px-3 py-2 font-sans text-[13px] text-[#ccc]", fxRowCellBg)}>
                                 {row.name}
                               </td>
-                              <td className={cn("px-3 py-2 text-right font-mono text-[13px] text-[#ccc]", fxRowCellBg)}>
+                              <td className={cn("px-3 py-2 text-right font-sans text-[13px] text-[#ccc]", fxRowCellBg)}>
                                 {row.priceText}
                               </td>
                             </tr>
@@ -817,7 +828,7 @@ export default function EconomyPage() {
                             <tr>
                               <td
                                 colSpan={2}
-                                className="px-3 py-6 text-center font-mono text-[13px] text-[#555]"
+                                className="px-3 py-6 text-center font-sans text-[13px] text-[#555]"
                               >
                                 NO DATA
                               </td>
@@ -832,65 +843,55 @@ export default function EconomyPage() {
               </div>
 
               {/* FX Matrix */}
-              <div className={railShell}>
-                <RailPanelHeader
+              <div className={discoverShellClass}>
+                <FlatRailPanelHeader
                   title="Official Exchange Rates (NRB)"
                   leadingDotClass="bg-blue-500"
                 />
-                <div className="bg-[#0c0c0c] px-1 py-2">
-                  <div className="flex items-center gap-2 px-3">
+                <div className={economyPanelBodyClass}>
+                <div className="border-b border-white/[0.06] px-2 py-1.5">
+                  <div className="flex items-center gap-2 px-0">
                     <Search className="h-3 w-3 shrink-0 text-[#555]" aria-hidden />
                     <input
                       type="search"
                       value={rateQuery}
                       onChange={(e) => setRateQuery(e.target.value)}
                       placeholder="FILTER CURRENCIES..."
-                      className="min-w-0 flex-1 border-none bg-transparent py-1.5 pl-0 font-mono text-[13px] text-[#ccc] placeholder:text-[#555] focus:outline-none focus:ring-0"
+                      className="min-w-0 flex-1 border-none bg-transparent py-1.5 pl-0 font-sans text-[13px] text-[#ccc] placeholder:text-[#555] focus:outline-none focus:ring-0"
                     />
                   </div>
                 </div>
-                {/*
-                  Paginated (≤8 rows per page). Bottom row radius only when no pagination footer.
-                */}
                 <div
                   className={cn(
-                    railListBody,
-                    "overflow-hidden rounded-t-xl",
-                    !showFxPagination && filteredRates.length > 0 && "rounded-b-xl"
+                    "overflow-hidden",
+                    !showFxPagination && filteredRates.length > 0 && "rounded-b-lg"
                   )}
                 >
-                  <div className="px-1 pb-1 pt-0">
-                  {/*
-                    border-separate + solid th bg: header matches main card (#0c0c0c), no alpha.
-                  */}
+                  <div className="px-2 pb-2 pt-0">
                   <table className="w-full border-separate border-spacing-0 text-left">
-                    {/*
-                      Single rounded clip on thead + solid bg so tbody row color never shows through
-                      the header’s corners (per-th rounded cells can anti-alias over the first row).
-                    */}
-                    <thead className="overflow-hidden rounded-t-xl bg-[#0c0c0c]">
+                    <thead className="overflow-hidden rounded-t-lg bg-white/[0.04]">
                       <tr className="border-b border-white/[0.06]">
                         <th
                           scope="col"
-                          className="rounded-tl-xl border-0 bg-[#0c0c0c] px-3 py-3 text-left font-mono text-[13px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
+                          className="rounded-tl-lg border-0 bg-white/[0.04] px-3 py-3 text-left font-sans text-[13px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
                         >
                           Code
                         </th>
                         <th
                           scope="col"
-                          className="border-0 bg-[#0c0c0c] px-3 py-3 text-right font-mono text-[13px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
+                          className="border-0 bg-white/[0.04] px-3 py-3 text-right font-sans text-[13px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
                         >
                           Buy
                         </th>
                         <th
                           scope="col"
-                          className="border-0 bg-[#0c0c0c] px-3 py-3 text-right font-mono text-[13px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
+                          className="border-0 bg-white/[0.04] px-3 py-3 text-right font-sans text-[13px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
                         >
                           Sell
                         </th>
                         <th
                           scope="col"
-                          className="rounded-tr-xl border-0 bg-[#0c0c0c] px-3 py-3 text-right font-mono text-[13px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
+                          className="rounded-tr-lg border-0 bg-white/[0.04] px-3 py-3 text-right font-sans text-[13px] font-normal uppercase leading-none tracking-[0.08em] text-[#a1a1aa]"
                         >
                           Delta
                         </th>
@@ -915,14 +916,14 @@ export default function EconomyPage() {
                                 <span className="font-mono text-[14px] text-[#e5e5e5]">
                                   {rate.currencyCode}
                                 </span>
-                                <span className="max-w-[120px] truncate font-mono text-[12px] text-[#555]">
+                                <span className="max-w-[120px] truncate font-sans text-[12px] text-[#555]">
                                   {rate.currencyName}
                                 </span>
                               </div>
                             </td>
                             <td
                               className={cn(
-                                "px-3 py-3 text-right font-mono text-[14px] text-[#ccc]",
+                                "px-3 py-3 text-right font-sans tabular-nums text-[14px] text-[#ccc]",
                                 fxRowCellBg
                               )}
                             >
@@ -930,7 +931,7 @@ export default function EconomyPage() {
                             </td>
                             <td
                               className={cn(
-                                "px-3 py-3 text-right font-mono text-[14px] text-[#ccc]",
+                                "px-3 py-3 text-right font-sans tabular-nums text-[14px] text-[#ccc]",
                                 fxRowCellBg
                               )}
                             >
@@ -953,7 +954,7 @@ export default function EconomyPage() {
                         <tr>
                           <td
                             colSpan={4}
-                            className="rounded-b-xl px-3 py-6 text-center font-mono text-[13px] text-[#555]"
+                            className="rounded-b-xl px-3 py-6 text-center font-sans text-[13px] text-[#555]"
                           >
                             NO DATA MATCHING FILTER
                           </td>
@@ -964,8 +965,8 @@ export default function EconomyPage() {
                   </div>
 
                   {showFxPagination && (
-                    <div className={cn(railPagination, "flex items-center justify-between rounded-b-xl")}>
-                      <span className="font-mono text-[11px] text-[#555]">
+                    <div className={cn(railPaginationFlat, "flex items-center justify-between")}>
+                      <span className="font-sans text-[11px] text-[#555]">
                         PAGE {fxPageSafe + 1} OF {fxTotalPages}
                       </span>
                       <div className="flex items-center gap-1">
@@ -993,6 +994,7 @@ export default function EconomyPage() {
                     </div>
                   )}
                 </div>
+                </div>
               </div>
 
             </div>
@@ -1001,8 +1003,8 @@ export default function EconomyPage() {
             <div className="min-w-0 space-y-4 xl:col-span-3">
               
               {/* Intelligence Signals */}
-              <div className={railShell}>
-                <RailPanelHeader
+              <div className={discoverShellClass}>
+                <FlatRailPanelHeader
                   title="Intelligence Signals"
                   leadingDotClass={
                     signalSentiment === "bearish" ? "bg-rose-500" : "bg-emerald-500"
@@ -1010,13 +1012,11 @@ export default function EconomyPage() {
                 />
                 <div
                   className={cn(
-                    railListBody,
-                    "overflow-hidden rounded-t-xl",
-                    !showSignalsPagination && topNews.length > 0 && "rounded-b-xl"
+                    economyPanelBodyClass,
+                    !showSignalsPagination && topNews.length > 0 && "overflow-hidden rounded-b-lg"
                   )}
                 >
-                  <div className={railCardInset}>
-                    <div className="flex flex-col">
+                  <div className="flex flex-col">
                       {paginatedSignals.map((event, i) => {
                         const bearish = inferBearish(event.title, event.body);
                         const bullish = inferBullish(event.title, event.body);
@@ -1026,20 +1026,20 @@ export default function EconomyPage() {
                           <div
                             key={`${event.timestamp}-${signalsPageSafe}-${i}`}
                             className={cn(
-                              railRow,
-                              isFirst && "rounded-t-xl",
-                              isLast && "rounded-b-xl"
+                              railRowFlat,
+                              isFirst && "rounded-t-lg",
+                              isLast && !showSignalsPagination && "rounded-b-lg"
                             )}
                           >
                             <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2">
                               <div className="flex min-w-0 flex-wrap items-center gap-2">
-                                <span className="rounded-md bg-white/5 px-1.5 py-0.5 font-mono text-[11px] uppercase text-[#888]">
+                                <span className="rounded-md bg-white/5 px-1.5 py-0.5 font-sans text-[11px] uppercase text-[#888]">
                                   {event.source ?? "SYS"}
                                 </span>
                                 {(bearish || bullish) && (
                                   <span
                                     className={cn(
-                                      "rounded-md px-1.5 py-0.5 font-mono text-[11px] uppercase",
+                                      "rounded-md px-1.5 py-0.5 font-sans text-[11px] uppercase",
                                       bearish
                                         ? "bg-rose-400/10 text-rose-400"
                                         : "bg-emerald-400/10 text-emerald-400"
@@ -1049,7 +1049,7 @@ export default function EconomyPage() {
                                   </span>
                                 )}
                               </div>
-                              <span className="shrink-0 font-mono text-[11px] text-[#555]">
+                              <span className="shrink-0 font-sans text-[11px] text-[#555]">
                                 [{timeAgo(event.timestamp).toUpperCase()}]
                               </span>
                             </div>
@@ -1058,18 +1058,17 @@ export default function EconomyPage() {
                         );
                       })}
                       {topNews.length === 0 && (
-                        <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-                          <p className="font-mono text-[12px] uppercase text-[#555]">
+                        <div className={cn(railRowFlat, "rounded-t-lg rounded-b-lg")}>
+                          <p className="font-sans text-[12px] uppercase text-[#555]">
                             NO SIGNALS DETECTED.
                           </p>
                         </div>
                       )}
-                    </div>
                   </div>
 
                   {showSignalsPagination && (
-                    <div className={cn(railPagination, "flex items-center justify-between rounded-b-xl")}>
-                      <span className="font-mono text-[11px] text-[#555]">
+                    <div className={cn(railPaginationFlat, "flex items-center justify-between")}>
+                      <span className="font-sans text-[11px] text-[#555]">
                         PAGE {signalsPageSafe + 1} OF {signalsTotalPages}
                       </span>
                       <div className="flex items-center gap-1">
@@ -1100,48 +1099,50 @@ export default function EconomyPage() {
               </div>
 
               {/* Volatility Watch */}
-              <div className={railShell}>
-                <RailPanelHeader
+              <div className={discoverShellClass}>
+                <FlatRailPanelHeader
                   title="Volatility Watch (Movers)"
                   leadingDotClass="bg-purple-500"
                 />
-                <div className={cn(railListBody, "rounded-b-xl")}>
-                  <div className={cn("flex flex-col", railCardInset)}>
+                <div className={economyPanelBodyClass}>
+                  <div className="flex flex-col">
                     {(summary?.topMovers ?? []).map((mover, i, arr) => {
                       const last = i === arr.length - 1;
                       return (
                         <div
                           key={mover.currencyCode}
                           className={cn(
-                            railRow,
+                            railRowFlat,
                             "flex items-start justify-between gap-3",
-                            i === 0 && "rounded-t-xl",
-                            last && "rounded-b-xl"
+                            i === 0 && "rounded-t-lg",
+                            last && "rounded-b-lg"
                           )}
                         >
                           <div className="flex min-w-0 flex-1 items-start gap-3">
-                            <span className="w-4 shrink-0 pt-0.5 font-mono text-[12px] text-[#555]">
+                            <span className="w-4 shrink-0 pt-0.5 font-sans text-[12px] text-[#555]">
                               {i + 1}
                             </span>
                             <div className="min-w-0">
                               <div className="font-mono text-[14px] text-[#e5e5e5]">
                                 {mover.currencyCode}
                               </div>
-                              <div className="break-words font-mono text-[11px] leading-snug text-[#555]">
+                              <div className="break-words font-sans text-[11px] leading-snug text-[#555]">
                                 {mover.currencyName}
                               </div>
                             </div>
                           </div>
                           <div className="shrink-0 text-right">
-                            <div className="font-mono text-[14px] text-[#ccc]">{mover.buy.toFixed(3)}</div>
+                            <div className="font-sans tabular-nums text-[14px] text-[#ccc]">
+                              {mover.buy.toFixed(3)}
+                            </div>
                             <IntelDelta change={mover.changeBuy} />
                           </div>
                         </div>
                       );
                     })}
                     {(summary?.topMovers ?? []).length === 0 && (
-                      <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-                        <p className="font-mono text-[12px] uppercase text-[#555]">
+                      <div className={cn(railRowFlat, "rounded-t-lg rounded-b-lg")}>
+                        <p className="font-sans text-[12px] uppercase text-[#555]">
                           AWAITING VOLATILITY DATA.
                         </p>
                       </div>

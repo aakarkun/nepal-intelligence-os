@@ -4,10 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchFeed } from "@/lib/api";
 import { useMemo } from "react";
 import { dedupeSignalEventsByTitle, cn } from "@/lib/utils";
-import {
-  DiscoverRailPanel,
-  discoverSidebarSurface,
-} from "@/components/discover/discover-rail-panel";
+import { DiscoverRailPanel } from "@/components/discover/discover-rail-panel";
 import type { SignalEventEntities } from "@repo/shared";
 
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
@@ -56,7 +53,7 @@ export function SidebarTrending({
   if (isLoading) {
     return (
       <DiscoverRailPanel title="Trending" leadingDotClass="bg-fuchsia-500">
-        <div className={cn(discoverSidebarSurface, "px-3 pt-2.5 pb-3")}>
+        <div>
           <div className="mb-2 h-3 w-36 rounded bg-white/[0.06]" />
           <div className="flex flex-wrap gap-2">
             {Array.from({ length: 7 }).map((_, idx) => (
@@ -76,8 +73,8 @@ export function SidebarTrending({
 
   return (
     <DiscoverRailPanel title="Trending" leadingDotClass="bg-fuchsia-500">
-      <div className={cn(discoverSidebarSurface, "px-3 pt-2.5 pb-3")}>
-        <p className="mb-2 font-mono text-[11px] uppercase tracking-wider text-[#555]">
+      <div>
+        <p className="mb-2 font-sans text-[11px] uppercase tracking-wider text-[#555]">
           Entities · last 6 hours
         </p>
         <div className="flex flex-wrap gap-2">
@@ -87,7 +84,7 @@ export function SidebarTrending({
               type="button"
               onClick={() => onTopicClick?.(name)}
               className={cn(
-                "rounded-md bg-[#0c0c0c]/90 px-2 py-1 font-mono text-[12px] text-[#ccc] transition-colors",
+                "rounded-md bg-white/[0.05] px-2 py-1 font-sans text-[12px] text-[#ccc] transition-colors",
                 "hover:bg-emerald-500/15 hover:text-emerald-400/90"
               )}
             >

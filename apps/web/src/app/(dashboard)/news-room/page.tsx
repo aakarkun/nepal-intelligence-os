@@ -61,15 +61,6 @@ export default function NewsRoomPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-bold tracking-tight">
-          News Room
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Editorial desk for browsing curated news by source and topic. For operational triage, use Signals Feed.
-        </p>
-      </div>
-
       <div className="grid gap-4 xl:grid-cols-[0.9fr_1.6fr_1fr]">
         <SourceRail sources={sources} selected={selectedSource} onSelect={setSelectedSource} />
         <HeadlinesList events={filtered} selectedId={selected} onSelect={setSelectedId} />

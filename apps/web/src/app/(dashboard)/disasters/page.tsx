@@ -11,8 +11,6 @@ import {
   Heart,
   Siren,
   ArrowUpRight,
-  MapPinned,
-  ChevronDown,
 } from "@/components/icons";
 import {
   fetchAnomalies,
@@ -22,10 +20,10 @@ import {
   fetchFeed,
   fetchFloodAlerts,
 } from "@/lib/api";
+import { discoverShellClass } from "@/components/discover/discover-rail-tokens";
+import { FlatRailPanelHeader } from "@/components/layout/intel-rail";
 import { cn, formatNepalDateTime, timeAgo } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const FEATURES = [
   {
@@ -178,6 +176,23 @@ const STRIKE_TARGETS: { id: CrisisStrikeTargetId; label: string; keywords: strin
 ];
 
 export type CrisisTab = "seismic" | "flood" | "conflict";
+
+const CRISIS_TABS: { id: CrisisTab; label: string }[] = [
+  { id: "seismic", label: "Seismic" },
+  { id: "flood", label: "Flood / Landslide" },
+  { id: "conflict", label: "Conflict / Protest" },
+];
+
+const crisisTabsTrackClass =
+  "flex w-full min-w-0 flex-row rounded-full bg-white/[0.06] p-px shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]";
+
+const crisisKpiTileClass =
+  "rounded-xl border border-white/[0.08] bg-white/[0.05] p-4";
+
+const crisisPanelBody = "min-w-0 px-2 pb-2";
+
+const crisisInsetRow =
+  "rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-2.5 transition-colors hover:bg-white/[0.05]";
 
 function DisastersContent() {
   const searchParams = useSearchParams();
@@ -356,115 +371,112 @@ function DisastersContent() {
   }, [focusSection]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight">
-          Crisis Monitor
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          Seismic feed plus conflict and anomaly watch for operational monitoring
-        </p>
-      </div>
+    <div className="-mx-4 px-4 pb-10 md:-mx-6 md:px-6 min-h-full bg-transparent text-[#e5e5e5] antialiased">
+      <nav className="mt-0 w-full min-w-0" aria-label="Crisis monitor sections">
+        <div className={crisisTabsTrackClass}>
+          {CRISIS_TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setCrisisTab(t.id)}
+              className={cn(
+                "min-w-0 flex-1 rounded-full px-2 py-1.5 text-center font-sans text-[11px] leading-snug tracking-tight transition-colors duration-150 sm:px-3 sm:py-1.5 sm:text-[12px]",
+                crisisTab === t.id
+                  ? "bg-white/[0.12] text-white"
+                  : "text-[#6b6b6b] hover:text-[#9ca3af]"
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </nav>
 
-      <Tabs value={crisisTab} onValueChange={(v) => setCrisisTab(v as CrisisTab)}>
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="seismic">Seismic</TabsTrigger>
-          <TabsTrigger value="flood">Flood / Landslide</TabsTrigger>
-          <TabsTrigger value="conflict">Conflict / Protest</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="seismic" className="space-y-4 mt-4">
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-5 space-y-1">
-            <div className="text-[13px] uppercase tracking-wide text-muted-foreground">
+      {crisisTab === "seismic" && (
+        <div className="mt-4 space-y-4">
+      <div className="grid gap-3 md:grid-cols-4">
+        <div className={crisisKpiTileClass}>
+            <div className="font-sans text-[12px] uppercase tracking-wide text-[#888]">
               Earthquakes tracked
             </div>
-            <div className="text-2xl font-display font-bold">{summary?.totalIncidents ?? incidents.length}</div>
-            <div className="text-xs text-muted-foreground">
+            <div className="mt-1 font-sans text-2xl font-semibold tabular-nums text-[#e5e5e5]">{summary?.totalIncidents ?? incidents.length}</div>
+            <div className="mt-1 font-sans text-[12px] text-[#666]">
               Official USGS incidents inside the Nepal watch box
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5 space-y-1">
-            <div className="text-[13px] uppercase tracking-wide text-muted-foreground">
+        </div>
+        <div className={crisisKpiTileClass}>
+            <div className="font-sans text-[12px] uppercase tracking-wide text-[#888]">
               Open anomalies
             </div>
-            <div className="text-2xl font-display font-bold">{anomalies.length}</div>
-            <div className="text-xs text-muted-foreground">
+            <div className="mt-1 font-sans text-2xl font-semibold tabular-nums text-[#e5e5e5]">{anomalies.length}</div>
+            <div className="mt-1 font-sans text-[12px] text-[#666]">
               Election/data anomalies still unresolved
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5 space-y-1">
-            <div className="text-[13px] uppercase tracking-wide text-muted-foreground">
+        </div>
+        <div className={crisisKpiTileClass}>
+            <div className="font-sans text-[12px] uppercase tracking-wide text-[#888]">
               Last 24 hours
             </div>
-            <div className="text-2xl font-display font-bold">{summary?.last24h ?? 0}</div>
-            <div className="text-xs text-muted-foreground">
+            <div className="mt-1 font-sans text-2xl font-semibold tabular-nums text-[#e5e5e5]">{summary?.last24h ?? 0}</div>
+            <div className="mt-1 font-sans text-[12px] text-[#666]">
               Earthquakes reported in the last 24 hours
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5 space-y-1">
-            <div className="text-[13px] uppercase tracking-wide text-muted-foreground">
+        </div>
+        <div className={crisisKpiTileClass}>
+            <div className="font-sans text-[12px] uppercase tracking-wide text-[#888]">
               Maximum magnitude
             </div>
-            <div className="text-lg font-display font-bold">
+            <div className="mt-1 font-sans text-xl font-semibold tabular-nums text-[#e5e5e5]">
               {summary ? `M${summary.maxMagnitude.toFixed(1)}` : "No hit"}
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="mt-1 font-sans text-[12px] text-[#666]">
               Strongest incident in the current tracking window
             </div>
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.35fr_0.85fr]">
-        <Card>
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-background/40">
-                  {hasRecentQuakes && (
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-status-error/30" />
-                  )}
-                  <Activity
-                    className={cn(
-                      "h-4 w-4 text-muted-foreground",
-                      hasRecentQuakes && "text-status-error"
-                    )}
-                  />
-                </div>
-                <div>
-                  <h2 className="font-display text-lg font-semibold">
-                    Earthquake watchlist
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    Live seismic incidents inside the Nepal watch box
-                  </p>
-                </div>
-              </div>
+        <div className={discoverShellClass}>
+          <FlatRailPanelHeader
+            title="Earthquake watchlist"
+            leadingDotClass={hasRecentQuakes ? "bg-rose-500" : "bg-slate-500"}
+            right={
               <Link
                 href="/feed"
-                className="text-xs text-nepal-red hover:underline"
+                className="font-sans text-[11px] tracking-tight text-nepal-red/90 hover:text-nepal-red hover:underline"
               >
-                Open Signals Feed
+                Signals feed →
               </Link>
+            }
+          />
+          <div className={crisisPanelBody}>
+            <div className="flex items-center gap-2 border-b border-white/[0.06] px-0 pb-2">
+              <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.06]">
+                {hasRecentQuakes && (
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-500/30" />
+                )}
+                <Activity
+                  className={cn(
+                    "relative h-4 w-4 text-[#666]",
+                    hasRecentQuakes && "text-rose-400"
+                  )}
+                  aria-hidden
+                />
+              </div>
+              <p className="font-sans text-[12px] text-[#888]">
+                Live seismic incidents inside the Nepal watch box
+              </p>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2 pt-2">
               {strongestIncidents.map((incident) => (
-                <div key={incident.id} className="rounded-md border border-border p-3">
+                <div key={incident.id} className={crisisInsetRow}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="text-sm font-medium leading-tight">
+                      <div className="font-sans text-[13px] font-medium leading-snug text-[#ccc]">
                         {incident.title}
                       </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
+                      <div className="mt-1 font-sans text-[12px] text-[#666]">
                         {incident.sourceName} · {formatNepalDateTime(incident.timestamp)}
                       </div>
                     </div>
@@ -480,7 +492,7 @@ function DisastersContent() {
                       M{incident.magnitude.toFixed(1)}
                     </Badge>
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-sans text-[12px] text-[#666]">
                     <span>{incident.place}</span>
                     <span>Depth {incident.depthKm.toFixed(1)} km</span>
                     <span>Sig {incident.significance}</span>
@@ -492,7 +504,7 @@ function DisastersContent() {
                       href={incident.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-3 inline-flex items-center gap-1 text-xs text-nepal-red hover:underline"
+                      className="mt-3 inline-flex items-center gap-1 font-sans text-[12px] tracking-tight text-nepal-red/90 hover:text-nepal-red"
                     >
                       Read source
                       <ArrowUpRight className="h-3 w-3" />
@@ -502,98 +514,83 @@ function DisastersContent() {
               ))}
 
               {strongestIncidents.length === 0 && (
-                <div className="rounded-md border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                <div className="rounded-lg border border-dashed border-white/[0.1] px-3 py-8 text-center font-sans text-[13px] text-[#666]">
                   No earthquake incidents are visible in the current tracking window.
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         <div className="space-y-4">
-          <Card>
-            <CardContent className="p-6 space-y-3">
-              <div className="flex items-center gap-2">
-                <MapPinned className="h-4 w-4 text-muted-foreground" />
-                <h2 className="font-display text-base font-semibold">
-                  Severity breakdown
-                </h2>
-              </div>
-              {summary && (
-                <div className="space-y-2">
-                  {[
-                    ["Minor", summary.incidentsBySeverity.minor],
-                    ["Light", summary.incidentsBySeverity.light],
-                    ["Moderate", summary.incidentsBySeverity.moderate],
-                    ["Strong+", summary.incidentsBySeverity.strongPlus],
-                  ].map(([label, count]) => (
-                    <div key={label} className="rounded-md border border-border px-3 py-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span>{label}</span>
-                        <span className="font-mono">{count}</span>
-                      </div>
+          <div className={discoverShellClass}>
+            <FlatRailPanelHeader title="Severity breakdown" leadingDotClass="bg-sky-500" />
+            <div className={cn(crisisPanelBody, "space-y-2")}>
+              {summary &&
+                [
+                  ["Minor", summary.incidentsBySeverity.minor],
+                  ["Light", summary.incidentsBySeverity.light],
+                  ["Moderate", summary.incidentsBySeverity.moderate],
+                  ["Strong+", summary.incidentsBySeverity.strongPlus],
+                ].map(([label, count]) => (
+                  <div key={label} className={crisisInsetRow}>
+                    <div className="flex items-center justify-between font-sans text-[13px] text-[#ccc]">
+                      <span>{label}</span>
+                      <span className="tabular-nums text-[#e5e5e5]">{count}</span>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
               {!summary && (
-                <div className="text-sm text-muted-foreground">
+                <div className="font-sans text-[13px] text-[#666]">
                   No crisis summary is available yet.
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card
+          <div
             id="anomalies"
             className={cn(
+              discoverShellClass,
               highlightAnomalies &&
-                "border-status-error/70 shadow-[0_0_0_1px_rgba(220,20,60,0.4)] animate-health-dot"
+                "border-rose-500/50 shadow-[0_0_0_1px_rgba(220,20,60,0.35)]"
             )}
           >
-            <CardContent className="p-6 space-y-3">
-              <div className="flex items-center gap-2">
-                <Siren className="h-4 w-4 text-muted-foreground" />
-                <h2 className="font-display text-base font-semibold">
-                  Open anomaly queue
-                </h2>
-              </div>
+            <FlatRailPanelHeader title="Open anomaly queue" leadingDotClass="bg-rose-500" />
+            <div className={crisisPanelBody}>
               <AnomalyQueue anomalies={anomalies} />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardContent className="p-6 space-y-3">
-              <h2 className="font-display text-base font-semibold">
-                Next direct crisis connectors
-              </h2>
+          <div className={discoverShellClass}>
+            <FlatRailPanelHeader title="Next direct crisis connectors" leadingDotClass="bg-amber-500" />
+            <div className={cn(crisisPanelBody, "space-y-2")}>
               {FEATURES.map((f) => {
                 const Icon = f.icon;
                 return (
-                  <div key={f.title} className="rounded-md border border-border p-3">
+                  <div key={f.title} className={crisisInsetRow}>
                     <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      <div className="text-sm font-medium">{f.title}</div>
+                      <Icon className="h-4 w-4 shrink-0 text-[#888]" aria-hidden />
+                      <div className="font-sans text-[13px] font-medium text-[#ccc]">{f.title}</div>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1 font-sans text-[12px] leading-snug text-[#666]">
                       {f.description}
                     </p>
                   </div>
                 );
               })}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="flood" className="space-y-4 mt-4">
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <CloudRain className="h-4 w-4 text-muted-foreground" />
-                <h2 className="font-display text-base font-semibold">Flood & Landslide</h2>
-              </div>
+      {crisisTab === "flood" && (
+        <div className="mt-4 space-y-4">
+          <div className={discoverShellClass}>
+            <FlatRailPanelHeader title="Flood & Landslide" leadingDotClass="bg-cyan-500" />
+            <div className={cn(crisisPanelBody, "space-y-4")}>
               {floodData?.alertsSource === "gdacs" && (
                 <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
                   Showing GDACS regional data. Station-level DHM data pending access approval.
@@ -632,11 +629,11 @@ function DisastersContent() {
                         return (order[b.status] ?? 0) - (order[a.status] ?? 0);
                       })
                       .map((station) => (
-                        <li key={station.id} className="rounded-md border border-border p-3">
+                        <li key={station.id} className={crisisInsetRow}>
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div>
-                              <span className="font-medium">{station.stationName}</span>
-                              <span className="text-muted-foreground text-sm ml-2">
+                              <span className="font-sans font-medium text-[#ccc]">{station.stationName}</span>
+                              <span className="ml-2 font-sans text-[13px] text-[#666]">
                                 {station.river}
                                 {station.district ? ` · ${station.district}` : ""}
                               </span>
@@ -652,11 +649,11 @@ function DisastersContent() {
                               {station.status.replace("_", " ")}
                             </Badge>
                           </div>
-                          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="mt-2 flex items-center gap-2 font-sans text-[12px] text-[#666]">
                             <span>Level: {station.waterLevel.toFixed(2)} m</span>
                             <span>Danger: {station.dangerLevel.toFixed(2)} m</span>
                           </div>
-                          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                          <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
                             <div
                               className="h-full rounded-full bg-red-500/80"
                               style={{
@@ -669,70 +666,62 @@ function DisastersContent() {
                   </ul>
                   )}
                   {floodData.alerts.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No station data in current bulletin.</p>
+                    <p className="font-sans text-[13px] text-[#666]">No station data in current bulletin.</p>
                   )}
                   {floodData.lastUpdated && (
-                    <p className="text-[13px] text-muted-foreground">
+                    <p className="font-sans text-[13px] text-[#666]">
                       Last updated {formatNepalDateTime(floodData.lastUpdated)}
                     </p>
                   )}
                 </>
               )}
               {!floodData && (
-                <p className="text-sm text-muted-foreground">
+                <p className="font-sans text-[13px] text-[#666]">
                   No flood station data yet. DHM bulletin or GDACS regional fallback is checked every 3 hours.
                 </p>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </div>
+        </div>
+      )}
 
-        <TabsContent value="conflict" className="space-y-4 mt-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">Signal theater:</span>
+      {crisisTab === "conflict" && (
+        <div className="mt-4 space-y-4">
+          <div className="inline-flex max-w-full flex-wrap items-center gap-2 rounded-full bg-white/[0.06] p-px px-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <span className="pl-2 font-sans text-[11px] uppercase tracking-wider text-[#666]">
+              Theater
+            </span>
             {(["nepal", "region", "global"] as const).map((theater) => (
               <button
                 key={theater}
                 type="button"
                 onClick={() => setActiveTheater(theater)}
                 className={cn(
-                  "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+                  "rounded-full px-2.5 py-1 font-sans text-[11px] tracking-tight transition-colors sm:text-[12px]",
                   activeTheater === theater
-                    ? "border-border bg-muted text-foreground"
-                    : "border-border/50 bg-transparent text-muted-foreground hover:bg-muted/50"
+                    ? "bg-white/[0.12] text-white"
+                    : "text-[#6b6b6b] hover:text-[#9ca3af]"
                 )}
               >
                 {theater === "nepal" ? "Nepal" : theater === "region" ? "Region" : "Global"}
-                <span className="ml-1.5 font-mono text-[12px] opacity-80">
-                  ({theaterCounts[theater]})
-                </span>
+                <span className="ml-1 font-sans tabular-nums opacity-80">({theaterCounts[theater]})</span>
               </button>
             ))}
           </div>
-          <Card>
-            <CardContent className="p-6 space-y-3">
-              <div className="flex items-center gap-2">
-                <Siren className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <h2 className="font-display text-base font-semibold">
-                    Conflict & crisis signals
-                  </h2>
-                  <p className="text-[13px] text-muted-foreground">
-                    War, fuel/oil shortages, supply-chain and high-impact crisis news
-                    {activeTheater !== "global" && ` · ${activeTheater === "nepal" ? "Nepal" : "Region"} only`}
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-2">
+          <div className={discoverShellClass}>
+            <FlatRailPanelHeader title="Conflict & crisis signals" leadingDotClass="bg-orange-500" />
+            <div className={cn(crisisPanelBody, "space-y-2")}>
+              <p className="border-b border-white/[0.06] pb-2 font-sans text-[12px] text-[#888]">
+                War, fuel and supply-chain stress, high-impact crisis news
+                {activeTheater !== "global" && ` · ${activeTheater === "nepal" ? "Nepal" : "Region"} focus`}
+              </p>
+              <div className="space-y-2 pt-1">
                 {filteredCrisisSignals.slice(0, 8).map((event) => (
-                  <div
-                    key={event.id}
-                    className="rounded-md border border-border px-3 py-2 text-sm"
-                  >
+                  <div key={event.id} className={cn(crisisInsetRow, "text-[13px]")}>
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="font-medium leading-tight">{event.title}</div>
-                        <div className="mt-1 text-[13px] text-muted-foreground">
+                        <div className="font-sans font-medium leading-snug text-[#ccc]">{event.title}</div>
+                        <div className="mt-1 font-sans text-[12px] text-[#666]">
                           {event.source ?? "Unknown source"} · {timeAgo(event.timestamp)}
                         </div>
                       </div>
@@ -740,66 +729,54 @@ function DisastersContent() {
                   </div>
                 ))}
                 {filteredCrisisSignals.length === 0 && (
-                  <div className="rounded-md border border-dashed border-border p-4 text-xs text-muted-foreground">
+                  <div className="rounded-lg border border-dashed border-white/[0.1] p-4 font-sans text-[12px] text-[#666]">
                     {crisisSignals.length === 0
                       ? "No conflict-tagged headlines in the current feed window."
                       : `No ${activeTheater === "nepal" ? "Nepal" : activeTheater === "region" ? "Region" : "Global"}-tagged crisis signals in this window.`}
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-3">
-              <div className="flex items-center gap-2">
-                <MapPinned className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <h2 className="font-display text-base font-semibold">
-                    Strike & defence balance
-                  </h2>
-                  <p className="text-[13px] text-muted-foreground">
-                    Reported strikes vs intercepted/defeated per theater (from signals feed)
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-2">
+            </div>
+          </div>
+          <div className={discoverShellClass}>
+            <FlatRailPanelHeader title="Strike & defence balance" leadingDotClass="bg-violet-500" />
+            <div className={cn(crisisPanelBody, "space-y-2")}>
+              <p className="border-b border-white/[0.06] pb-2 font-sans text-[12px] text-[#888]">
+                Reported strikes vs intercepted / defeated (from signals feed language)
+              </p>
+              <div className="space-y-2 pt-1">
                 {strikeTally.map((bucket) => (
-                  <div
-                    key={bucket.label}
-                    className="rounded-md border border-border px-3 py-2 text-xs"
-                  >
+                  <div key={bucket.label} className={crisisInsetRow}>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium">{bucket.label}</span>
-                      <span className="font-mono">
+                      <span className="font-sans text-[13px] font-medium text-[#ccc]">{bucket.label}</span>
+                      <span className="font-sans text-[12px] tabular-nums text-[#a1a1aa]">
                         {bucket.intercepted}/{bucket.total} intercepted
                       </span>
                     </div>
-                    <div className="mt-1 text-[13px] text-muted-foreground">
+                    <div className="mt-1 font-sans text-[12px] text-[#666]">
                       {bucket.intercepted === 0
                         ? "No intercepts mentioned in current window."
-                        : "Intercepts inferred from language like 'shot down' or 'intercepted'."}
+                        : "Inferred from phrasing such as ‘shot down’ or ‘intercepted’."}
                     </div>
                   </div>
                 ))}
                 {strikeTally.length === 0 && (
-                  <div className="rounded-md border border-dashed border-border p-4 text-xs text-muted-foreground">
+                  <div className="rounded-lg border border-dashed border-white/[0.1] p-4 font-sans text-[12px] text-[#666]">
                     No strike/defence balance can be inferred from the current signal window.
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* planned connector grid removed to keep layout tighter; details now live in the \"Next direct crisis connectors\" card */}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function DisastersPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-[40vh] items-center justify-center text-muted-foreground">Loading…</div>}>
+    <Suspense fallback={<div className="flex min-h-[40vh] items-center justify-center font-sans text-[#888]">Loading…</div>}>
       <DisastersContent />
     </Suspense>
   );
@@ -829,24 +806,22 @@ function AnomalyQueue({ anomalies }: { anomalies: Awaited<ReturnType<typeof fetc
   const pageItems = sorted.slice(start, start + pageSize);
 
   if (sorted.length === 0) {
-    return <div className="text-sm text-muted-foreground">No active anomalies right now.</div>;
+    return <div className="font-sans text-[13px] text-[#666]">No active anomalies right now.</div>;
   }
 
   return (
     <>
       <div className="space-y-2">
         {pageItems.map((anomaly) => (
-          <div key={anomaly.id} className="rounded-md border border-border p-3">
+          <div key={anomaly.id} className={crisisInsetRow}>
             <div className="flex items-center justify-between gap-2">
-              <div className="text-sm font-medium">{anomaly.type}</div>
+              <div className="font-sans text-[13px] font-medium text-[#ccc]">{anomaly.type}</div>
               <Badge variant={anomaly.severity === "critical" ? "error" : "stale"}>
                 {anomaly.severity}
               </Badge>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">{anomaly.details}</div>
-            <div className="mt-2 text-[13px] text-muted-foreground">
-              {timeAgo(anomaly.timestamp)}
-            </div>
+            <div className="mt-1 font-sans text-[12px] text-[#666]">{anomaly.details}</div>
+            <div className="mt-2 font-sans text-[12px] text-[#888]">{timeAgo(anomaly.timestamp)}</div>
           </div>
         ))}
       </div>
@@ -856,18 +831,18 @@ function AnomalyQueue({ anomalies }: { anomalies: Awaited<ReturnType<typeof fetc
             type="button"
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={safePage === 0}
-            className="h-6 w-6 rounded border border-border text-xs text-muted-foreground disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center"
+            className="flex h-6 w-6 items-center justify-center rounded border border-white/[0.12] font-sans text-xs text-[#888] disabled:cursor-not-allowed disabled:opacity-40"
           >
             ←
           </button>
-          <span className="text-[13px] text-muted-foreground">
+          <span className="font-sans text-[13px] text-[#666]">
             {safePage + 1}/{pageCount}
           </span>
           <button
             type="button"
             onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
             disabled={safePage >= pageCount - 1}
-            className="h-6 w-6 rounded border border-border text-xs text-muted-foreground disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center"
+            className="flex h-6 w-6 items-center justify-center rounded border border-white/[0.12] font-sans text-xs text-[#888] disabled:cursor-not-allowed disabled:opacity-40"
           >
             →
           </button>

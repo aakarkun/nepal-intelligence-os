@@ -2,22 +2,30 @@
 
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { FlatRailPanelHeader } from "@/components/layout/intel-rail";
 import {
-  RailPanelHeader,
-  railShell,
-  railListBody,
-  railCardInset,
-} from "@/components/layout/intel-rail";
+  discoverShellClass,
+  discoverInnerCardClass,
+} from "@/components/discover/discover-rail-tokens";
+
+export {
+  discoverShellClass,
+  discoverInnerCardClass,
+  discoverInnerWellClass,
+} from "@/components/discover/discover-rail-tokens";
+
+/** @deprecated Use {@link discoverShellClass} */
+export const discoverFlatCardClass = discoverShellClass;
 
 /**
- * Inner surface for Discover sidebar widgets — Intel Rail style: fill only, no outline
- * (same family as {@link railRow} / panel rows).
+ * Optional micro-tint (e.g. party tiles) — opacity only, no border.
+ * @deprecated Prefer explicit `bg-white/[0.05]` at call sites when adding new UI.
  */
-export const discoverSidebarSurface = "rounded-xl bg-[#181818]/60";
+export const discoverSidebarSurface = "bg-white/[0.05]";
 
-/** Dark footer strip — light vertical padding; body above already has bottom space. */
+/** Footer link row under stacked content — divider only. */
 export const discoverSidebarFooterStrip =
-  "rounded-bl-xl rounded-br-xl bg-[#0c0c0c]/80 px-3 py-1";
+  "border-t border-white/[0.06] px-0 pt-2.5 mt-2";
 
 interface DiscoverRailPanelProps {
   title: string;
@@ -25,13 +33,11 @@ interface DiscoverRailPanelProps {
   right?: ReactNode;
   children: ReactNode;
   className?: string;
-  /** Extra classes on the rail inset wrapper (same as Signal stream: `railCardInset`). */
   bodyClassName?: string;
 }
 
 /**
- * Shell + header + list body aligned with the main **Signal stream** panel on Discover
- * (`railShell` → `RailPanelHeader` → `railListBody` → `railCardInset`).
+ * Bordered transparent shell + transparent title row + single inner card with tint.
  */
 export function DiscoverRailPanel({
   title,
@@ -42,11 +48,13 @@ export function DiscoverRailPanel({
   bodyClassName,
 }: DiscoverRailPanelProps) {
   return (
-    <div className={cn(railShell, className)}>
-      <RailPanelHeader title={title} leadingDotClass={leadingDotClass} right={right} />
-      <div className={cn(railListBody, "rounded-b-xl")}>
-        <div className={cn(railCardInset, "text-[#ccc]", bodyClassName)}>{children}</div>
-      </div>
+    <div className={cn(discoverShellClass, className)}>
+      <FlatRailPanelHeader
+        title={title}
+        leadingDotClass={leadingDotClass}
+        right={right}
+      />
+      <div className={cn(discoverInnerCardClass, bodyClassName)}>{children}</div>
     </div>
   );
 }

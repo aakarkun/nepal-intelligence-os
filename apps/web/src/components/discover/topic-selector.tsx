@@ -90,7 +90,7 @@ export function TopicSelector({ onSave, onDismiss }: TopicSelectorProps) {
       right={
         <button
           type="button"
-          className="rounded p-1 font-mono text-[14px] leading-none text-[#888] hover:bg-white/[0.06] hover:text-[#e5e5e5]"
+          className="rounded p-1 font-sans text-[14px] leading-none text-[#888] hover:bg-white/[0.06] hover:text-[#e5e5e5]"
           aria-label="Close"
           onClick={handleDismiss}
         >
@@ -98,47 +98,38 @@ export function TopicSelector({ onSave, onDismiss }: TopicSelectorProps) {
         </button>
       }
     >
-      <div className="flex flex-col gap-0">
-        <div className="overflow-hidden rounded-xl">
-          <div
-            className={cn(
-              "space-y-2 overflow-hidden bg-[#181818]/60 px-3 pt-2.5 pb-3",
-              "rounded-t-xl rounded-bl-xl rounded-br-xl"
-            )}
-          >
-            <p className="font-mono text-[12px] uppercase tracking-wider text-[#666]">
-              Select topics to prioritise in For You
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {TOPICS.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => toggle(id)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-[12px] uppercase tracking-wide transition-colors",
-                    selected.has(id)
-                      ? "bg-emerald-500/15 text-emerald-400/90"
-                      : "bg-[#0c0c0c]/90 text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
-                  )}
-                >
-                  <Icon className="h-3 w-3" />
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className={discoverSidebarFooterStrip}>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="h-auto min-h-0 w-full border-0 bg-transparent py-1 font-mono text-[12px] uppercase tracking-wider text-emerald-400/90 hover:bg-white/[0.06] hover:text-emerald-400"
-              onClick={handleSave}
+      <div className="space-y-2">
+        <p className="font-sans text-[12px] uppercase tracking-wider text-[#666]">
+          Select topics to prioritise in For You
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {TOPICS.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => toggle(id)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-sans text-[12px] uppercase tracking-wide transition-colors",
+                selected.has(id)
+                  ? "bg-emerald-500/15 text-emerald-400/90"
+                  : "bg-white/[0.05] text-[#888] hover:bg-white/[0.08] hover:text-[#ccc]"
+              )}
             >
-              Save
-            </Button>
-          </div>
+              <Icon className="h-3 w-3" />
+              {label}
+            </button>
+          ))}
         </div>
+      </div>
+      <div className={discoverSidebarFooterStrip}>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="h-auto min-h-0 w-full border-0 bg-transparent py-1 font-sans text-[12px] uppercase tracking-wider text-emerald-400/90 hover:bg-white/[0.06] hover:text-emerald-400"
+          onClick={handleSave}
+        >
+          Save
+        </Button>
       </div>
     </DiscoverRailPanel>
   );

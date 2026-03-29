@@ -167,7 +167,7 @@ export function IntelPanel() {
                 >
                   {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </button>
-                <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed pr-10">
+                <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed pr-10">
                   {result.brief}
                 </pre>
                 <p className="mt-3 text-[13px] text-muted-foreground">

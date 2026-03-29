@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
-  DiscoverRailPanel,
-  discoverSidebarSurface,
-} from "@/components/discover/discover-rail-panel";
-import { cn } from "@/lib/utils";
+import { DiscoverRailPanel } from "@/components/discover/discover-rail-panel";
 
 const KATHMANDU_LAT = 27.7172;
 const KATHMANDU_LON = 85.3240;
@@ -99,8 +95,8 @@ export function SidebarWeather() {
   if (!data?.current || !data?.daily) {
     return (
       <DiscoverRailPanel title="Weather" leadingDotClass="bg-sky-500">
-        <div className={cn(discoverSidebarSurface, "px-3 pt-2.5 pb-3")}>
-          <p className="mb-1.5 font-mono text-[12px] uppercase tracking-wider text-[#666]">
+        <>
+          <p className="mb-1.5 font-sans text-[12px] uppercase tracking-wider text-[#666]">
             Kathmandu
           </p>
           <div className="flex items-center gap-2">
@@ -120,7 +116,7 @@ export function SidebarWeather() {
               </div>
             ))}
           </div>
-        </div>
+        </>
       </DiscoverRailPanel>
     );
   }
@@ -134,8 +130,8 @@ export function SidebarWeather() {
 
   return (
     <DiscoverRailPanel title="Weather" leadingDotClass="bg-sky-500">
-      <div className={cn(discoverSidebarSurface, "px-3 pt-2.5 pb-3")}>
-        <p className="mb-1.5 font-mono text-[12px] uppercase tracking-wider text-[#666]">Kathmandu</p>
+      <>
+        <p className="mb-1.5 font-sans text-[12px] uppercase tracking-wider text-[#666]">Kathmandu</p>
         <div className="flex items-center gap-2">
           <span className="text-2xl font-semibold tabular-nums text-[#e5e5e5]">
             {Math.round(cur.temperature_2m)}°
@@ -144,7 +140,7 @@ export function SidebarWeather() {
             {today.emoji} {today.label}
           </span>
         </div>
-        <p className="mt-1 font-mono text-[11px] text-[#555]">
+        <p className="mt-1 font-sans text-[11px] text-[#555]">
           Wind {cur.windspeed_10m} km/h · H: {Math.round(high)}° L: {Math.round(low)}°
         </p>
         <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 pt-2">
@@ -160,16 +156,16 @@ export function SidebarWeather() {
                 key={dateStr}
                 className="flex min-w-[3rem] flex-col items-center gap-0.5 text-center"
               >
-                <span className="font-mono text-[11px] uppercase tracking-wide text-[#666]">{dayName}</span>
+                <span className="font-sans text-[11px] uppercase tracking-wide text-[#666]">{dayName}</span>
                 <span className="text-sm">{info.emoji}</span>
-                <span className="font-mono text-[11px] tabular-nums text-[#a1a1aa]">
+                <span className="font-sans text-[11px] tabular-nums text-[#a1a1aa]">
                   {Math.round(max)}° / {Math.round(min)}°
                 </span>
               </div>
             );
           })}
         </div>
-      </div>
+      </>
     </DiscoverRailPanel>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Lucide-shaped wrappers around Hugeicons (same import names, drop-in replacement).
+ * Hugeicons via thin wrappers — familiar names (PanelLeft, X, …) for drop-in use; no lucide-react.
  */
 import { HugeiconsIcon } from "@hugeicons/react";
 import type { HugeiconsIconProps } from "@hugeicons/react";
@@ -30,6 +30,7 @@ import {
   DashboardSquare01Icon,
   DatabaseIcon,
   Delete02Icon,
+  DiscoverCircleIcon,
   Dollar01Icon,
   EyeIcon,
   FavouriteIcon,
@@ -55,6 +56,7 @@ import {
   MoreHorizontalIcon,
   MountainIcon,
   NewsIcon,
+  PanelLeftIcon,
   PanelRightIcon,
   PhoneOff01Icon,
   PinIcon,
@@ -81,12 +83,13 @@ import { cn } from "@/lib/utils";
 type IconProps = Omit<HugeiconsIconProps, "icon">;
 
 function wrap(Icon: NonNullable<HugeiconsIconProps["icon"]>) {
-  return function IconComponent({ className, ...props }: IconProps) {
+  return function IconComponent(props: IconProps) {
+    const { className, ...rest } = props ?? ({} as IconProps);
     return (
       <HugeiconsIcon
         icon={Icon}
         className={cn("shrink-0", className)}
-        {...props}
+        {...rest}
       />
     );
   };
@@ -101,12 +104,13 @@ export const Search = wrap(Search01Icon);
 export const Heart = wrap(FavouriteIcon);
 export const Globe = wrap(GlobeIcon);
 export const Shield = wrap(Shield01Icon);
-export function Loader2({ className, ...props }: IconProps) {
+export function Loader2(props: IconProps) {
+  const { className, ...rest } = props ?? ({} as IconProps);
   return (
     <HugeiconsIcon
       icon={Loading03Icon}
       className={cn("shrink-0 animate-spin", className)}
-      {...props}
+      {...rest}
     />
   );
 }
@@ -138,6 +142,8 @@ export const ZoomIn = wrap(ZoomInAreaIcon);
 export const ZoomOut = wrap(ZoomOutAreaIcon);
 export const RotateCcw = wrap(RotateLeft01Icon);
 export const Command = wrap(CommandIcon);
+export const DiscoverCircle = wrap(DiscoverCircleIcon);
+export const PanelLeft = wrap(PanelLeftIcon);
 export const PanelRight = wrap(PanelRightIcon);
 export const Sparkles = wrap(SparklesIcon);
 export const LayoutGrid = wrap(GridViewIcon);

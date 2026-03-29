@@ -4,21 +4,8 @@ import { useEffect, useMemo } from "react";
 import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import {
-  LayoutDashboard,
-  Map,
-  TableProperties,
-  Building2,
-  Radio,
-  Newspaper,
-  TrendingUp,
-  Globe,
-  AlertTriangle,
-  Headphones,
-  Diff,
-  PanelRight,
-  Trash2,
-} from "@/components/icons";
+import { Diff, PanelRight, Trash2 } from "@/components/icons";
+import { flattenNavItems } from "@/components/layout/nav-config";
 import { fetchConstituencies } from "@/lib/api";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { useDispatch } from "react-redux";
@@ -31,19 +18,12 @@ interface CommandPaletteProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const NAV_ITEMS = [
-  { label: "Discover", path: "/", icon: LayoutDashboard },
-  { label: "Political Pulse", path: "/political-pulse", icon: LayoutDashboard },
-  { label: "Tactical Map", path: "/map", icon: Map },
-  { label: "Constituencies", path: "/constituencies", icon: TableProperties },
-  { label: "Parliament", path: "/parliament", icon: Building2 },
-  { label: "Signals Feed", path: "/feed", icon: Radio },
-  { label: "News Room", path: "/news-room", icon: Newspaper },
-  { label: "Economy", path: "/economy", icon: TrendingUp },
-  { label: "World", path: "/world", icon: Globe },
-  { label: "Crisis Monitor", path: "/disasters", icon: AlertTriangle },
-  { label: "War Room", path: "/war-room", icon: Headphones },
-];
+/** Same routes/order as sidebar `NAV_SECTIONS` (flattenNavItems). */
+const NAV_ITEMS = flattenNavItems().map((item) => ({
+  label: item.label,
+  path: item.href,
+  icon: item.icon,
+}));
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();

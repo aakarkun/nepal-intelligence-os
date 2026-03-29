@@ -51,7 +51,7 @@ export function ElectionDatasetSelector() {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="font-mono text-[12px] uppercase tracking-wider text-[#888]">
+      <span className="font-sans text-[12px] uppercase tracking-wider text-[#888]">
         Dataset
       </span>
       <Popover open={open} onOpenChange={setOpen}>
@@ -59,7 +59,7 @@ export function ElectionDatasetSelector() {
           <button
             type="button"
             className={cn(
-              "flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
+              "flex items-center gap-1 rounded-full px-3 py-1.5 font-sans text-[13px] uppercase tracking-wider transition-colors",
               open
                 ? "bg-blue-500/15 text-blue-400/90"
                 : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
@@ -72,7 +72,7 @@ export function ElectionDatasetSelector() {
           </button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-72 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0c] p-1 text-[#ccc] shadow-xl shadow-black/50"
+          className="w-72 overflow-hidden rounded-xl border border-white/[0.08] bg-surface-page p-1 text-[#ccc] shadow-xl shadow-black/50"
           align="start"
           sideOffset={4}
         >
@@ -91,7 +91,7 @@ export function ElectionDatasetSelector() {
                     setOpen(false);
                   }}
                   className={cn(
-                    "flex w-full items-center justify-between gap-3 rounded-none px-3 py-2 text-left font-mono text-[13px] transition-colors",
+                    "flex w-full items-center justify-between gap-3 rounded-none px-3 py-2 text-left font-sans text-[13px] transition-colors",
                     isSelected
                       ? "rounded-xl bg-blue-500/15 text-blue-400/90"
                       : "hover:rounded-xl hover:bg-white/[0.06]"

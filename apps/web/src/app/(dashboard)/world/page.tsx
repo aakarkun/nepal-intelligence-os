@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import { AlertCircle, DollarSign } from "@/components/icons";
 import { fetchWorldArticles } from "@/lib/api";
 import type { GeopoliticsArticle } from "@repo/shared";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IntelRailSections, FlatRailPanelHeader, railRowFlat } from "@/components/layout/intel-rail";
+import { discoverShellClass } from "@/components/discover/discover-rail-tokens";
 import { cn, timeAgo } from "@/lib/utils";
 
 type WorldPanel = GeopoliticsArticle["panel"];
@@ -18,6 +20,17 @@ const PANELS: { id: WorldPanel; label: string }[] = [
   { id: "un", label: "UN & Multilateral" },
 ];
 
+const PANEL_DOT: Record<WorldPanel, string> = {
+  south_asia: "bg-amber-500",
+  diplomatic: "bg-sky-500",
+  remittance: "bg-emerald-500",
+  un: "bg-violet-500",
+};
+
+/** Same track as Anomalies — not full width: hugs tab labels. */
+const deskTabsTrackClass =
+  "inline-flex max-w-full flex-row rounded-full bg-white/[0.06] p-px shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]";
+
 const REMITTANCE_COUNTRIES = [
   { code: "MY", name: "Malaysia" },
   { code: "QA", name: "Qatar" },
@@ -26,39 +39,55 @@ const REMITTANCE_COUNTRIES = [
   { code: "KW", name: "Kuwait" },
 ];
 
-function ArticleCard({ article }: { article: GeopoliticsArticle }) {
+const deskTileClass = "rounded-xl bg-white/[0.05] px-3 py-2";
+const panelBodyClass = "min-w-0";
+
+function ArticleRow({
+  article,
+  isFirst,
+  isLast,
+}: {
+  article: GeopoliticsArticle;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
   const toneNegative = article.tone !== null && article.tone < -5;
   return (
-    <Card className="border border-border bg-card/80">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <h3 className="font-medium leading-tight">{article.title}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {article.source} · {timeAgo(article.publishedAt)}
-              {toneNegative && (
-                <span className="ml-2 inline-flex items-center gap-1 text-red-400">
-                  <AlertCircle className="h-3 w-3" />
-                  Negative tone
-                </span>
-              )}
-            </p>
-          </div>
-          <a
-            href={article.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 text-xs text-nepal-red hover:underline"
-          >
-            Read more →
-          </a>
-        </div>
-      </CardContent>
-    </Card>
+    <div
+      className={cn(
+        railRowFlat,
+        isFirst && "rounded-t-lg",
+        isLast && "rounded-b-lg"
+      )}
+    >
+      <div className="mb-1.5 flex min-w-0 items-start justify-between gap-3">
+        <h3 className="font-sans text-[14px] font-normal leading-snug text-[#ccc]">{article.title}</h3>
+        <a
+          href={article.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 font-sans text-[11px] tracking-tight text-nepal-red/90 transition-colors hover:text-nepal-red"
+        >
+          Open →
+        </a>
+      </div>
+      <p className="font-sans text-[12px] text-[#555]">
+        <span className="text-[#666]">{article.source}</span>
+        {" · "}
+        {timeAgo(article.publishedAt)}
+        {toneNegative && (
+          <span className="ml-2 inline-flex items-center gap-1 font-sans text-[11px] tracking-tight text-rose-400/85">
+            <AlertCircle className="h-3 w-3" />
+            Conflict-oriented tone
+          </span>
+        )}
+      </p>
+    </div>
   );
 }
 
 export default function WorldPage() {
+  const panelOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
   const [activePanel, setActivePanel] = useState<WorldPanel>("south_asia");
   const { data: articles = [], isLoading } = useQuery({
     queryKey: ["world-articles", activePanel],
@@ -66,90 +95,122 @@ export default function WorldPage() {
     refetchInterval: 60_000,
   });
 
+  const activeLabel = PANELS.find((p) => p.id === activePanel)?.label ?? "Global";
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight">
-          Global Desk
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Nepal&apos;s geopolitical context — South Asia, diplomatic wire,
-          remittance corridors, and multilateral.
-        </p>
-      </div>
+    <div
+      className={cn(
+        "-mx-4 px-4 pb-10 md:-mx-6 md:px-6 min-h-full bg-transparent text-[#e5e5e5] antialiased"
+      )}
+    >
+      <div className="flex items-start gap-4">
+        <div className="min-w-0 flex-1 space-y-4">
+          <nav className="flex justify-start" role="tablist" aria-label="Global desk panels">
+            <div className={cn(deskTabsTrackClass, "overflow-x-auto")}>
+              {PANELS.map((p) => {
+                const on = p.id === activePanel;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={on}
+                    id={`desk-tab-${p.id}`}
+                    aria-controls="global-desk-panel"
+                    onClick={() => setActivePanel(p.id)}
+                    className={cn(
+                      "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-center font-sans text-[11px] leading-snug tracking-tight transition-colors duration-150 sm:px-3 sm:py-1.5 sm:text-[12px]",
+                      on
+                        ? "bg-white/[0.12] text-white"
+                        : "text-[#6b6b6b] hover:text-[#9ca3af]"
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
 
-      <Tabs value={activePanel} onValueChange={(v) => setActivePanel(v as WorldPanel)}>
-        <TabsList className="flex flex-wrap gap-1">
-          {PANELS.map((p) => (
-            <TabsTrigger key={p.id} value={p.id}>
-              {p.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+          <div
+            id="global-desk-panel"
+            role="tabpanel"
+            aria-labelledby={`desk-tab-${activePanel}`}
+            className={discoverShellClass}
+          >
+            <FlatRailPanelHeader
+              title={activeLabel}
+              leadingDotClass={PANEL_DOT[activePanel]}
+            />
+            <div className={cn(panelBodyClass, "px-2 pb-2")}>
+              {activePanel === "south_asia" && (
+                <div className="border-b border-white/[0.06] px-0 py-3 font-sans text-[13px] leading-relaxed text-[#a1a1aa]">
+                  Nepal sits between India and China. Stories from both neighbours directly affect
+                  Nepal&apos;s trade, politics, and security.
+                </div>
+              )}
 
-        {PANELS.map((p) => (
-          <TabsContent key={p.id} value={p.id} className="space-y-4 mt-4">
-            {p.id === "south_asia" && (
-              <Card className="border-amber-500/20 bg-amber-500/5">
-                <CardContent className="p-4">
-                  <p className="text-sm">
-                    Nepal sits between India and China. Stories from both
-                    neighbours directly affect Nepal&apos;s trade, politics, and
-                    security.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-            {p.id === "remittance" && (
-              <Card className="border border-border bg-card/80">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
+              {activePanel === "remittance" && (
+                <div className="border-b border-white/[0.06] px-0 py-3">
+                  <div className="mb-2 flex items-center gap-2 font-sans text-[12px] tracking-tight text-[#888]">
+                    <DollarSign className="h-3.5 w-3.5 text-[#666]" aria-hidden />
                     Top remittance source countries
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-3">
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                     {REMITTANCE_COUNTRIES.map((c) => (
-                      <div
-                        key={c.code}
-                        className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm"
-                      >
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {c.code}
-                        </span>
-                        <span>{c.name}</span>
+                      <div key={c.code} className={cn(deskTileClass, "flex items-center gap-2")}>
+                        <span className="font-mono text-[11px] text-[#666]">{c.code}</span>
+                        <span className="font-sans text-[13px] text-[#ccc]">{c.name}</span>
                       </div>
                     ))}
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Gulf and Southeast Asian stories matter for Nepal&apos;s
-                    migrant workers and remittance flows.
+                  <p className="mt-3 font-sans text-[12px] leading-snug text-[#555]">
+                    Gulf and Southeast Asian stories matter for Nepal&apos;s migrant workers and
+                    remittance flows.
                   </p>
-                </CardContent>
-              </Card>
-            )}
-            {isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
-            ) : articles.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No recent articles — checking sources…
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {articles.map((a) => (
-                  <ArticleCard key={a.id} article={a} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
+                </div>
+              )}
 
-      <p className="text-[13px] text-muted-foreground">
-        Tone score from GDELT: negative = more conflict-oriented coverage,
-        positive = more cooperative.
-      </p>
+              {isLoading ? (
+                <p className="px-0 py-4 font-sans text-[13px] text-[#555]">Loading…</p>
+              ) : articles.length === 0 ? (
+                <p className="px-0 py-4 font-sans text-[13px] text-[#555]">
+                  No recent articles — checking sources…
+                </p>
+              ) : (
+                <div className="flex flex-col overflow-hidden rounded-xl">
+                  {articles.map((a, i) => (
+                    <ArticleRow
+                      key={a.id}
+                      article={a}
+                      isFirst={i === 0}
+                      isLast={i === articles.length - 1}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <p className="font-sans text-[12px] leading-snug text-[#666]">
+            Tone score from GDELT: negative = more conflict-oriented coverage, positive = more
+            cooperative.
+          </p>
+        </div>
+
+        <aside
+          className={cn(
+            "hidden shrink-0 overflow-hidden transition-[transform,opacity,width] duration-200 ease-out lg:block",
+            panelOpen
+              ? "w-[var(--intel-rail-width)] translate-x-0 opacity-100"
+              : "pointer-events-none w-0 translate-x-6 opacity-0"
+          )}
+        >
+          <div className="space-y-3">
+            <IntelRailSections />
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

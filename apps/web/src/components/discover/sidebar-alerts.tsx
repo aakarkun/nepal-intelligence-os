@@ -3,12 +3,12 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { fetchCrisisIncidents, fetchEarthquakeIncidents } from "@/lib/api";
-import { cn, timeAgo } from "@/lib/utils";
+import { timeAgo } from "@/lib/utils";
 import {
   DiscoverRailPanel,
   discoverSidebarFooterStrip,
 } from "@/components/discover/discover-rail-panel";
-import { railRow } from "@/components/layout/intel-rail";
+import { cn } from "@/lib/utils";
 import { Check } from "@/components/icons";
 
 type AlertSeverity = "info" | "warning" | "danger" | "extreme_danger";
@@ -29,7 +29,6 @@ function getTypeInfo(incidentType: "flood" | "protest" | "fire" | "seismic"): Al
   }
 }
 
-/** Muted rail-style chips — no solid bright fills */
 const BADGE_STYLES: Record<AlertSeverity, string> = {
   info: "border border-white/[0.08] bg-white/[0.04] text-[#9ca3af]",
   warning: "border border-amber-500/20 bg-amber-500/[0.08] text-amber-200/75",
@@ -88,26 +87,19 @@ export function SidebarAlerts() {
         leadingDotClass="bg-amber-500"
         right={null}
       >
-        <div className="flex flex-col gap-0">
-          <div className="overflow-hidden rounded-xl">
-            <div className={cn("overflow-hidden bg-[#181818]/60", "rounded-t-xl rounded-bl-xl rounded-br-xl")}>
-              {[0, 1].map((idx) => (
-                <div
-                  key={idx}
-                  className={cn(railRow, "flex flex-col gap-1")}
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="h-[18px] w-[70px] rounded bg-white/[0.06]" />
-                    <div className="h-3 w-[160px] rounded bg-white/[0.06]" />
-                  </div>
-                  <div className="h-4 w-[220px] rounded bg-white/[0.06]" />
-                </div>
-              ))}
+        <div className="divide-y divide-white/[0.06]">
+          {[0, 1].map((idx) => (
+            <div key={idx} className="flex flex-col gap-1 py-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="h-[18px] w-[70px] rounded bg-white/[0.06]" />
+                <div className="h-3 w-[160px] rounded bg-white/[0.06]" />
+              </div>
+              <div className="h-4 w-[220px] rounded bg-white/[0.06]" />
             </div>
-            <div className={discoverSidebarFooterStrip}>
-              <div className="h-3 w-28 rounded bg-white/[0.06]" />
-            </div>
-          </div>
+          ))}
+        </div>
+        <div className={discoverSidebarFooterStrip}>
+          <div className="h-3 w-28 rounded bg-white/[0.06]" />
         </div>
       </DiscoverRailPanel>
     );
@@ -123,58 +115,44 @@ export function SidebarAlerts() {
         ) : null
       }
     >
-      <div className="flex flex-col gap-0">
-        {display.length === 0 ? (
-          <div className={cn(railRow, "rounded-t-xl rounded-b-xl")}>
-            <p className="flex items-center gap-2 font-mono text-[12px] text-[#666]">
-              <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400/80" />
-              No active alerts
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-0">
-            <div className="overflow-hidden rounded-xl">
-              <div
-                className={cn(
-                  "overflow-hidden bg-[#181818]/60",
-                  "rounded-t-xl rounded-bl-xl rounded-br-xl"
-                )}
-              >
-                {display.map((a) => (
-                  <div
-                    key={a.id}
-                    className={cn(railRow, "flex flex-col gap-1")}
+      {display.length === 0 ? (
+        <p className="flex items-center gap-2 py-1 font-sans text-[12px] text-[#666]">
+          <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400/80" />
+          No active alerts
+        </p>
+      ) : (
+        <>
+          <div className="divide-y divide-white/[0.06]">
+            {display.map((a) => (
+              <div key={a.id} className="flex flex-col gap-1 py-2.5 first:pt-0 last:pb-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded px-1.5 py-0.5 font-sans text-[11px] font-medium uppercase",
+                      BADGE_STYLES[a.severity]
+                    )}
                   >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase",
-                          BADGE_STYLES[a.severity]
-                        )}
-                      >
-                        {a.severity.replace("_", " ")}
-                      </span>
-                      <span className="font-mono text-[11px] text-[#555]">
-                        {a.typeInfo.icon && `${a.typeInfo.icon} `}
-                        {a.typeInfo.label} · {timeAgo(a.time)}
-                      </span>
-                    </div>
-                    <p className="line-clamp-2 text-[13px] leading-snug text-[#ccc]">{a.title}</p>
-                  </div>
-                ))}
+                    {a.severity.replace("_", " ")}
+                  </span>
+                  <span className="font-sans text-[11px] text-[#555]">
+                    {a.typeInfo.icon && `${a.typeInfo.icon} `}
+                    {a.typeInfo.label} · {timeAgo(a.time)}
+                  </span>
+                </div>
+                <p className="line-clamp-2 text-[13px] leading-snug text-[#ccc]">{a.title}</p>
               </div>
-              <div className={discoverSidebarFooterStrip}>
-                <Link
-                  href="/disasters"
-                  className="font-mono text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
-                >
-                  View all →
-                </Link>
-              </div>
-            </div>
+            ))}
           </div>
-        )}
-      </div>
+          <div className={discoverSidebarFooterStrip}>
+            <Link
+              href="/disasters"
+              className="font-sans text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
+            >
+              View all →
+            </Link>
+          </div>
+        </>
+      )}
     </DiscoverRailPanel>
   );
 }

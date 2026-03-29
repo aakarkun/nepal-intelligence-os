@@ -213,8 +213,8 @@ function buildGradientMesh(baseHex: string, seedKey: string): MeshStyle {
       );
     }
   } else {
-    const count =
-      variant === 0 ? 8 : variant === 1 ? 10 : variant === 3 ? 9 : 7;
+    // `variant` is 1 | 3 here (0 and 2 handled above).
+    const count = variant === 1 ? 10 : 9;
     for (let i = 0; i < count; i++) {
       const a = anchors[i % anchors.length];
       const ax = i < 3 ? a.x : 10 + rand() * 80;
@@ -283,7 +283,7 @@ function LikeButton({
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="inline-flex items-center gap-1 rounded p-1 transition-transform duration-150 hover:bg-white/[0.06] disabled:opacity-50"
+      className="inline-flex items-center gap-1 rounded-full px-2 py-1 transition-transform duration-150 hover:bg-white/[0.06] disabled:opacity-50"
       style={{ transform: animating ? "scale(1.3)" : "scale(1)" }}
       aria-label={liked ? "Unlike" : "Like"}
     >
@@ -342,7 +342,7 @@ function MoreMenu({
         <MoreHorizontal className={iconClassName} />
       </Button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0c] p-1 shadow-xl shadow-black/50">
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-[10rem] overflow-hidden rounded-xl border border-white/[0.08] bg-surface-page p-1 shadow-xl shadow-black/50">
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded-none px-4 py-2 text-left text-sm text-[#ccc] transition-colors hover:rounded-xl hover:bg-white/[0.06]"
@@ -469,7 +469,7 @@ export function FeedItemCard({
           <h2 className="font-sans text-lg font-semibold leading-tight tracking-tight text-[#e5e5e5] sm:text-xl">
             {item.title}
           </h2>
-          <p className="font-mono text-[12px] uppercase tracking-wider text-[#888]">
+          <p className="font-sans text-[12px] uppercase tracking-wider text-[#888]">
             {item.source} · {timeAgo(item.publishedAt)}
           </p>
           {item.summary && (
@@ -478,7 +478,7 @@ export function FeedItemCard({
           <div className="flex flex-wrap items-center gap-2">
             {item.sourceCount != null && item.sourceCount > 0 && (
               <span
-                className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide"
+                className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-1.5 py-0.5 font-sans text-[11px] font-medium uppercase tracking-wide"
                 style={{
                   color: config.color,
                 }}
@@ -582,12 +582,12 @@ export function FeedItemCard({
         >
           {item.title}
         </h3>
-        <p className="font-mono text-[11px] uppercase tracking-wider text-[#666]">
+        <p className="font-sans text-[11px] uppercase tracking-wider text-[#666]">
           {item.source} · {timeAgo(item.publishedAt)}
         </p>
         {item.sourceCount != null && item.sourceCount > 1 && (
           <span
-            className="inline-flex items-center rounded-full bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide"
+            className="inline-flex items-center rounded-full bg-white/[0.06] px-1.5 py-0.5 font-sans text-[11px] font-medium uppercase tracking-wide"
             style={{ color: config.color }}
           >
             {item.sourceCount} sources

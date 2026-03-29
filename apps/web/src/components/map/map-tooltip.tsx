@@ -25,13 +25,13 @@ export function MapTooltip({ visible, x, y, data }: MapTooltipProps) {
     <div
       className={cn(
         "pointer-events-none absolute z-50",
-        "bg-card border border-border rounded-sm px-3 py-2 text-xs shadow-lg",
+        "rounded-xl border border-violet-400/25 bg-zinc-950/92 px-3 py-2 text-xs text-violet-50/95 shadow-lg shadow-violet-950/40 backdrop-blur-md",
         "transition-opacity duration-100",
         visible ? "opacity-100" : "opacity-0"
       )}
       style={{ left: x + 12, top: y - 12 }}
     >
-      <p className="font-semibold text-foreground">{data.name}</p>
+      <p className="font-semibold text-violet-50">{data.name}</p>
 
       {data.party && (
         <div className="mt-1 flex items-center gap-1.5">
@@ -39,18 +39,18 @@ export function MapTooltip({ visible, x, y, data }: MapTooltipProps) {
             className="inline-block h-2 w-2 rounded-full"
             style={{ backgroundColor: data.partyColor ?? "#888" }}
           />
-          <span className="text-muted-foreground">{data.party}</span>
+          <span className="text-violet-200/80">{data.party}</span>
         </div>
       )}
 
       {data.votes !== undefined && (
-        <p className="mt-0.5 text-muted-foreground">
+        <p className="mt-0.5 text-violet-200/75">
           {formatNumber(data.votes)} votes
         </p>
       )}
 
       {data.lastUpdate && (
-        <p className="mt-0.5 text-muted-foreground/70">
+        <p className="mt-0.5 text-violet-300/65">
           {timeAgo(data.lastUpdate)}
         </p>
       )}

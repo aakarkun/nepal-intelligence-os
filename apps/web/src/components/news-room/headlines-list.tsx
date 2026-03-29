@@ -48,13 +48,13 @@ export function HeadlinesList({ events, selectedId, onSelect }: HeadlinesListPro
                 )}
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-muted-foreground">
                   <span>{e.source ?? "Unknown source"}</span>
-                  <span className="font-mono tabular-nums">{timeAgo(e.timestamp)}</span>
+                  <span className="font-sans tabular-nums">{timeAgo(e.timestamp)}</span>
                   <span className="rounded border border-border/40 bg-background/10 px-1.5 py-0.5 text-[12px] uppercase tracking-wide">
                     {e.type}
                   </span>
                 </div>
               </div>
-              <span className="shrink-0 text-[12px] font-mono tabular-nums text-muted-foreground">
+              <span className="shrink-0 text-[12px] font-sans tabular-nums text-muted-foreground">
                 {new Date(e.timestamp).toISOString().slice(11, 16)}
               </span>
             </div>
