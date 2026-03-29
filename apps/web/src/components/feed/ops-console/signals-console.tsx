@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Radio, ListFilter, Search } from "@/components/icons";
+import { Radio, ListFilter, Search, ChevronDown } from "@/components/icons";
 import type { SignalEvent, SignalEventType, SignalSeverity } from "@repo/shared";
 import { fetchFeed } from "@/lib/api";
 import { useRealtimeStore } from "@/stores/realtime-store";
 import { cn } from "@/lib/utils";
 import { SignalCard } from "./signal-card";
 import { SignalDetail } from "./signal-detail";
+import { FlatRailPanelHeader } from "@/components/layout/intel-rail";
+import { discoverShellClass } from "@/components/discover/discover-rail-tokens";
 import { useLanguage } from "@/providers/language-provider";
 import { shouldShowByLanguage } from "@/lib/language-filter";
 import {
@@ -20,8 +22,16 @@ import {
   saveReviewedIds,
   type SignalsConsoleMode,
 } from "./state";
+import { titleForType } from "./severity";
 
 type ConsoleTab = "attention" | "all" | "pinned";
+
+/** Queue tabs — same strip pattern as `ConstituenciesTable` (FILTER_TABS UI). */
+const QUEUE_TABS: { id: ConsoleTab; label: string }[] = [
+  { id: "attention", label: "Attention" },
+  { id: "all", label: "All" },
+  { id: "pinned", label: "Pinned" },
+];
 
 type SignalsConsoleProps = {
   allowedTypes: SignalEventType[];
@@ -46,7 +56,10 @@ export function SignalsConsole({ allowedTypes }: SignalsConsoleProps) {
   const [type, setType] = useState<"all" | SignalEventType>("all");
   const [q, setQ] = useState("");
   const [newCount, setNewCount] = useState(0);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const newestSeenIdRef = useRef<string | null>(null);
+
+  const hasAdvancedFilters = severity !== "all" || type !== "all";
 
   useEffect(() => {
     setMode(loadMode());
@@ -191,161 +204,240 @@ export function SignalsConsole({ allowedTypes }: SignalsConsoleProps) {
     return merged.filter((e) => e.source && e.source === selected.source && e.id !== selected.id);
   }, [merged, selected]);
 
+  /** Secondary pill row inside Advanced panel (severity). */
+  const filterPillTrackClass =
+    "inline-flex max-w-full flex-wrap items-center gap-1 rounded-full bg-white/[0.06] p-px px-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]";
+
+  const pillBtn = (active: boolean) =>
+    cn(
+      "rounded-full px-2.5 py-1 font-sans text-[11px] tracking-tight transition-colors sm:text-[12px]",
+      active ? "bg-white/[0.14] text-white shadow-sm shadow-black/20" : "text-[#6b6b6b] hover:text-[#b4b4b4]"
+    );
+
+  const severityOptions = [
+    ["all", "All"] as const,
+    ["critical", "Critical"] as const,
+    ["warning", "Warning"] as const,
+    ["info", "Info"] as const,
+  ];
+
+  function clearAdvancedFilters() {
+    setSeverity("all");
+    setType("all");
+  }
+
   return (
     <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
-      <div className="space-y-3">
-        <div className="sticky top-12 z-10 rounded-xl border border-border bg-background/70 p-3 backdrop-blur">
-          <div className="flex flex-wrap items-center gap-2">
+      <div className="flex min-h-0 min-w-0 flex-col gap-3">
+        <div className="relative w-full min-w-0">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#666]" />
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search signals…"
+            className="h-10 w-full min-w-0 rounded-xl border border-white/[0.08] bg-white/[0.04] pl-10 pr-3 font-sans text-[13px] text-[#e5e5e5] placeholder:text-[#5c5c5c] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] focus:outline-none focus:ring-1 focus:ring-white/20"
+            aria-label="Search signals"
+          />
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div
+            className="inline-flex w-max max-w-full min-w-0 flex-wrap items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.04] p-1"
+            role="tablist"
+            aria-label="Signal queue"
+          >
+            {QUEUE_TABS.map(({ id, label }) => {
+              const active = tab === id;
+              const count =
+                id === "attention" ? attentionCount : id === "all" ? merged.length : pinnedCount;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setTab(id)}
+                  className={cn(
+                    "rounded-full px-2.5 py-1.5 font-sans text-[11px] font-medium uppercase tracking-wide transition-colors",
+                    active
+                      ? "bg-white/[0.14] text-[#e5e5e5] shadow-sm shadow-black/20"
+                      : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
+                  )}
+                >
+                  {label}{" "}
+                  <span className="tabular-nums text-[10px] text-[#666]">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:ml-auto">
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen((o) => !o)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-sans text-[11px] tracking-tight transition-colors sm:text-[12px]",
+                advancedOpen
+                  ? "border-white/[0.14] bg-white/[0.1] text-[#e5e5e5]"
+                  : "border-white/[0.08] bg-white/[0.03] text-[#a1a1a1] hover:bg-white/[0.06] hover:text-[#e5e5e5]",
+                hasAdvancedFilters && !advancedOpen && "ring-1 ring-amber-500/35"
+              )}
+              aria-expanded={advancedOpen}
+              aria-controls="signals-advanced-filters"
+            >
+              <ListFilter className="h-3.5 w-3.5 shrink-0 opacity-80" />
+              Advanced filters
+              {hasAdvancedFilters && !advancedOpen ? (
+                <span className="font-sans tabular-nums text-[10px] text-amber-400/90">· on</span>
+              ) : null}
+              <ChevronDown
+                className={cn("h-3.5 w-3.5 shrink-0 opacity-70 transition-transform", advancedOpen && "rotate-180")}
+              />
+            </button>
             <button
               type="button"
               onClick={() => onMode(mode === "live" ? "review" : "live")}
               className={cn(
-                "inline-flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 font-sans text-[11px] tracking-tight transition-colors sm:text-[12px]",
                 mode === "live"
-                  ? "border-emerald-500/25 bg-emerald-500/8 text-emerald-300"
-                  : "border-border bg-muted/20 text-muted-foreground hover:text-foreground"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200/95"
+                  : "border-white/[0.08] bg-white/[0.04] text-[#a1a1aa] hover:bg-white/[0.08] hover:text-[#e5e5e5]"
               )}
             >
-              <Radio className="h-3.5 w-3.5" />
+              <Radio
+                className={cn(
+                  "h-3.5 w-3.5 shrink-0",
+                  mode === "live" ? "text-emerald-400" : "text-[#666]"
+                )}
+              />
               {mode === "live" ? "Live" : "Review"}
             </button>
+          </div>
+        </div>
 
-            <div className="ml-auto flex items-center gap-2">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground/70" />
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search signals…"
-                  className="h-8 w-56 rounded-md border border-border bg-background/40 pl-7 pr-2 text-xs text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-border/50"
-                />
+        {advancedOpen ? (
+          <div
+            id="signals-advanced-filters"
+            className="space-y-3 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+          >
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-sans text-[10px] uppercase tracking-[0.14em] text-[#666]">Severity</span>
+                {hasAdvancedFilters ? (
+                  <button
+                    type="button"
+                    onClick={clearAdvancedFilters}
+                    className="font-sans text-[11px] text-[#888] underline-offset-2 hover:text-[#ccc] hover:underline"
+                  >
+                    Clear
+                  </button>
+                ) : null}
               </div>
+              <div className={filterPillTrackClass}>
+                {severityOptions.map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setSeverity(id)}
+                    className={pillBtn(severity === id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              <div className="flex items-center gap-2">
-                <ListFilter className="h-4 w-4 text-muted-foreground" />
-                <select
-                  value={severity}
-                  onChange={(e) => setSeverity(e.target.value as typeof severity)}
-                  className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground"
-                  aria-label="Severity filter"
-                >
-                  <option value="all">All severity</option>
-                  <option value="critical">Critical</option>
-                  <option value="warning">Warning</option>
-                  <option value="info">Info</option>
-                </select>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as typeof type)}
-                  className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground"
-                  aria-label="Type filter"
-                >
-                  <option value="all">All types</option>
-                  {allowedTypes.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
+            <div className="space-y-1.5">
+              <span className="font-sans text-[10px] uppercase tracking-[0.14em] text-[#666]">Type</span>
+              <div className="-mx-0.5 flex max-h-[5.5rem] flex-wrap gap-1.5 overflow-y-auto overscroll-y-contain px-0.5 pb-0.5 sm:max-h-none">
+                <button type="button" onClick={() => setType("all")} className={pillBtn(type === "all")}>
+                  All
+                </button>
+                {allowedTypes.map((t) => (
+                  <button key={t} type="button" onClick={() => setType(t)} className={pillBtn(type === t)}>
+                    {titleForType(t)}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
+        ) : null}
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setTab("attention")}
-              className={cn(
-                "rounded-md border px-2.5 py-1 text-xs font-medium",
-                tab === "attention"
-                  ? "border-nepal-red/40 bg-nepal-red/10 text-nepal-red"
-                  : "border-border bg-muted/10 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Attention ({attentionCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("all")}
-              className={cn(
-                "rounded-md border px-2.5 py-1 text-xs font-medium",
-                tab === "all"
-                  ? "border-nepal-red/40 bg-nepal-red/10 text-nepal-red"
-                  : "border-border bg-muted/10 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("pinned")}
-              className={cn(
-                "rounded-md border px-2.5 py-1 text-xs font-medium",
-                tab === "pinned"
-                  ? "border-nepal-red/40 bg-nepal-red/10 text-nepal-red"
-                  : "border-border bg-muted/10 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Pinned ({pinnedCount})
-            </button>
+        <div className={cn(discoverShellClass, "flex min-h-0 flex-col")}>
+          <FlatRailPanelHeader
+            title="Signal queue"
+            leadingDotClass="bg-emerald-400"
+            right={
+              newCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={jumpToTop}
+                  className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 font-sans text-[11px] font-medium text-emerald-300 sm:text-[12px]"
+                >
+                  {newCount} new
+                </button>
+              ) : null
+            }
+          />
 
-            {newCount > 0 && (
-              <button
-                type="button"
-                onClick={jumpToTop}
-                className="ml-auto rounded-md border border-emerald-500/25 bg-emerald-500/8 px-2.5 py-1 text-xs font-medium text-emerald-300"
-              >
-                {newCount} new signals
-              </button>
+          <div
+            ref={listRef}
+            className={cn(
+              "mx-3 mb-3 mt-1 min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden rounded-xl bg-white/[0.06] px-2 pb-3 pt-2.5 text-[#ccc]",
+              "shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+            )}
+            style={{ maxHeight: "calc(100vh - 14rem)" }}
+            onScroll={() => {
+              if (mode !== "live") return;
+              const el = listRef.current;
+              if (!el) return;
+              if (el.scrollTop < 12) {
+                newestSeenIdRef.current = merged[0]?.id ?? null;
+                setNewCount(0);
+              }
+            }}
+          >
+            {filtered.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-white/[0.1] px-4 py-10 text-center font-sans text-[13px] text-[#888]">
+                No signals match the current view.
+              </div>
+            ) : (
+              filtered.map((e) => (
+                <SignalCard
+                  key={e.id}
+                  event={e}
+                  selected={selected?.id === e.id}
+                  isPinned={pinnedIds.has(e.id)}
+                  isReviewed={reviewedIds.has(e.id)}
+                  onSelect={() => setSelectedId(e.id)}
+                  onTogglePinned={() => togglePinned(e.id)}
+                  onMarkReviewed={() => toggleReviewed(e.id)}
+                  onCopyLink={() => copyLink(e.id)}
+                />
+              ))
             )}
           </div>
         </div>
-
-        <div
-          ref={listRef}
-          className="space-y-2 overflow-auto rounded-xl border border-border bg-card/20 p-3"
-          style={{ maxHeight: "calc(100vh - 12rem)" }}
-          onScroll={() => {
-            if (mode !== "live") return;
-            const el = listRef.current;
-            if (!el) return;
-            if (el.scrollTop < 12) {
-              newestSeenIdRef.current = merged[0]?.id ?? null;
-              setNewCount(0);
-            }
-          }}
-        >
-          {filtered.length === 0 ? (
-            <div className="py-10 text-center text-sm text-muted-foreground">
-              No signals match the current view.
-            </div>
-          ) : (
-            filtered.map((e) => (
-              <SignalCard
-                key={e.id}
-                event={e}
-                selected={selected?.id === e.id}
-                isPinned={pinnedIds.has(e.id)}
-                isReviewed={reviewedIds.has(e.id)}
-                onSelect={() => setSelectedId(e.id)}
-                onTogglePinned={() => togglePinned(e.id)}
-                onMarkReviewed={() => toggleReviewed(e.id)}
-                onCopyLink={() => copyLink(e.id)}
-              />
-            ))
-          )}
-        </div>
       </div>
 
-      <div className="sticky top-12 self-start" style={{ maxHeight: "calc(100vh - 4rem)" }}>
-        <SignalDetail
-          event={selected}
-          isPinned={selected ? pinnedIds.has(selected.id) : false}
-          isReviewed={selected ? reviewedIds.has(selected.id) : false}
-          onMarkReviewed={() => selected && toggleReviewed(selected.id)}
-          onTogglePinned={() => selected && togglePinned(selected.id)}
-          related={related}
-        />
+      <div
+        className={cn(
+          discoverShellClass,
+          "sticky top-12 flex max-h-[calc(100vh-4rem)] min-h-0 flex-col self-start overflow-hidden"
+        )}
+      >
+        <FlatRailPanelHeader title="Detail" leadingDotClass="bg-violet-400" />
+        <div className="min-h-0 flex-1 overflow-auto px-2 pb-3 pt-0">
+          <SignalDetail
+            event={selected}
+            isPinned={selected ? pinnedIds.has(selected.id) : false}
+            isReviewed={selected ? reviewedIds.has(selected.id) : false}
+            onMarkReviewed={() => selected && toggleReviewed(selected.id)}
+            onTogglePinned={() => selected && togglePinned(selected.id)}
+            related={related}
+          />
+        </div>
       </div>
     </div>
   );

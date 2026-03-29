@@ -2,12 +2,6 @@
 
 import type { SignalSeverity, SignalEventType } from "@repo/shared";
 
-export const SEVERITY_STRIPE_CLASS: Record<SignalSeverity, string> = {
-  critical: "bg-status-error",
-  warning: "bg-status-stale",
-  info: "bg-muted-foreground/60",
-};
-
 export const SEVERITY_BADGE_CLASS: Record<SignalSeverity, string> = {
   critical: "border-red-500/25 bg-red-500/10 text-red-300",
   warning: "border-amber-500/25 bg-amber-500/10 text-amber-300",

@@ -298,7 +298,7 @@ export function SignalsFeed(
                 <div className="flex items-center gap-3 pl-5.5 text-[12px] text-muted-foreground">
                   <span>{timeAgo(event.timestamp)}</span>
                   {redditMeta && (
-                    <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                    <span className="font-sans text-[11px] tabular-nums text-muted-foreground">
                       {redditMeta}
                     </span>
                   )}

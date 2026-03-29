@@ -1,4 +1,5 @@
 import { SignalsConsole } from "@/components/feed/ops-console/signals-console";
+import { cn } from "@/lib/utils";
 import type { SignalEventType } from "@repo/shared";
 
 /**
@@ -25,17 +26,15 @@ const FEED_ALLOWED_TYPES: SignalEventType[] = [
 
 export default function FeedPage() {
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight">
-          Signals Feed
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          What&apos;s signaling now: operational alerts, NEPSE trading signals, ingest, anomalies,
-          social, and high-attention news. Invest wisely; full news in News Room.
-        </p>
+    <div
+      className={cn(
+        "-mx-4 flex w-full gap-6 px-4 pb-10 antialiased md:-mx-6 md:pl-6 md:pr-0",
+        "min-h-full bg-transparent text-[#e5e5e5]"
+      )}
+    >
+      <div className="min-w-0 flex-1 space-y-4">
+        <SignalsConsole allowedTypes={FEED_ALLOWED_TYPES} />
       </div>
-      <SignalsConsole allowedTypes={FEED_ALLOWED_TYPES} />
     </div>
   );
 }

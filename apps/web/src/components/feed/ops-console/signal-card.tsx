@@ -4,12 +4,7 @@ import { useMemo } from "react";
 import { Pin, PinOff, CheckCircle2, Copy } from "@/components/icons";
 import type { SignalEvent } from "@repo/shared";
 import { cn, timeAgo } from "@/lib/utils";
-import {
-  SEVERITY_BADGE_CLASS,
-  SEVERITY_STRIPE_CLASS,
-  TYPE_BADGE_CLASS,
-  titleForType,
-} from "./severity";
+import { SEVERITY_BADGE_CLASS, TYPE_BADGE_CLASS, titleForType } from "./severity";
 
 type SignalCardProps = {
   event: SignalEvent;
@@ -55,76 +50,93 @@ export function SignalCard({
         }
       }}
       className={cn(
-        "group relative w-full rounded-md border text-left transition-colors",
-        "hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border",
-        selected ? "border-nepal-red/40 bg-nepal-red/5" : "border-border bg-card/30"
+        "group flex w-full gap-3 rounded-xl p-3 text-left transition-[border-color] duration-150",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20",
+        selected ? "border border-white/[0.18]" : "border-0 border-transparent"
       )}
     >
-      <span
-        className={cn(
-          "absolute left-0 top-0 h-full w-1 rounded-l-md",
-          SEVERITY_STRIPE_CLASS[event.severity]
-        )}
-      />
-
-      <div className="flex gap-3 p-3 pl-4">
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={cn("rounded-md border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide", typeBadgeClass)}>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span
+                  className={cn(
+                    "rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                    typeBadgeClass
+                  )}
+                >
                   {titleForType(event.type)}
                 </span>
-                <span className={cn("rounded-md border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide", severityBadgeClass)}>
+                <span
+                  className={cn(
+                    "rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                    severityBadgeClass
+                  )}
+                >
                   {event.severity}
                 </span>
                 {isReviewed && (
-                  <span className="rounded-md border border-border/40 bg-background/20 px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span className="rounded-full border border-white/[0.1] bg-white/[0.04] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#888]">
                     Reviewed
                   </span>
                 )}
                 {isPinned && (
-                  <span className="rounded-md border border-amber-500/25 bg-amber-500/8 px-2 py-0.5 text-[12px] font-semibold uppercase tracking-wide text-amber-300">
+                  <span className="rounded-full border border-amber-500/25 bg-amber-500/8 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
                     Pinned
                   </span>
                 )}
               </div>
 
-              <div className="mt-2 line-clamp-2 text-sm font-semibold leading-snug">
+              <div
+                className={cn(
+                  "mt-2.5 line-clamp-2 font-sans text-[13px] font-semibold leading-relaxed transition-colors duration-150",
+                  selected
+                    ? "text-[#e5e5e5]"
+                    : "text-[#e5e5e5]/50 group-hover:text-[#e5e5e5] group-focus-within:text-[#e5e5e5]"
+                )}
+              >
                 {event.title}
               </div>
               {event.body && (
-                <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                <div className="mt-1.5 line-clamp-2 font-sans text-[12px] leading-relaxed text-[#8a8a8a]">
                   {event.body}
                 </div>
               )}
             </div>
 
             <div className="shrink-0 text-right">
-              <div className="font-mono text-[12px] tabular-nums text-muted-foreground">
+              <div className="font-sans text-[12px] tabular-nums text-[#888]">
                 {timeAgo(event.timestamp)}
               </div>
             </div>
           </div>
 
           {meta.length > 0 && (
-            <div className="flex flex-wrap gap-2 text-[12px] text-muted-foreground">
+            <div className="flex flex-wrap gap-1.5 font-sans text-[11px] text-[#888]">
               {meta.slice(0, 2).map((m) => (
-                <span key={m} className="rounded border border-border/40 bg-background/10 px-2 py-0.5">
+                <span
+                  key={m}
+                  className="rounded-full border border-white/[0.08] bg-white/[0.04] px-2 py-0.5 text-[#a3a3a3]"
+                >
                   {m}
                 </span>
               ))}
             </div>
           )}
 
-          <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-2 transition-opacity duration-150",
+              selected ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+            )}
+          >
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onMarkReviewed();
               }}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/20 px-2 py-1 text-[13px] text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-1 font-sans text-[12px] text-[#a1a1aa] hover:bg-white/[0.08] hover:text-[#e5e5e5]"
               aria-label="Mark reviewed"
             >
               <CheckCircle2 className="h-3.5 w-3.5" />
@@ -136,7 +148,7 @@ export function SignalCard({
                 e.stopPropagation();
                 onTogglePinned();
               }}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/20 px-2 py-1 text-[13px] text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-1 font-sans text-[12px] text-[#a1a1aa] hover:bg-white/[0.08] hover:text-[#e5e5e5]"
               aria-label={isPinned ? "Unpin" : "Pin"}
             >
               {isPinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
@@ -148,7 +160,7 @@ export function SignalCard({
                 e.stopPropagation();
                 onCopyLink();
               }}
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background/20 px-2 py-1 text-[13px] text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.1] bg-white/[0.04] px-2.5 py-1 font-sans text-[12px] text-[#a1a1aa] hover:bg-white/[0.08] hover:text-[#e5e5e5]"
               aria-label="Copy link"
             >
               <Copy className="h-3.5 w-3.5" />
@@ -156,7 +168,6 @@ export function SignalCard({
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 }
