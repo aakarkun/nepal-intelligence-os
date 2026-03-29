@@ -5,17 +5,15 @@ import Link from "next/link";
 import type { ConstituencyResult } from "@repo/shared";
 import { cn, formatNepalDateTime, formatNumber, timeAgo } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PartyMark } from "@/components/party/party-mark";
-import {
-  ResponsiveContainer,
-  LineChart,
-  CartesianGrid,
-} from "recharts";
+import { ResponsiveContainer, LineChart, CartesianGrid } from "recharts";
 import { ArrowLeft, Copy, Check, Eye, EyeOff } from "@/components/icons";
 import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { useRealtimeStore } from "@/stores/realtime-store";
+import { discoverShellClass } from "@/components/discover/discover-rail-tokens";
+import { FlatRailPanelHeader } from "@/components/layout/intel-rail";
+
+const panelBodyClass = "min-w-0 px-2 pb-2";
 
 interface ConstituencyDossierProps {
   data: ConstituencyResult;
@@ -24,22 +22,31 @@ interface ConstituencyDossierProps {
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case "counting":
-      return <Badge variant="stale">Counting</Badge>;
+      return (
+        <span className="rounded px-1.5 py-0.5 font-sans text-[10px] uppercase tracking-wide text-amber-400/90">
+          Counting
+        </span>
+      );
     case "final":
-      return <Badge variant="final">Final</Badge>;
+      return (
+        <span className="rounded px-1.5 py-0.5 font-sans text-[10px] uppercase tracking-wide text-emerald-400/90">
+          Final
+        </span>
+      );
     case "stale":
       return (
-        <Badge
-          variant="outline"
-          className="border-transparent bg-yellow-500/15 text-yellow-500"
-        >
+        <span className="rounded px-1.5 py-0.5 font-sans text-[10px] uppercase tracking-wide text-yellow-500/90">
           Stale
-        </Badge>
+        </span>
       );
     case "error":
       return <Badge variant="error">Error</Badge>;
     default:
-      return <Badge variant="outline">{status}</Badge>;
+      return (
+        <span className="font-sans text-[10px] uppercase tracking-wide text-[#888]">
+          {status}
+        </span>
+      );
   }
 }
 
@@ -54,16 +61,12 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
   const removeFromWatchlist = useRealtimeStore((s) => s.removeFromWatchlist);
   const isWatched = watchlist.includes(data.constituencyId);
   const candidateWatchlist = useRealtimeStore((s) => s.candidateWatchlist);
-  const addCandidateToWatchlist = useRealtimeStore(
-    (s) => s.addCandidateToWatchlist
-  );
+  const addCandidateToWatchlist = useRealtimeStore((s) => s.addCandidateToWatchlist);
   const removeCandidateFromWatchlist = useRealtimeStore(
     (s) => s.removeCandidateFromWatchlist
   );
 
-  const sortedCandidates = [...data.candidates].sort(
-    (a, b) => b.votes - a.votes
-  );
+  const sortedCandidates = [...data.candidates].sort((a, b) => b.votes - a.votes);
   const maxVotes = sortedCandidates[0]?.votes ?? 0;
 
   async function handleCopy() {
@@ -73,93 +76,91 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Back + Header */}
-      <div>
-        <Button
-          variant="ghost"
-          size="sm"
-          asChild
-          className="mb-2 -ml-2 text-muted-foreground"
-        >
-          <Link href="/constituencies">
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            Back to Constituencies
-          </Link>
-        </Button>
-        <div className="flex items-center gap-3">
-          <h1 className="font-display text-2xl font-bold tracking-tight">
-            {data.constituencyName}
-          </h1>
-          <StatusBadge status={data.status} />
-          <button
-            type="button"
-            onClick={() =>
-              isWatched
-                ? removeFromWatchlist(data.constituencyId)
-                : addToWatchlist(data.constituencyId)
-            }
-            className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-card/60 px-2 py-1 text-[13px] text-muted-foreground hover:text-nepal-red hover:border-nepal-red/60 transition-colors"
-          >
-            {isWatched ? (
+    <div className="space-y-4">
+      <Link
+        href="/constituencies"
+        className="inline-flex items-center gap-1 font-sans text-[12px] text-[#888] transition-colors hover:text-[#ccc]"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Back to Constituencies
+      </Link>
+
+      <div className={cn(discoverShellClass, "min-w-0")}>
+        <FlatRailPanelHeader
+          title="Vote breakdown"
+          leadingDotClass="bg-sky-500"
+          right={
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <StatusBadge status={data.status} />
+              <button
+                type="button"
+                onClick={() =>
+                  isWatched
+                    ? removeFromWatchlist(data.constituencyId)
+                    : addToWatchlist(data.constituencyId)
+                }
+                className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-white/[0.06] px-2.5 py-1 font-sans text-[11px] text-[#a1a1aa] transition-colors hover:border-white/[0.15] hover:text-[#e5e5e5]"
+              >
+                {isWatched ? (
+                  <>
+                    <EyeOff className="h-3 w-3" />
+                    Unwatch
+                  </>
+                ) : (
+                  <>
+                    <Eye className="h-3 w-3" />
+                    Watch
+                  </>
+                )}
+              </button>
+            </div>
+          }
+        />
+        <div className={panelBodyClass}>
+          <p className="mb-3 font-sans text-[10px] text-[#555]">
+            {(data.sourceName ?? data.sourceId) && (
               <>
-                <EyeOff className="h-3 w-3" />
-                Unwatch
-              </>
-            ) : (
-              <>
-                <Eye className="h-3 w-3" />
-                Watch
+                Source: {data.sourceName ?? data.sourceId}
+                {" · "}
+                {isCurrentDataset
+                  ? `Updated ${timeAgo(data.sourceFetchedAt ?? data.lastUpdate)}`
+                  : `Archived ${formatNepalDateTime(data.sourceFetchedAt ?? data.lastUpdate)}`}
+                <br />
               </>
             )}
-          </button>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {data.districtName} · Province {data.provinceId} ·{" "}
-          {formatNumber(data.totalVotes)} total votes
-        </p>
-        {(data.sourceName ?? data.sourceId) && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            Source: {data.sourceName ?? data.sourceId}
-            {" · "}
-            {isCurrentDataset
-              ? `Updated ${timeAgo(data.sourceFetchedAt ?? data.lastUpdate)} ago`
-              : `Archived snapshot from ${formatNepalDateTime(
-                  data.sourceFetchedAt ?? data.lastUpdate
-                )}`}
+            Bar fill is proportional to votes (relative to the leader).{" "}
+            <span className="text-[#666]">0 votes means no colored fill—only the track shows.</span>
           </p>
-        )}
-      </div>
 
-      {/* Candidate Leaderboard */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">
-            Candidate Leaderboard
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Horizontal Bar Chart */}
-          <div className="space-y-2">
+          <div className="mb-4 space-y-2">
             {sortedCandidates.map((c) => {
               const width = maxVotes > 0 ? (c.votes / maxVotes) * 100 : 0;
               return (
                 <div key={c.candidateId} className="flex items-center gap-3">
-                  <div className="w-36 truncate text-sm">
+                  <div className="w-32 shrink-0 truncate font-sans text-[12px] text-[#a1a1aa] sm:w-40">
                     {c.candidateName}
                   </div>
-                  <div className="flex-1">
-                    <div className="h-6 overflow-hidden rounded bg-muted">
-                      <div
-                        className="h-full rounded transition-all duration-500"
-                        style={{
-                          width: `${width}%`,
-                          backgroundColor: c.partyColor,
-                        }}
-                      />
-                    </div>
+                  <div className="min-w-0 flex-1">
+                    {c.votes === 0 ? (
+                      <div className="flex h-6 items-center rounded border border-dashed border-white/[0.1] bg-white/[0.03] px-2">
+                        <span className="font-sans text-[10px] text-[#666]">
+                          No vote total in this feed
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="h-6 overflow-hidden rounded bg-white/[0.06]">
+                        <div
+                          className="h-full rounded-sm transition-all duration-500"
+                          style={{
+                            width: `${width}%`,
+                            backgroundColor: c.partyColor,
+                            opacity: 0.85,
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
-                  <div className="w-20 text-right text-sm tabular-nums">
+                  <div className="w-16 shrink-0 text-right font-sans text-[12px] tabular-nums text-[#e5e5e5] sm:w-20">
                     {formatNumber(c.votes)}
                   </div>
                 </div>
@@ -167,26 +168,15 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
             })}
           </div>
 
-          {/* Results Table */}
-          <div className="overflow-auto rounded-md border border-white/5 bg-card/10">
-            <table className="w-full text-xs">
-              <thead className="bg-background/85 backdrop-blur">
-                <tr className="border-b border-white/10">
-                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                    #
-                  </th>
-                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                    Candidate
-                  </th>
-                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                    Party
-                  </th>
-                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">
-                    Votes
-                  </th>
-                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">
-                    Share
-                  </th>
+          <div className="min-w-0 overflow-x-auto rounded-lg border border-white/[0.06] bg-white/[0.06]">
+            <table className="w-full border-collapse font-sans text-[12px]">
+              <thead>
+                <tr className="border-b border-white/[0.06] bg-white/[0.04] text-left text-[11px] uppercase tracking-wide text-[#666]">
+                  <th className="px-2 py-2 font-medium">#</th>
+                  <th className="px-2 py-2 font-medium">Candidate</th>
+                  <th className="px-2 py-2 font-medium">Party</th>
+                  <th className="px-2 py-2 text-right font-medium tabular-nums">Votes</th>
+                  <th className="px-2 py-2 text-right font-medium tabular-nums">Share</th>
                 </tr>
               </thead>
               <tbody>
@@ -198,20 +188,23 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
                   return (
                     <tr
                       key={c.candidateId}
-                      className="border-b border-white/5 odd:bg-background even:bg-muted/20"
+                      className="border-b border-white/[0.04] transition-colors last:border-b-0 hover:bg-white/[0.04]"
                     >
-                      <td className="px-3 py-2 tabular-nums text-muted-foreground">
-                        {i + 1}
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex items-center gap-1.5">
+                      <td className="px-2 py-1.5 tabular-nums text-[#666]">{i + 1}</td>
+                      <td className="px-2 py-1.5">
+                        <div className="flex min-w-0 items-center gap-1.5">
                           <PartyMark
                             partyId={c.partyId}
                             partyName={c.partyName}
                             partyColor={c.partyColor}
                             size="sm"
                           />
-                          <span className={cn(i === 0 && "font-semibold")}>
+                          <span
+                            className={cn(
+                              "truncate text-[#e5e5e5]",
+                              i === 0 && "font-medium"
+                            )}
+                          >
                             {c.candidateName}
                           </span>
                           <button
@@ -231,7 +224,7 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
                                 });
                               }
                             }}
-                            className="ml-1 text-muted-foreground hover:text-nepal-red transition-colors"
+                            className="shrink-0 text-[#888] transition-colors hover:text-[#ccc]"
                             title={
                               candidateWatchlist.some(
                                 (wc) => wc.candidateId === c.candidateId
@@ -250,13 +243,11 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
                           </button>
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-muted-foreground">
-                        {c.partyName}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums">
+                      <td className="px-2 py-1.5 text-[#a1a1aa]">{c.partyName}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums text-[#e5e5e5]">
                         {formatNumber(c.votes)}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums">
+                      <td className="px-2 py-1.5 text-right tabular-nums text-[#a1a1aa]">
                         {share}%
                       </td>
                     </tr>
@@ -265,62 +256,57 @@ export function ConstituencyDossier({ data }: ConstituencyDossierProps) {
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Vote Trend Chart (placeholder) */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Vote Trend</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="relative h-48">
+      <div className={cn(discoverShellClass, "min-w-0")}>
+        <FlatRailPanelHeader title="Vote trend" leadingDotClass="bg-amber-500" />
+        <div className={panelBodyClass}>
+          <div className="relative h-48 rounded-lg border border-white/[0.06] bg-white/[0.04]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={[]}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(255,255,255,0.07)"
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
               </LineChart>
             </ResponsiveContainer>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-sm text-muted-foreground">
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <p className="font-sans text-[12px] text-[#666]">
                 Vote trend will appear as counting progresses
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Audit Panel */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-sm font-medium">Raw Data</CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopy}
-            className="h-7 text-xs"
-          >
-            {copied ? (
-              <>
-                <Check className="mr-1 h-3 w-3" />
-                Copied
-              </>
-            ) : (
-              <>
-                <Copy className="mr-1 h-3 w-3" />
-                Copy JSON
-              </>
-            )}
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <pre className="max-h-80 overflow-auto rounded-md bg-muted p-4 font-mono text-xs leading-relaxed">
+      <div className={cn(discoverShellClass, "min-w-0")}>
+        <FlatRailPanelHeader
+          title="Raw data"
+          leadingDotClass="bg-violet-500"
+          right={
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-white/[0.06] px-2.5 py-1 font-sans text-[11px] text-[#a1a1aa] transition-colors hover:border-white/[0.15] hover:text-[#e5e5e5]"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3 w-3" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3 w-3" />
+                  Copy JSON
+                </>
+              )}
+            </button>
+          }
+        />
+        <div className={panelBodyClass}>
+          <pre className="max-h-80 overflow-auto rounded-lg border border-white/[0.06] bg-black/20 p-3 font-mono text-[11px] leading-relaxed text-[#a1a1aa]">
             <code>{JSON.stringify(data, null, 2)}</code>
           </pre>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
