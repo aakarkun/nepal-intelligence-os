@@ -76,7 +76,7 @@ export function WhatChangedCard() {
       <div className="h-full rounded-xl bg-[#181818]/60 p-3">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <div className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+            <div className="font-sans text-[13px] uppercase tracking-wider text-[#a1a1aa]">
               What changed
             </div>
             <p className="mt-1 text-xs text-muted-foreground">Archive mode</p>
@@ -128,7 +128,7 @@ export function WhatChangedCard() {
     <div className="h-full rounded-xl bg-[#181818]/60 p-3">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <div className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+          <div className="font-sans text-[13px] uppercase tracking-wider text-[#a1a1aa]">
             What changed
           </div>
           <p className="mt-1 text-xs text-muted-foreground">Last 10 min</p>
@@ -149,7 +149,7 @@ export function WhatChangedCard() {
                   router.push(`/constituencies/${item.constituencyId}`)
                 }
                 className={cn(
-                  "flex w-full items-center justify-between rounded-lg bg-[#0c0c0c]/60 p-3 text-left transition-colors",
+                  "flex w-full items-center justify-between rounded-lg bg-surface-page/60 p-3 text-left transition-colors",
                   "hover:bg-white/[0.04]"
                 )}
               >
@@ -174,7 +174,7 @@ export function WhatChangedCard() {
                   </div>
                   <span
                     className={cn(
-                      "font-mono text-sm font-bold tabular-nums",
+                      "font-sans text-sm font-bold tabular-nums",
                       item.delta > 0 ? "text-green-500" : "text-red-500"
                     )}
                   >

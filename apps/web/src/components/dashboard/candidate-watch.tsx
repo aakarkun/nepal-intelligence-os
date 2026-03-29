@@ -134,7 +134,7 @@ export function CandidateWatch() {
       <div className="rounded-xl bg-[#181818]/60 p-3">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <div className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+            <div className="font-sans text-[13px] uppercase tracking-wider text-[#a1a1aa]">
               Vote leaders
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -148,9 +148,9 @@ export function CandidateWatch() {
             <Link
               key={`${candidate.constituencyId}:${candidate.candidateName}`}
               href={`/constituencies/${candidate.constituencyId}`}
-              className="flex items-center gap-3 rounded-lg bg-[#0c0c0c]/60 px-3 py-2 transition-colors hover:bg-white/[0.04]"
+              className="flex items-center gap-3 rounded-lg bg-surface-page/60 px-3 py-2 transition-colors hover:bg-white/[0.04]"
             >
-              <div className="w-6 text-center font-mono text-xs text-muted-foreground">
+              <div className="w-6 text-center font-sans text-xs text-muted-foreground">
                 {index + 1}
               </div>
               <div
@@ -171,7 +171,7 @@ export function CandidateWatch() {
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-mono text-sm font-bold tabular-nums">
+                <div className="font-sans text-sm font-bold tabular-nums">
                   {formatNumber(candidate.votes)}
                 </div>
                 <div className="text-[12px] text-muted-foreground">
@@ -189,7 +189,7 @@ export function CandidateWatch() {
       <div className="rounded-xl bg-[#181818]/60 p-3">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <div className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+            <div className="font-sans text-[13px] uppercase tracking-wider text-[#a1a1aa]">
               Popular personalities
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -217,9 +217,9 @@ export function CandidateWatch() {
               <Link
                 key={`${candidate.constituencyId}:${candidate.candidateName}:personality`}
                 href={`/constituencies/${candidate.constituencyId}`}
-                className="flex items-center gap-3 rounded-lg bg-[#0c0c0c]/60 px-3 py-2 transition-colors hover:bg-white/[0.04]"
+                className="flex items-center gap-3 rounded-lg bg-surface-page/60 px-3 py-2 transition-colors hover:bg-white/[0.04]"
               >
-                <div className="w-6 text-center font-mono text-xs text-muted-foreground">
+                <div className="w-6 text-center font-sans text-xs text-muted-foreground">
                   {index + 1}
                 </div>
                 <div
@@ -243,7 +243,7 @@ export function CandidateWatch() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="inline-flex items-center gap-1 font-mono text-sm font-bold tabular-nums text-nepal-red">
+                  <div className="inline-flex items-center gap-1 font-sans text-sm font-bold tabular-nums text-nepal-red">
                     <Megaphone className="h-3.5 w-3.5" />
                     #{candidate.personalityRank}
                   </div>

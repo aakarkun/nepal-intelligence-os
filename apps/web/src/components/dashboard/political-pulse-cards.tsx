@@ -6,14 +6,12 @@ import type { ReactNode } from "react";
 import { cn, timeAgo } from "@/lib/utils";
 import {
   discoverSidebarFooterStrip,
-  discoverSidebarSurface,
 } from "@/components/discover/discover-rail-panel";
 import {
-  RailPanelHeader,
-  railShell,
-  railListBody,
-  railCardInset,
-} from "@/components/layout/intel-rail";
+  discoverShellClass,
+  discoverInnerCardClass,
+} from "@/components/discover/discover-rail-tokens";
+import { FlatRailPanelHeader } from "@/components/layout/intel-rail";
 import {
   fetchCabinetEvents,
   fetchParliamentSession,
@@ -40,25 +38,21 @@ function PoliticalPulsePanel({
   children: ReactNode;
 }) {
   return (
-    <div className={cn(railShell, "h-full flex flex-col")}>
-      <RailPanelHeader title={title} leadingDotClass={POLITICAL_LEADING_DOT_CLASS} />
-      <div className={cn(railListBody, "rounded-b-xl flex-1")}>
-        <div className={cn(railCardInset, "text-[#ccc] flex h-full flex-col")}>
-          {/* Inner surface must fill the available height in the rail body */}
-          <div className="flex h-full flex-col overflow-hidden rounded-xl">
-            <div
-              className={cn(
-                discoverSidebarSurface,
-                "flex flex-1 flex-col px-3 pt-2.5 pb-3"
-              )}
-            >
-              <div className="flex-1 space-y-2">{children}</div>
-            </div>
-            {footer ? (
-              <div className={discoverSidebarFooterStrip}>{footer}</div>
-            ) : null}
-          </div>
-        </div>
+    <div className={cn(discoverShellClass, "flex h-full flex-col")}>
+      <FlatRailPanelHeader
+        title={title}
+        leadingDotClass={POLITICAL_LEADING_DOT_CLASS}
+      />
+      <div
+        className={cn(
+          discoverInnerCardClass,
+          "flex min-h-0 flex-1 flex-col"
+        )}
+      >
+        <div className="flex-1 space-y-2">{children}</div>
+        {footer ? (
+          <div className={discoverSidebarFooterStrip}>{footer}</div>
+        ) : null}
       </div>
     </div>
   );
@@ -128,7 +122,7 @@ export function PoliticalPulseCards() {
         footer={
           <Link
             href="/feed"
-            className="font-mono text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
+            className="font-sans text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
           >
             View all →
           </Link>

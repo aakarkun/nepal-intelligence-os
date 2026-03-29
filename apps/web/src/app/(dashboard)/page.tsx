@@ -197,25 +197,16 @@ export default function DiscoverPage() {
     <div
       className={cn(
         "-mx-4 flex w-full gap-6 px-4 pb-10 antialiased md:-mx-6 md:pl-6 md:pr-0",
-        "min-h-full bg-background text-[#e5e5e5]"
+        "min-h-full bg-transparent text-[#e5e5e5]"
       )}
     >
       <div className="min-w-0 flex-1">
-        <div className="border-b border-white/10 pb-4 pt-2">
-          <h1 className="font-mono text-lg uppercase tracking-[0.2em] text-[#e5e5e5]">
-            Discover
-          </h1>
-          <p className="mt-1 font-mono text-[12px] uppercase tracking-wider text-[#888]">
-            Curated signals · Nepal Intelligence OS
-          </p>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2 overflow-x-auto md:flex-nowrap">
+        <div className="flex flex-wrap items-center gap-2 overflow-x-auto md:flex-nowrap">
           <button
             type="button"
             onClick={() => setTab("for-you")}
             className={cn(
-              "rounded-full px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
+              "rounded-full px-3 py-1.5 font-sans text-[13px] uppercase tracking-wider transition-colors",
               tab === "for-you" && !topicFilter
                 ? accent.selected
                 : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
@@ -230,7 +221,7 @@ export default function DiscoverPage() {
               setTopicFilter(null);
             }}
             className={cn(
-              "rounded-full px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
+              "rounded-full px-3 py-1.5 font-sans text-[13px] uppercase tracking-wider transition-colors",
               tab === "top"
                 ? accent.selected
                 : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
@@ -243,7 +234,7 @@ export default function DiscoverPage() {
               <button
                 type="button"
                 className={cn(
-                  "flex items-center gap-1 rounded-full px-3 py-1.5 font-mono text-[13px] uppercase tracking-wider transition-colors",
+                  "flex items-center gap-1 rounded-full px-3 py-1.5 font-sans text-[13px] uppercase tracking-wider transition-colors",
                   (tab === "topics" || topicFilter != null)
                     ? accent.selected
                     : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
@@ -256,7 +247,7 @@ export default function DiscoverPage() {
               </button>
             </PopoverTrigger>
             <PopoverContent
-              className="w-56 overflow-hidden rounded-xl border border-white/[0.08] bg-[#0c0c0c] p-1 text-[#ccc] shadow-xl shadow-black/50"
+              className="w-56 overflow-hidden rounded-xl border border-white/[0.08] bg-surface-page p-1 text-[#ccc] shadow-xl shadow-black/50"
               align="start"
               sideOffset={4}
             >
@@ -269,7 +260,7 @@ export default function DiscoverPage() {
                     setTopicsOpen(false);
                   }}
                   className={cn(
-                    "flex w-full items-center justify-between gap-3 rounded-none px-3 py-2 text-left font-mono text-[13px] transition-colors",
+                    "flex w-full items-center justify-between gap-3 rounded-none px-3 py-2 text-left font-sans text-[13px] transition-colors",
                     !topicFilter
                       ? cn("rounded-xl", accent.selected)
                       : "hover:rounded-xl hover:bg-white/[0.06]"
@@ -292,7 +283,7 @@ export default function DiscoverPage() {
                       setTopicsOpen(false);
                     }}
                     className={cn(
-                      "flex w-full items-center justify-between gap-3 rounded-none px-3 py-2 text-left font-mono text-[13px] transition-colors",
+                      "flex w-full items-center justify-between gap-3 rounded-none px-3 py-2 text-left font-sans text-[13px] transition-colors",
                       topicFilter === id
                         ? cn("rounded-xl", accent.selected)
                         : "hover:rounded-xl hover:bg-white/[0.06]"
@@ -315,7 +306,7 @@ export default function DiscoverPage() {
           <button
             type="button"
             onClick={refreshAndScrollTop}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-[#181818]/60 px-3 py-1.5 font-mono text-[12px] uppercase tracking-wider text-[#a1a1aa] transition-colors hover:bg-white/[0.06] hover:text-[#e5e5e5]"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-[#181818]/60 px-3 py-1.5 font-sans text-[12px] uppercase tracking-wider text-[#a1a1aa] transition-colors hover:bg-white/[0.06] hover:text-[#e5e5e5]"
           >
             ↑ {newCountSinceView} new {newCountSinceView === 1 ? "story" : "stories"} — refresh
           </button>
@@ -328,11 +319,11 @@ export default function DiscoverPage() {
             <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
               {topicFilter != null ? (
                 <>
-                  <p className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+                  <p className="font-sans text-[13px] uppercase tracking-wider text-[#a1a1aa]">
                     No {TOPICS.find((t) => t.id === topicFilter)?.label?.toLowerCase() ?? "topic"}{" "}
                     stories right now
                   </p>
-                  <p className="mt-2 font-mono text-[12px] text-[#666]">
+                  <p className="mt-2 font-sans text-[12px] text-[#666]">
                     Try another topic or switch to For You.
                   </p>
                 </>
@@ -341,10 +332,10 @@ export default function DiscoverPage() {
                   <span className="text-2xl opacity-80" aria-hidden>
                     📡
                   </span>
-                  <p className="mt-2 font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+                  <p className="mt-2 font-sans text-[13px] uppercase tracking-wider text-[#a1a1aa]">
                     No signals yet
                   </p>
-                  <p className="mt-2 max-w-sm font-mono text-[12px] leading-relaxed text-[#666]">
+                  <p className="mt-2 max-w-sm font-sans text-[12px] leading-relaxed text-[#666]">
                     The worker fetches data every few minutes. Check back shortly or visit{" "}
                     <Link
                       href="/feed"
@@ -387,7 +378,7 @@ export default function DiscoverPage() {
                     onClick={() => void handleLoadMore()}
                     disabled={loadingMore}
                     className={cn(
-                      "rounded-md border border-white/10 bg-white/[0.04] px-5 py-2 font-mono text-[12px] uppercase tracking-wider text-[#a1a1aa] transition-colors",
+                      "rounded-md border border-white/10 bg-white/[0.04] px-5 py-2 font-sans text-[12px] uppercase tracking-wider text-[#a1a1aa] transition-colors",
                       "hover:bg-white/[0.08] hover:text-[#e5e5e5]",
                       loadingMore && "pointer-events-none opacity-50"
                     )}

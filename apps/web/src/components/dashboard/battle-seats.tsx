@@ -38,7 +38,7 @@ export function BattleSeats() {
 
   return (
     <div className="rounded-xl bg-[#181818]/60 p-3">
-      <div className="mb-3 font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+      <div className="mb-3 font-sans text-[13px] uppercase tracking-wider text-[#a1a1aa]">
         Closest races
       </div>
       <div className="space-y-2">
@@ -59,7 +59,7 @@ export function BattleSeats() {
                 router.push(`/constituencies/${seat.constituencyId}`)
               }
               className={cn(
-                "w-full rounded-lg bg-[#0c0c0c]/60 p-3 text-left transition-colors",
+                "w-full rounded-lg bg-surface-page/60 p-3 text-left transition-colors",
                 "hover:bg-white/[0.04]"
               )}
             >
@@ -67,7 +67,7 @@ export function BattleSeats() {
                 <p className="truncate text-sm font-medium text-[#e5e5e5]">
                   {seat.constituencyName}
                 </p>
-                <span className="ml-2 shrink-0 font-mono text-xs font-bold tabular-nums text-[#dc143c]">
+                <span className="ml-2 shrink-0 font-sans text-xs font-bold tabular-nums text-[#dc143c]">
                   ±{formatNumber(margin)}
                 </span>
               </div>
@@ -97,12 +97,12 @@ export function BattleSeats() {
                     style={{ backgroundColor: first.partyColor }}
                   />
                   {first.partyName}
-                  <span className="font-mono tabular-nums">
+                  <span className="font-sans tabular-nums">
                     {formatNumber(first.votes)}
                   </span>
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="font-mono tabular-nums">
+                  <span className="font-sans tabular-nums">
                     {formatNumber(second.votes)}
                   </span>
                   {second.partyName}

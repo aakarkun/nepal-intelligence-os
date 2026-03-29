@@ -39,7 +39,7 @@ export function FederalProportionalCard() {
 
   return (
     <div className="flex h-full flex-col space-y-3">
-      <div className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+      <div className="font-sans text-[13px] uppercase tracking-wider text-[#a1a1aa]">
         Federal proportional results
       </div>
 
@@ -70,7 +70,7 @@ export function FederalProportionalCard() {
               </div>
             </div>
             <div className="text-right shrink-0">
-              <p className="font-mono text-sm font-semibold tabular-nums text-[#e5e5e5]">
+              <p className="font-sans text-sm font-semibold tabular-nums text-[#e5e5e5]">
                 {party.seatsWon + party.seatsLeading}
               </p>
               <p className="text-[12px] text-[#555]">seats</p>

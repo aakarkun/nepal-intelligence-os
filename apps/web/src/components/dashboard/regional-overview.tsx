@@ -89,7 +89,7 @@ export function RegionalOverview() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="font-mono text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+          <div className="font-sans text-[13px] uppercase tracking-wider text-[#a1a1aa]">
             Regional overview
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -139,7 +139,7 @@ export function RegionalOverview() {
 
       {activeProvince === "all" ? (
         <div className="rounded-xl bg-[#181818]/60 p-3">
-          <div className="mb-3 font-mono text-[12px] uppercase tracking-wider text-[#888]">
+          <div className="mb-3 font-sans text-[12px] uppercase tracking-wider text-[#888]">
             Province overview
           </div>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -149,17 +149,17 @@ export function RegionalOverview() {
                 type="button"
                 onClick={() => setActiveProvince(province.provinceId)}
                 className={cn(
-                  "flex flex-col items-start rounded-lg bg-[#0c0c0c]/60 px-3 py-2 text-left text-xs transition-colors",
+                  "flex flex-col items-start rounded-lg bg-surface-page/60 px-3 py-2 text-left text-xs transition-colors",
                   "hover:bg-white/[0.04]"
                 )}
               >
                 <div className="flex w-full items-center justify-between gap-2">
                   <span className="font-medium text-[#e5e5e5]">{province.label}</span>
-                  <span className="rounded-full bg-white/[0.06] px-2 py-0.5 font-mono text-[12px] text-[#888]">
+                  <span className="rounded-full bg-white/[0.06] px-2 py-0.5 font-sans text-[12px] text-[#888]">
                     {province.pct}% reported
                   </span>
                 </div>
-                <div className="mt-1 font-mono text-sm tabular-nums">
+                <div className="mt-1 font-sans text-sm tabular-nums">
                   {province.counted}/{province.constituencies}{" "}
                   <span className="text-muted-foreground text-[13px]">constituencies</span>
                 </div>
@@ -173,18 +173,18 @@ export function RegionalOverview() {
       ) : (
         <div className="rounded-xl bg-[#181818]/60 p-3">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <div className="font-mono text-[12px] uppercase tracking-wider text-[#888]">
+            <div className="font-sans text-[12px] uppercase tracking-wider text-[#888]">
               Province detail
             </div>
             {activeProvinceAggregate ? (
-              <span className="rounded-full bg-white/[0.06] px-2 py-0.5 font-mono text-[12px] text-[#888]">
+              <span className="rounded-full bg-white/[0.06] px-2 py-0.5 font-sans text-[12px] text-[#888]">
                 {activeProvinceAggregate.pct}% reported
               </span>
             ) : null}
           </div>
 
           {activeProvinceAggregate ? (
-            <div className="rounded-lg bg-[#0c0c0c]/60 px-3 py-3">
+            <div className="rounded-lg bg-surface-page/60 px-3 py-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium text-[#e5e5e5]">
@@ -195,7 +195,7 @@ export function RegionalOverview() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono text-sm tabular-nums text-[#e5e5e5]">
+                  <div className="font-sans text-sm tabular-nums text-[#e5e5e5]">
                     {activeProvinceAggregate.counted}/{activeProvinceAggregate.constituencies}
                   </div>
                   <p className="text-[12px] text-muted-foreground">constituencies</p>
@@ -212,7 +212,7 @@ export function RegionalOverview() {
 
       <div className="rounded-xl bg-[#181818]/60 p-3">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <div className="font-mono text-[12px] uppercase tracking-wider text-[#888]">
+          <div className="font-sans text-[12px] uppercase tracking-wider text-[#888]">
             District progress
           </div>
           <div className="text-xs text-muted-foreground">
@@ -235,7 +235,7 @@ export function RegionalOverview() {
             return (
               <div
                 key={`${district.provinceId}-${district.districtName}`}
-                className="flex items-center justify-between gap-3 rounded-lg bg-[#0c0c0c]/60 px-3 py-2 text-xs"
+                className="flex items-center justify-between gap-3 rounded-lg bg-surface-page/60 px-3 py-2 text-xs"
               >
                 <div>
                   <div className="font-medium text-[#e5e5e5]">{district.districtName}</div>
@@ -245,7 +245,7 @@ export function RegionalOverview() {
                   </p>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="font-mono text-sm tabular-nums">{pct}%</span>
+                  <span className="font-sans text-sm tabular-nums">{pct}%</span>
                   <div className="mt-1 h-1.5 w-24 rounded-full bg-white/[0.06]">
                     <div
                       className="h-full rounded-full bg-blue-500/80"

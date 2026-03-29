@@ -50,7 +50,7 @@ export function PartyStandings() {
     <div className="space-y-4">
       {/* Stacked bar */}
       <div className="relative">
-        <div className="flex h-9 w-full overflow-hidden rounded-xl bg-[#0c0c0c]/60">
+        <div className="flex h-9 w-full overflow-hidden rounded-xl bg-surface-page/60">
           {sorted.map((party) => {
             const seats = party.seatsWon + party.seatsLeading;
             if (seats === 0) return null;
@@ -88,7 +88,7 @@ export function PartyStandings() {
           className="absolute top-0 h-full border-l-2 border-dashed border-white/40"
           style={{ left: `${majorityPct}%` }}
         >
-          <span className="absolute -top-6 left-1 font-mono text-[12px] text-[#888]">
+          <span className="absolute -top-6 left-1 font-sans text-[12px] text-[#888]">
             {HOR_MAJORITY_THRESHOLD}
           </span>
         </div>
@@ -126,14 +126,14 @@ function PartyCard({ party }: { party: PartyResult }) {
         />
         <span className="text-xs font-semibold">{party.partyShortName}</span>
       </div>
-      <p className="mt-1 font-mono text-[20px] font-bold leading-none tabular-nums text-[#e5e5e5]">
+      <p className="mt-1 font-sans text-[20px] font-bold leading-none tabular-nums text-[#e5e5e5]">
         {total}
       </p>
       <div className="mt-2 flex gap-2 text-[12px] text-[#888]">
         <span>Won {party.seatsWon}</span>
         <span>Lead {party.seatsLeading}</span>
       </div>
-      <p className="mt-0.5 font-mono text-[12px] tabular-nums text-[#555]">
+      <p className="mt-0.5 font-sans text-[12px] tabular-nums text-[#555]">
         {formatNumber(party.totalVotes)} votes
       </p>
     </div>

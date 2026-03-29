@@ -77,7 +77,7 @@ export function NationalSummaryCards() {
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <TooltipProvider delayDuration={0}>
         <StatCard label="Seats Counted">
-          <div className="font-mono text-2xl font-bold tabular-nums">
+          <div className="font-sans text-2xl font-bold tabular-nums">
             {data.countedConstituencies}
             <span className="text-base text-muted-foreground">
               /{data.totalConstituencies}
@@ -112,7 +112,7 @@ export function NationalSummaryCards() {
                     i
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs text-xs">
+                <TooltipContent side="top" className="max-w-xs">
                   This view currently shows constituency (FPTP) seats. Proportional
                   representation seat allocation is tracked separately by the Election
                   Commission and may still be pending, even when all constituencies are reported.
@@ -138,7 +138,7 @@ export function NationalSummaryCards() {
                 {leadingParty.partyShortName}
               </span>
             </div>
-            <p className="font-mono text-2xl font-bold tabular-nums">
+            <p className="font-sans text-2xl font-bold tabular-nums">
               {leadingParty.seatsWon + leadingParty.seatsLeading}
               <span className="ml-1 text-sm font-normal text-muted-foreground">
                 seats
@@ -149,13 +149,13 @@ export function NationalSummaryCards() {
       </StatCard>
 
       <StatCard label="Total Votes Cast">
-        <p className="font-mono text-2xl font-bold tabular-nums">
+        <p className="font-sans text-2xl font-bold tabular-nums">
           {formatNumber(data.totalVotesCast)}
         </p>
       </StatCard>
 
       <StatCard label="Last Update">
-        <p className="font-mono text-2xl font-bold tabular-nums">
+        <p className="font-sans text-2xl font-bold tabular-nums">
           {isCurrentDataset ? timeAgo(data.timestamp) : formatNepalDateTime(data.timestamp)}
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
