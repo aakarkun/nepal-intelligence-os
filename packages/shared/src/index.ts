@@ -1,4 +1,5 @@
 export * from "./schemas";
+export * from "./nrb-bulletin";
 export * from "./constants";
 export * from "./minister-wikipedia";
 export * from "./election-seat-utils";

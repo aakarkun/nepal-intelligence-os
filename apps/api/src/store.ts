@@ -5,7 +5,11 @@
  * market assets, nepse summary, market portal snapshot, crisis summary, earthquake incidents, flood metadata).
  */
 
-import { ConstituencyResultSchema, HOR_2082_OFFICIAL_DATASET_ID } from "@repo/shared";
+import {
+  ConstituencyResultSchema,
+  HOR_2082_OFFICIAL_DATASET_ID,
+  buildNrbBulletinSnapshot,
+} from "@repo/shared";
 import type {
   NationalSummary,
   ConstituencyResult,
@@ -21,6 +25,7 @@ import type {
   MarketAssetQuote,
   NepseSummary,
   MarketPortalSnapshot,
+  NrbBulletinSnapshot,
   CabinetEvent,
   ParliamentSession,
   GeopoliticsArticle,
@@ -296,6 +301,18 @@ export function getForexRates(): ForexRate[] {
 
 export function getEconomySummary(): EconomySummary | null {
   return economySummary;
+}
+
+/** Derived view of the latest NRB forex bulletin (official API) for the Economy macro strip. */
+export function getNrbBulletinSnapshot(): NrbBulletinSnapshot | null {
+  const rates = getForexRates();
+  if (rates.length === 0) return null;
+  const first = rates[0];
+  const ts =
+    economySummary?.timestamp ??
+    first.publishedOn ??
+    `${first.date}T00:00:00.000Z`;
+  return buildNrbBulletinSnapshot(rates, ts);
 }
 
 export function getMarketAssetQuotes(): MarketAssetQuote[] {

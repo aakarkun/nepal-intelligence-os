@@ -9,6 +9,7 @@ import {
   fetchEconomySummary,
   fetchFeed,
   fetchForexRates,
+  fetchNrbBulletin,
   fetchMarketAssetQuotes,
   fetchNepseHistory,
   fetchNepseSummary,
@@ -204,6 +205,21 @@ export default function EconomyPage() {
     refetchInterval: 30 * 60 * 1000,
   });
 
+  const {
+    data: nrbBulletin,
+    isPending: nrbBulletinPending,
+    isError: nrbBulletinError,
+    isSuccess: nrbBulletinSuccess,
+    failureCount: nrbBulletinFailureCount,
+    error: nrbBulletinErrorObj,
+    refetch: refetchNrbBulletin,
+    dataUpdatedAt: nrbBulletinUpdatedAt,
+  } = useQuery({
+    queryKey: ["economy", "nrb-bulletin"],
+    queryFn: fetchNrbBulletin,
+    refetchInterval: 30 * 60 * 1000,
+  });
+
   const { data: assetQuotes = [] } = useQuery({
     queryKey: ["economy", "assets"],
     queryFn: fetchMarketAssetQuotes,
@@ -339,14 +355,115 @@ export default function EconomyPage() {
           dataUpdatedAt={Math.max(
             forexUpdatedAt ?? 0,
             nepseUpdatedAt ?? 0,
-            marketPortalUpdatedAt ?? 0
+            marketPortalUpdatedAt ?? 0,
+            nrbBulletinUpdatedAt ?? 0
           )}
         />
       </div>
 
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1 space-y-4">
-          
+          {/* NRB official bulletin (macro slice — FX publication + headline anchors) */}
+          <div className={discoverShellClass}>
+            <FlatRailPanelHeader
+              title="NRB macro bulletin"
+              leadingDotClass="bg-violet-500"
+              right={
+                nrbBulletinSuccess && nrbBulletin ? (
+                  <span className="max-w-[min(100%,14rem)] text-right font-sans text-[12px] leading-none text-[#888]">
+                    {nrbBulletin.publishedOn
+                      ? `Published ${timeAgo(nrbBulletin.publishedOn)}`
+                      : `Calendar ${nrbBulletin.bulletinDate}`}
+                  </span>
+                ) : null
+              }
+            />
+            <div className={cn(economyPanelBodyClass, "px-2 pb-2")}>
+              {nrbBulletinPending ? (
+                <p className="py-2 font-sans text-[13px] text-[#555]">Loading bulletin metadata…</p>
+              ) : nrbBulletinError ? (
+                <div className="space-y-3 py-2">
+                  <p className="font-sans text-[13px] leading-relaxed text-rose-300/90">
+                    Couldn&apos;t load the NRB bulletin block{" "}
+                    {nrbBulletinFailureCount > 1 ? `(after ${nrbBulletinFailureCount} tries)` : ""}.
+                    {nrbBulletinErrorObj instanceof Error ? ` ${nrbBulletinErrorObj.message}` : ""}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void refetchNrbBulletin()}
+                    className="rounded-full border border-white/[0.12] bg-white/[0.06] px-3 py-1.5 font-sans text-[12px] text-[#ccc] transition-colors hover:bg-white/[0.1]"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : nrbBulletinSuccess && !nrbBulletin ? (
+                <p className="py-2 font-sans text-[13px] leading-relaxed text-[#a1a1aa]">
+                  No NRB forex bulletin in cache yet. When the worker ingests{" "}
+                  <span className="font-mono text-[12px] text-[#888]">/api/forex/v1/rates</span>, this
+                  strip will show publication metadata and headline USD/INR anchors.
+                </p>
+              ) : nrbBulletin ? (
+                <div className="space-y-3 py-1">
+                  <p className="font-sans text-[12px] leading-snug text-[#666]">
+                    <span className="text-[#555]">Source</span>
+                    <span className="text-[#666]">
+                      {" · "}
+                      {nrbBulletin.sourceName} ({nrbBulletin.currencyCount} pairs) · pipeline{" "}
+                      {timeAgo(nrbBulletin.timestamp)}
+                    </span>
+                  </p>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {(["USD", "INR"] as const).map((code) => {
+                      const ref =
+                        code === "USD" ? nrbBulletin.referenceUsd : nrbBulletin.referenceInr;
+                      return (
+                        <div key={code} className={economyTileClass}>
+                          <div className="mb-1 font-sans text-[12px] uppercase tracking-wider text-[#888]">
+                            <span className="font-mono normal-case">{code}</span>/NPR
+                          </div>
+                          {ref ? (
+                            <div className="space-y-1 font-sans text-[12px] text-[#a1a1aa]">
+                              <div className="tabular-nums text-[#e5e5e5]">
+                                Buy {ref.buy.toFixed(2)} · Sell {ref.sell.toFixed(2)}
+                                {ref.unit !== 1 ? (
+                                  <span className="text-[#666]">
+                                    {" "}
+                                    (per {ref.unit} {ref.currencyCode})
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="text-[11px] text-[#555]">{ref.currencyName}</div>
+                            </div>
+                          ) : (
+                            <p className="font-sans text-[12px] text-[#555]">Not in bulletin set</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 border-t border-white/[0.06] pt-2 font-sans text-[12px]">
+                    <a
+                      href={nrbBulletin.forexApiUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-500/85 underline decoration-emerald-500/30 underline-offset-2 hover:text-emerald-400"
+                    >
+                      NRB FOREX API (v1)
+                    </a>
+                    <a
+                      href={nrbBulletin.macroDatabaseUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-500/85 underline decoration-emerald-500/30 underline-offset-2 hover:text-emerald-400"
+                    >
+                      Database on Nepalese economy
+                    </a>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
           {/* Top Indicators Strip */}
           <div className={discoverShellClass}>
             <FlatRailPanelHeader title="Market snapshot" leadingDotClass="bg-emerald-500" />

@@ -17,6 +17,7 @@ import type {
   MarketAssetQuote,
   NepseSummary,
   MarketPortalSnapshot,
+  NrbBulletinSnapshot,
   PoliticalPulseEvent,
   PartyIntelRow,
   PoliticalPulseStats,
@@ -201,6 +202,10 @@ export function fetchForexRates(): Promise<ForexRate[]> {
 
 export function fetchEconomySummary(): Promise<EconomySummary> {
   return fetchJSON("/v1/economy/summary");
+}
+
+export function fetchNrbBulletin(): Promise<NrbBulletinSnapshot | null> {
+  return fetchJSON<NrbBulletinSnapshot | null>("/v1/economy/nrb-bulletin");
 }
 
 export function fetchMarketAssetQuotes(): Promise<MarketAssetQuote[]> {

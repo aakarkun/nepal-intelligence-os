@@ -42,6 +42,7 @@ import {
   upsertWorldArticles,
   getForexRates,
   getEconomySummary,
+  getNrbBulletinSnapshot,
   getMarketAssetQuotes,
   getNepseSummary,
   getMarketPortalSnapshot,
@@ -83,6 +84,7 @@ import {
 import { getCircuitBreaker } from "./lib/circuit-breaker";
 import * as workerStateRepo from "./db/repos/worker-state.js";
 import * as politicalPulseRepo from "./db/repos/political-pulse.js";
+import * as pratipakchyaPromisesRepo from "./db/repos/pratipakchya-promises.js";
 import {
   PoliticalPulseEventSchema,
   LegislativeBillRowSchema,
@@ -358,7 +360,7 @@ api.patch("/worker-state", async (c) => {
     "lastNewsRunAt", "lastRssNepalRunAt", "lastParliamentRunAt", "lastDhmRunAt",
     "lastGdacsRunAt", "lastGdeltRunAt", "lastUnRssRunAt", "lastUsgsRunAt",
     "lastPoliticalRssRunAt", "lastParliamentBillsRunAt", "lastGazetteRunAt",
-    "lastWeeklyDigestRunAt", "lastMinisterBioRunAt",
+    "lastWeeklyDigestRunAt", "lastMinisterBioRunAt", "lastPratipakchyaPromisesRunAt",
   ] as const;
   for (const k of keys) {
     if (body[k] !== undefined && typeof body[k] === "number") partial[k] = body[k];
@@ -408,6 +410,21 @@ api.get("/politics/cabinet-events", async (c) => {
 api.get("/politics/parliament-session", async (c) => {
   const session = await getParliamentSession();
   return c.json(session ?? null);
+});
+
+// ─── Pratipakchya promises (DB-backed) ───────────────────────────────────────
+
+api.get("/politics/pratipakchya/promises", async (c) => {
+  const limit = Number(c.req.query("limit") ?? 200);
+  return c.json(await pratipakchyaPromisesRepo.listPromises(limit));
+});
+
+api.get("/politics/pratipakchya/promises/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  if (!Number.isFinite(id)) return c.json({ error: "Invalid id" }, 400);
+  const row = await pratipakchyaPromisesRepo.getPromiseById(id);
+  if (!row) return c.json({ error: "Not found" }, 404);
+  return c.json(row);
 });
 
 // ─── Political Pulse (governance intelligence) ───────────────────────────────
@@ -621,6 +638,10 @@ api.get("/world/articles", async (c) => {
 
 api.get("/economy/forex", (c) => {
   return c.json(getForexRates());
+});
+
+api.get("/economy/nrb-bulletin", (c) => {
+  return c.json(getNrbBulletinSnapshot());
 });
 
 api.get("/economy/summary", (c) => {
@@ -970,6 +991,51 @@ api.post("/ingest/politics/parliament-session", async (c) => {
 
   await setParliamentSession(parsed.data);
   return c.json({ ok: true });
+});
+
+const PratipakchyaPromiseIngestSchema = z.object({
+  id: z.number().int(),
+  category: z.string().min(1),
+  categoryNe: z.string().nullable().optional(),
+  categoryEn: z.string().nullable().optional(),
+  titleNe: z.string().nullable().optional(),
+  titleEn: z.string().nullable().optional(),
+  deadline: z.string().nullable().optional(),
+  deadlineDate: z.string().nullable().optional(),
+  status: z.string().min(1),
+  progress: z.number().int().min(0).max(100).optional().default(0),
+  lastUpdated: z.string().nullable().optional(),
+  evidence: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  payload: z.unknown(),
+  fetchedAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
+api.post("/ingest/politics/pratipakchya/promises", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json();
+  const parsed = PratipakchyaPromiseIngestSchema.array().safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  const result = await pratipakchyaPromisesRepo.upsertPromises(
+    parsed.data.map((r) => ({
+      ...r,
+      categoryNe: r.categoryNe ?? null,
+      categoryEn: r.categoryEn ?? null,
+      titleNe: r.titleNe ?? null,
+      titleEn: r.titleEn ?? null,
+      deadline: r.deadline ?? null,
+      deadlineDate: r.deadlineDate ?? null,
+      lastUpdated: r.lastUpdated ?? null,
+      evidence: r.evidence ?? null,
+      notes: r.notes ?? null,
+    }))
+  );
+  return c.json({ ok: true, ...result });
 });
 
 api.post("/ingest/world/articles", async (c) => {
