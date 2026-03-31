@@ -39,7 +39,7 @@ export function MapControls({
   onResetView,
 }: MapControlsProps) {
   return (
-    <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1.5 bg-card/90 backdrop-blur border border-border rounded-md p-2">
+    <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1.5 bg-card border border-border rounded-lg p-2 shadow-sm">
       {LAYER_CONFIG.map(({ key, label, icon: Icon }) => {
         const active = layers[key];
         return (

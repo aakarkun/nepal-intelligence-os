@@ -1,18 +1,23 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Syne, JetBrains_Mono, Noto_Sans } from "next/font/google";
 import { StoreProvider } from "@/providers/store-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { SSEProvider } from "@/providers/sse-provider";
-import { LanguageProvider } from "@/providers/language-provider";
 import "./globals.css";
+import { cn } from "@/lib/utils";
 
-const inter = Inter({
+const notoSans = Noto_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
-  variable: "--font-inter",
   display: "swap",
 });
 
-/** Monospace for market ticker symbols / ISO codes only — body uses Inter. */
+const syne = Syne({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
+
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
@@ -34,15 +39,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${inter.variable} ${jetbrainsMono.variable}`}
+      className={cn("dark", "font-sans", notoSans.variable)}
       suppressHydrationWarning
     >
-      <body className="font-sans antialiased">
+      <body
+        className={`${syne.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+      >
         <StoreProvider>
           <QueryProvider>
-            <SSEProvider>
-              <LanguageProvider>{children}</LanguageProvider>
-            </SSEProvider>
+            <SSEProvider>{children}</SSEProvider>
           </QueryProvider>
         </StoreProvider>
       </body>
