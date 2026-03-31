@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { DiscoverRailPanel } from "@/components/discover/discover-rail-panel";
 
 const KATHMANDU_LAT = 27.7172;
 const KATHMANDU_LON = 85.3240;
@@ -89,7 +90,36 @@ export function SidebarWeather() {
       });
   }, []);
 
-  if (hidden || !data?.current || !data?.daily) return null;
+  if (hidden) return null;
+
+  if (!data?.current || !data?.daily) {
+    return (
+      <DiscoverRailPanel title="Weather" leadingDotClass="bg-sky-500">
+        <>
+          <p className="mb-1.5 font-sans text-[12px] uppercase tracking-wider text-[#666]">
+            Kathmandu
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="h-9 w-20 rounded bg-white/[0.06]" />
+            <div className="h-4 w-28 rounded bg-white/[0.06]" />
+          </div>
+          <div className="mt-1 h-3 w-full rounded bg-white/[0.06]" />
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 pt-2">
+            {Array.from({ length: 5 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="flex min-w-[3rem] h-[58px] flex-col items-center justify-between text-center"
+              >
+                <div className="h-3 w-10 rounded bg-white/[0.06]" />
+                <div className="h-4 w-6 rounded bg-white/[0.06]" />
+                <div className="h-3 w-20 rounded bg-white/[0.06]" />
+              </div>
+            ))}
+          </div>
+        </>
+      </DiscoverRailPanel>
+    );
+  }
 
   const cur = data.current;
   const daily = data.daily;
@@ -99,36 +129,43 @@ export function SidebarWeather() {
   const low = daily.temperature_2m_min[0];
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <h3 className="text-sm font-medium text-foreground">Weather</h3>
-      <p className="mt-1 text-xs text-muted-foreground">Kathmandu</p>
-      <div className="mt-2 flex items-center gap-2">
-        <span className="text-2xl font-semibold tabular-nums">{Math.round(cur.temperature_2m)}°</span>
-        <span className="text-sm text-muted-foreground">{today.emoji} {today.label}</span>
-      </div>
-      <p className="mt-0.5 text-[10px] text-muted-foreground">
-        Wind {cur.windspeed_10m} km/h · H: {Math.round(high)}° L: {Math.round(low)}°
-      </p>
-      <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
-        {daily.time.slice(0, 5).map((dateStr, i) => {
-          const d = new Date(dateStr);
-          const dayName = dayNames[d.getDay()];
-          const code = daily.weathercode[i] ?? 0;
-          const info = getWeatherInfo(code);
-          const max = daily.temperature_2m_max[i];
-          const min = daily.temperature_2m_min[i];
-          return (
-            <div
-              key={dateStr}
-              className="flex min-w-[3rem] flex-col items-center gap-0.5 text-center"
-            >
-              <span className="text-[10px] font-medium text-muted-foreground">{dayName}</span>
-              <span className="text-sm">{info.emoji}</span>
-              <span className="text-[10px] tabular-nums">{Math.round(max)}° / {Math.round(min)}°</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <DiscoverRailPanel title="Weather" leadingDotClass="bg-sky-500">
+      <>
+        <p className="mb-1.5 font-sans text-[12px] uppercase tracking-wider text-[#666]">Kathmandu</p>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-semibold tabular-nums text-[#e5e5e5]">
+            {Math.round(cur.temperature_2m)}°
+          </span>
+          <span className="text-sm text-[#a1a1aa]">
+            {today.emoji} {today.label}
+          </span>
+        </div>
+        <p className="mt-1 font-sans text-[11px] text-[#555]">
+          Wind {cur.windspeed_10m} km/h · H: {Math.round(high)}° L: {Math.round(low)}°
+        </p>
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 pt-2">
+          {daily.time.slice(0, 5).map((dateStr, i) => {
+            const d = new Date(dateStr);
+            const dayName = dayNames[d.getDay()];
+            const code = daily.weathercode[i] ?? 0;
+            const info = getWeatherInfo(code);
+            const max = daily.temperature_2m_max[i];
+            const min = daily.temperature_2m_min[i];
+            return (
+              <div
+                key={dateStr}
+                className="flex min-w-[3rem] flex-col items-center gap-0.5 text-center"
+              >
+                <span className="font-sans text-[11px] uppercase tracking-wide text-[#666]">{dayName}</span>
+                <span className="text-sm">{info.emoji}</span>
+                <span className="font-sans text-[11px] tabular-nums text-[#a1a1aa]">
+                  {Math.round(max)}° / {Math.round(min)}°
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </>
+    </DiscoverRailPanel>
   );
 }

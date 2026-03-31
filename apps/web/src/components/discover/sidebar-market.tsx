@@ -4,6 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { fetchNepseSummary, fetchForexRates, fetchMarketAssetQuotes } from "@/lib/api";
 import { timeAgo } from "@/lib/utils";
+import {
+  DiscoverRailPanel,
+  discoverSidebarFooterStrip,
+} from "@/components/discover/discover-rail-panel";
 
 const NEPAL_TZ = "Asia/Kathmandu";
 
@@ -18,22 +22,76 @@ function isNepseOpen(): boolean {
   return minutes >= 11 * 60 && minutes < 15 * 60;
 }
 
+export function computePercentChange(current: number, previous: number | null): number | null {
+  if (previous == null || previous === 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
+export function computeGoldNprPerTola(
+  xauUsdPerOunce: number,
+  usdNpr: number
+): number {
+  return xauUsdPerOunce * usdNpr * (11.6638038 / 31.1034768);
+}
+
 export function SidebarMarket() {
-  const { data: nepse } = useQuery({
+  const { data: nepse, isLoading: nepseLoading } = useQuery({
     queryKey: ["economy", "nepse"],
     queryFn: () => fetchNepseSummary(),
     refetchInterval: 60_000,
   });
-  const { data: forex = [] } = useQuery({
+  const { data: forex = [], isLoading: forexLoading } = useQuery({
     queryKey: ["economy", "forex"],
     queryFn: () => fetchForexRates(),
     refetchInterval: 60_000,
   });
-  const { data: assets = [] } = useQuery({
+  const { data: assets = [], isLoading: assetsLoading } = useQuery({
     queryKey: ["economy", "assets"],
     queryFn: () => fetchMarketAssetQuotes(),
     refetchInterval: 60_000,
   });
+
+  const isLoading = nepseLoading || forexLoading || assetsLoading;
+
+  if (isLoading) {
+    return (
+      <DiscoverRailPanel title="Market pulse" leadingDotClass="bg-cyan-500">
+        <div className="divide-y divide-white/[0.06] font-sans text-[13px]">
+          <div className="flex justify-between gap-2 py-1.5">
+            <div className="h-3 w-16 rounded bg-white/[0.06]" />
+            <div className="h-3 w-20 rounded bg-white/[0.06]" />
+          </div>
+          <div className="flex justify-between gap-2 py-1.5">
+            <div className="h-3 w-20 rounded bg-white/[0.06]" />
+            <div className="h-3 w-24 rounded bg-white/[0.06]" />
+          </div>
+          <div className="flex justify-between gap-2 py-1.5">
+            <div className="h-3 w-16 rounded bg-white/[0.06]" />
+            <div className="h-3 w-20 rounded bg-white/[0.06]" />
+          </div>
+          <div className="flex justify-between gap-2 py-1.5">
+            <div className="h-3 w-20 rounded bg-white/[0.06]" />
+            <div className="h-3 w-28 rounded bg-white/[0.06]" />
+          </div>
+          <div className="flex justify-between gap-2 py-1.5">
+            <div className="h-3 w-24 rounded bg-white/[0.06]" />
+            <div className="h-3 w-24 rounded bg-white/[0.06]" />
+          </div>
+          <p className="py-2 font-sans text-[11px] uppercase tracking-wider text-[#555]">
+            <span className="inline-block h-3 w-20 rounded bg-white/[0.06]" />
+          </p>
+        </div>
+        <div className={discoverSidebarFooterStrip}>
+          <Link
+            href="/economy"
+            className="font-sans text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
+          >
+            View full economy →
+          </Link>
+        </div>
+      </DiscoverRailPanel>
+    );
+  }
 
   const usd = forex.find((f) => f.currencyCode === "USD");
   const inr = forex.find((f) => f.currencyCode === "INR");
@@ -54,20 +112,33 @@ export function SidebarMarket() {
 
   const open = isNepseOpen();
   const updatedAt = nepse?.timestamp ?? usd?.publishedOn ?? usd?.date ?? assets[0]?.timestamp;
+  const btcPercent = btc
+    ? computePercentChange(btc.price, btc.previousPrice) ?? btc.changePercent
+    : null;
+  const goldPercent = gold
+    ? computePercentChange(gold.price, gold.previousPrice) ?? gold.changePercent
+    : null;
+  const goldNprPerTola =
+    gold == null
+      ? null
+      : gold.currency === "NPR"
+        ? gold.price
+        : usd
+          ? computeGoldNprPerTola(gold.price, usd.buy)
+          : null;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <h3 className="text-sm font-medium text-foreground">Market Pulse</h3>
-      <div className="mt-2 space-y-2 text-sm">
+    <DiscoverRailPanel title="Market pulse" leadingDotClass="bg-cyan-500">
+      <div className="divide-y divide-white/[0.06] font-sans text-[13px]">
         {hasRealNepse && (
-          <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">NEPSE</span>
-            <span className="tabular-nums">
+          <div className="flex justify-between gap-2 py-1.5">
+            <span className="text-[#888]">NEPSE</span>
+            <span className="tabular-nums text-[#e5e5e5]">
               {nepse!.index.toLocaleString()}
               {nepse!.changePercent != null && (
                 <span
                   className={
-                    (nepse!.changePercent ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"
+                    (nepse!.changePercent ?? 0) >= 0 ? "text-emerald-400/80" : "text-rose-400/80"
                   }
                 >
                   {" "}
@@ -76,79 +147,138 @@ export function SidebarMarket() {
                 </span>
               )}
               {!open && (
-                <span className="ml-1 text-[10px] text-muted-foreground">(closed)</span>
+                <span className="ml-1 text-[11px] text-[#555]">(closed)</span>
               )}
             </span>
           </div>
         )}
         {usd != null && (
-          <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">USD/NPR</span>
-            <span className="tabular-nums">{usd.buy?.toFixed(2) ?? "—"}</span>
+          <div className="flex justify-between gap-2 py-1.5">
+            <span className="text-[#888]">USD/NPR</span>
+            <span className="tabular-nums text-[#e5e5e5]">
+              {usd.buy?.toFixed(2) ?? "—"}
+              {(() => {
+                const usdPercent = computePercentChange(usd.buy, usd.previousBuy);
+                if (usdPercent == null) return null;
+                return (
+                  <span className={usdPercent >= 0 ? "text-emerald-400/80" : "text-rose-400/80"}>
+                    {" "}
+                    {usdPercent >= 0 ? "+" : ""}
+                    {usdPercent.toFixed(2)}%
+                  </span>
+                );
+              })()}
+            </span>
           </div>
         )}
         {inr != null && (
-          <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">INR/NPR</span>
-            <span className="tabular-nums">{inr.buy?.toFixed(2) ?? "—"}</span>
+          <div className="flex justify-between gap-2 py-1.5">
+            <span className="text-[#888]">INR/NPR</span>
+            <span className="tabular-nums text-[#e5e5e5]">
+              {inr.buy?.toFixed(2) ?? "—"}
+              {(() => {
+                const inrPercent = computePercentChange(inr.buy, inr.previousBuy);
+                if (inrPercent == null) return null;
+                return (
+                  <span className={inrPercent >= 0 ? "text-emerald-400/80" : "text-rose-400/80"}>
+                    {" "}
+                    {inrPercent >= 0 ? "+" : ""}
+                    {inrPercent.toFixed(2)}%
+                  </span>
+                );
+              })()}
+            </span>
           </div>
         )}
         {aud != null && (
-          <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">AUD/NPR</span>
-            <span className="tabular-nums">{aud.buy?.toFixed(2) ?? "—"}</span>
+          <div className="flex justify-between gap-2 py-1.5">
+            <span className="text-[#888]">AUD/NPR</span>
+            <span className="tabular-nums text-[#e5e5e5]">
+              {aud.buy?.toFixed(2) ?? "—"}
+              {(() => {
+                const audPercent = computePercentChange(aud.buy, aud.previousBuy);
+                if (audPercent == null) return null;
+                return (
+                  <span className={audPercent >= 0 ? "text-emerald-400/80" : "text-rose-400/80"}>
+                    {" "}
+                    {audPercent >= 0 ? "+" : ""}
+                    {audPercent.toFixed(2)}%
+                  </span>
+                );
+              })()}
+            </span>
           </div>
         )}
         {btc != null && (
-          <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">BTC</span>
-            <span className="tabular-nums">
+          <div className="flex justify-between gap-2 py-1.5">
+            <span className="text-[#888]">BTC/USD</span>
+            <span className="tabular-nums text-[#e5e5e5]">
               ${btc.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              {btc.changePercent != null && (
+              {btcPercent != null && (
                 <span
                   className={
-                    (btc.changePercent ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"
+                    (btcPercent ?? 0) >= 0 ? "text-emerald-400/80" : "text-rose-400/80"
                   }
                 >
                   {" "}
-                  {(btc.changePercent ?? 0) >= 0 ? "+" : ""}
-                  {(btc.changePercent ?? 0).toFixed(2)}%
+                  {(btcPercent ?? 0) >= 0 ? "+" : ""}
+                  {(btcPercent ?? 0).toFixed(2)}%
                 </span>
               )}
             </span>
           </div>
         )}
         {gold != null && (
-          <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">Gold (XAU)</span>
-            <span className="tabular-nums">
-              ${gold.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-              {gold.changePercent != null && (
+          <div className="flex justify-between gap-2 py-1.5">
+            <span className="text-[#888]">
+              {gold.currency === "NPR" ? "XAU/NPR (tola)" : "XAU/USD"}
+            </span>
+            <span className="tabular-nums text-[#e5e5e5]">
+              {gold.currency === "NPR" ? "रु " : "$"}
+              {gold.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              {goldPercent != null && (
                 <span
                   className={
-                    (gold.changePercent ?? 0) >= 0 ? "text-emerald-500" : "text-red-500"
+                    (goldPercent ?? 0) >= 0 ? "text-emerald-400/80" : "text-rose-400/80"
                   }
                 >
                   {" "}
-                  {(gold.changePercent ?? 0) >= 0 ? "+" : ""}
-                  {(gold.changePercent ?? 0).toFixed(2)}%
+                  {(goldPercent ?? 0) >= 0 ? "+" : ""}
+                  {(goldPercent ?? 0).toFixed(2)}%
+                </span>
+              )}
+              {gold.change != null && (
+                <span className={gold.change >= 0 ? "text-emerald-400/80" : "text-rose-400/80"}>
+                  {" "}
+                  ({gold.change >= 0 ? "+" : ""}
+                  {gold.change.toLocaleString(undefined, { maximumFractionDigits: 0 })})
                 </span>
               )}
             </span>
           </div>
         )}
+        {goldNprPerTola != null && gold?.currency !== "NPR" && (
+          <div className="flex justify-between gap-2 py-1.5">
+            <span className="text-[#888]">XAU/NPR (tola)</span>
+            <span className="tabular-nums text-[#e5e5e5]">
+              रु {goldNprPerTola.toLocaleString("en-NP", { maximumFractionDigits: 0 })}
+            </span>
+          </div>
+        )}
+        {updatedAt && (
+          <p className="py-2 font-sans text-[11px] uppercase tracking-wider text-[#555]">
+            Updated {timeAgo(updatedAt)}
+          </p>
+        )}
       </div>
-      {updatedAt && (
-        <p className="mt-2 text-[10px] text-muted-foreground">
-          Updated {timeAgo(updatedAt)}
-        </p>
-      )}
-      <Link
-        href="/economy"
-        className="mt-2 block text-xs text-nepal-red hover:underline"
-      >
-        View full economy →
-      </Link>
-    </div>
+      <div className={discoverSidebarFooterStrip}>
+        <Link
+          href="/economy"
+          className="font-sans text-[12px] uppercase tracking-wider text-blue-400/90 hover:underline"
+        >
+          View full economy →
+        </Link>
+      </div>
+    </DiscoverRailPanel>
   );
 }
