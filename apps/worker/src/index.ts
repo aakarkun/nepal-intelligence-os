@@ -43,6 +43,10 @@ import { getCircuitBreaker } from "./lib/circuit-breaker";
 import { runWatchlistCheck } from "./lib/watchlist-checker";
 import type { SourceHealth } from "@repo/shared";
 import path from "node:path";
+import { fetchPratipakchyaPromises } from "./sources/pratipakchya-promises";
+import { postPratipakchyaPromises } from "./ingest-client";
+import { fetchUpcomingIssuesFromHtmlSource } from "./sources/upcoming-issues";
+import { postUpcomingIssues } from "./ingest-client";
 
 const { API_URL, REPLAY_SPEED, MODE, NEWS_FEEDS_PATH, SOCIAL_FEEDS_PATH, ADMIN_SECRET, WORKER_SECRET, TELEGRAM_BOT_TOKEN } = env;
 
@@ -89,6 +93,8 @@ type LiveWorkerState = {
   lastCycleCompletedAt?: string;
   lastNepseRunAt?: number;
   lastNepseRunDate?: string;
+  lastPratipakchyaPromisesRunAt?: number;
+  lastUpcomingIssuesRunAt?: number;
   lastParliamentBillsRunAt?: number;
   lastGazetteRunAt?: number;
   lastMarketAssetsFetchedAt?: string;
@@ -135,6 +141,8 @@ async function readLiveWorkerState(): Promise<LiveWorkerState> {
       lastParliamentBillsRunAt?: number | null;
       lastGazetteRunAt?: number | null;
       lastMinisterBioRunAt?: number | null;
+      lastPratipakchyaPromisesRunAt?: number | null;
+      lastUpcomingIssuesRunAt?: number | null;
     };
     return {
       lastNepseRunAt: row.lastNepseRunAt ?? undefined,
@@ -152,6 +160,8 @@ async function readLiveWorkerState(): Promise<LiveWorkerState> {
       lastParliamentBillsRunAt: row.lastParliamentBillsRunAt ?? undefined,
       lastGazetteRunAt: row.lastGazetteRunAt ?? undefined,
       lastMinisterBioRunAt: row.lastMinisterBioRunAt ?? undefined,
+      lastPratipakchyaPromisesRunAt: row.lastPratipakchyaPromisesRunAt ?? undefined,
+      lastUpcomingIssuesRunAt: row.lastUpcomingIssuesRunAt ?? undefined,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -181,6 +191,8 @@ async function writeLiveWorkerState(state: LiveWorkerState): Promise<void> {
     if (state.lastParliamentBillsRunAt != null)
       body.lastParliamentBillsRunAt = state.lastParliamentBillsRunAt;
     if (state.lastGazetteRunAt != null) body.lastGazetteRunAt = state.lastGazetteRunAt;
+    if (state.lastPratipakchyaPromisesRunAt != null)
+      body.lastPratipakchyaPromisesRunAt = state.lastPratipakchyaPromisesRunAt;
     await fetch(`${base}/v1/worker-state`, {
       method: "PATCH",
       headers,
@@ -658,6 +670,8 @@ async function runLiveCrisis(): Promise<void> {
 const FLOOD_INTERVAL_MS = 3 * 60 * 60 * 1000;
 let lastFloodRunAt: number | null = null;
 
+const PRATIPAKCHYA_PROMISES_INTERVAL_MS = 8 * 60 * 60 * 1000; // 3x/day
+
 async function runLiveFlood(): Promise<void> {
   const nowMs = Date.now();
   if (
@@ -1052,6 +1066,83 @@ function shouldRunNepse(state: LiveWorkerState): boolean {
 async function runLiveCycle(): Promise<void> {
   const state = await readLiveWorkerState();
   const runNepse = shouldRunNepse(state);
+  const nowMs = Date.now();
+  const shouldRunPratipakchyaPromises =
+    state.lastPratipakchyaPromisesRunAt == null ||
+    nowMs - state.lastPratipakchyaPromisesRunAt >= PRATIPAKCHYA_PROMISES_INTERVAL_MS;
+
+  const shouldRunUpcomingIssues =
+    env.UPCOMING_ISSUES_SOURCE_URL &&
+    (state.lastUpcomingIssuesRunAt == null ||
+      nowMs - state.lastUpcomingIssuesRunAt >= env.UPCOMING_ISSUES_MINUTES * 60 * 1000);
+
+  const upcomingIssuesJob = async () => {
+    if (!env.UPCOMING_ISSUES_SOURCE_URL) {
+      return;
+    }
+    if (!shouldRunUpcomingIssues) return;
+    try {
+      const rows = await fetchUpcomingIssuesFromHtmlSource(env.UPCOMING_ISSUES_SOURCE_URL);
+      if (rows.length === 0) {
+        console.warn(
+          "[live] Upcoming issues fetch returned 0 rows — check parser/source URL. Skipping ingest."
+        );
+        return;
+      }
+      const ok = await postUpcomingIssues(API_URL, rows);
+      if (!ok) {
+        console.warn("[live] Upcoming issues POST failed");
+        return;
+      }
+      console.log(`[live] Upcoming issues upserted: ${rows.length}`);
+      state.lastUpcomingIssuesRunAt = Date.now();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn("[live] Upcoming issues ingest failed:", msg);
+    }
+  };
+
+  const pratipakchyaJob = async () => {
+    if (!shouldRunPratipakchyaPromises) return;
+    try {
+      const rows = await fetchPratipakchyaPromises();
+      if (rows && rows.length > 0) {
+        const ok = await postPratipakchyaPromises(
+          API_URL,
+          rows.map((r) => ({
+            id: r.id,
+            category: r.category,
+            categoryNe: r.categoryNe,
+            categoryEn: r.categoryEn,
+            titleNe: r.titleNe,
+            titleEn: r.titleEn,
+            deadline: r.deadline,
+            deadlineDate: r.deadlineDate,
+            status: r.status,
+            progress: r.progress,
+            lastUpdated: r.lastUpdated,
+            evidence: r.evidence,
+            notes: r.notes,
+            payload: r.payload,
+            fetchedAt: r.fetchedAt,
+            updatedAt: r.updatedAt,
+          }))
+        );
+        if (!ok) {
+          console.warn("[live] Pratipakchya promises POST failed");
+          return;
+        }
+        console.log(`[live] Pratipakchya promises upserted: ${rows.length}`);
+      } else {
+        console.log("[live] Pratipakchya promises unchanged (etag/hash)");
+      }
+      state.lastPratipakchyaPromisesRunAt = Date.now();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn("[live] Pratipakchya promises ingest failed:", msg);
+    }
+  };
+
   await Promise.allSettled([
     ...(env.SCRAPE_ELECTION ? [runLiveEcn()] : []),
     runLiveNews(),
@@ -1062,17 +1153,20 @@ async function runLiveCycle(): Promise<void> {
     runLiveWorld(),
     runLiveEconomy(state),
     ...(runNepse ? [runLiveNepse()] : []),
+    pratipakchyaJob(),
+    upcomingIssuesJob(),
     runPoliticalPulseJobs({
       lastParliamentBillsRunAt: state.lastParliamentBillsRunAt ?? null,
       lastGazetteRunAt: state.lastGazetteRunAt ?? null,
       lastMinisterBioRunAt: state.lastMinisterBioRunAt ?? null,
     }),
   ]);
-  const nowMs = Date.now();
   const nextState: LiveWorkerState = {
     lastCycleCompletedAt: new Date().toISOString(),
     lastNepseRunAt: runNepse ? nowMs : state.lastNepseRunAt,
     lastNepseRunDate: runNepse ? new Date().toISOString().slice(0, 10) : state.lastNepseRunDate,
+    lastPratipakchyaPromisesRunAt: state.lastPratipakchyaPromisesRunAt,
+    lastUpcomingIssuesRunAt: state.lastUpcomingIssuesRunAt,
     lastMarketAssetQuotes: state.lastMarketAssetQuotes,
     lastMarketAssetsFetchedAt: state.lastMarketAssetsFetchedAt,
   };

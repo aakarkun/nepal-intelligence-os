@@ -38,6 +38,10 @@ Thumbs.db
 .live-worker-state.json
 .live-api-state.json
 
+# Generated ingestion artifacts
+apps/worker/.cache/
+data/pratipakchya/promises.json
+
 # Git worktrees (isolated feature branches)
 .worktrees/
 

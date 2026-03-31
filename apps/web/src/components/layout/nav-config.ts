@@ -33,6 +33,7 @@ export const NAV_SECTIONS: { label?: string; items: NavItem[] }[] = [
       { href: "/political-pulse", icon: Activity, label: "Political Pulse" },
       { href: "/parliament", icon: Building2, label: "Parliament" },
       { href: "/constituencies", icon: TableProperties, label: "Constituencies" },
+      { href: "/pratipakchya", icon: TableProperties, label: "Pratipakchya" },
     ],
   },
   {

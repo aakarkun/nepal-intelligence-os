@@ -32,7 +32,7 @@ const PANEL_DOT: Record<WorldPanel, string> = {
 
 /** Same track as Anomalies — not full width: hugs tab labels. */
 const deskTabsTrackClass =
-  "inline-flex max-w-full flex-row rounded-full bg-white/[0.06] p-px shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]";
+  "flex max-w-full flex-wrap items-center gap-1 rounded-full bg-white/[0.06] p-px shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]";
 
 const REMITTANCE_COUNTRIES = [
   { code: "MY", name: "Malaysia" },
@@ -129,7 +129,7 @@ export default function WorldPage() {
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1 space-y-4">
           <nav className="flex justify-start" role="tablist" aria-label="Global desk panels">
-            <div className={cn(deskTabsTrackClass, "overflow-x-auto")}>
+            <div className={deskTabsTrackClass}>
               {PANELS.map((p) => {
                 const on = p.id === activePanel;
                 return (
@@ -142,7 +142,7 @@ export default function WorldPage() {
                     aria-controls="global-desk-panel"
                     onClick={() => setActivePanel(p.id)}
                     className={cn(
-                      "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-center font-sans text-[11px] leading-snug tracking-tight transition-colors duration-150 sm:px-3 sm:py-1.5 sm:text-[12px]",
+                      "whitespace-normal rounded-full px-2.5 py-1.5 text-center font-sans text-[11px] leading-snug tracking-tight transition-colors duration-150 sm:px-3 sm:py-1.5 sm:text-[12px]",
                       on
                         ? "bg-white/[0.12] text-white"
                         : "text-[#6b6b6b] hover:text-[#9ca3af]"

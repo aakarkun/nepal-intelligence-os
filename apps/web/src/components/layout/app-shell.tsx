@@ -41,14 +41,29 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <AppSidebar />
           <SidebarInset
             className={cn(
-              "flex min-h-svh flex-col transition-[margin] duration-100 ease-out bg-transparent",
+              "flex min-h-svh flex-col bg-transparent transition-[margin] duration-100 ease-out overflow-x-hidden",
               intelRailOpen && !inlineIntelRailRoute ? "md:mr-[var(--intel-rail-width)]" : "md:mr-0"
             )}
           >
+            <a
+              href="#main-content"
+              className={cn(
+                "sr-only focus:not-sr-only",
+                "fixed left-3 top-3 z-[100] rounded-md border border-white/[0.12] bg-black/80 px-3 py-2",
+                "font-sans text-[12px] text-white shadow-md",
+                "focus-visible:outline-none"
+              )}
+            >
+              Skip to content
+            </a>
             <TopBar onCommandOpen={() => setCommandOpen(true)} />
-            <div className="flex min-h-0 flex-1 flex-col px-4 py-4 pb-10 md:px-6 md:py-6 md:pb-10">
+            <main
+              id="main-content"
+              tabIndex={-1}
+              className="flex min-h-0 flex-1 flex-col px-0 py-4 pb-10 md:px-6 md:py-6 md:pb-10"
+            >
               {children}
-            </div>
+            </main>
           </SidebarInset>
         </SidebarProvider>
       </ShellHeaderProvider>

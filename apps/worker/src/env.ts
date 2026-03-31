@@ -57,4 +57,8 @@ export const env = {
   WORKER_SECRET: process.env.WORKER_SECRET ?? undefined,
   /** Optional: for watchlist alerts to Telegram */
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN ?? undefined,
+  /** Optional: Upcoming Issues scrape source (HTML page). When unset, worker skips the job. */
+  UPCOMING_ISSUES_SOURCE_URL: process.env.UPCOMING_ISSUES_SOURCE_URL ?? undefined,
+  /** Optional: throttle upcoming issues scrape (minutes). Default: 720 (12h). */
+  UPCOMING_ISSUES_MINUTES: numberFromEnv(process.env.UPCOMING_ISSUES_MINUTES, 720),
 } as const;

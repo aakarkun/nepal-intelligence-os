@@ -77,6 +77,29 @@ bun run scrape:ecn
 bun run scrape:news
 ```
 
+## Pratipakchya (promises dataset)
+
+Pratipakchya ships data as static JS (no API). The worker includes a safe extractor that downloads `https://pratipakchya.com/promises.js`, evaluates it in a sandbox, and writes a JSON artifact:
+
+```bash
+cd apps/worker
+bun run extract:pratipakchya-promises
+```
+
+Output: `data/pratipakchya/promises.json` (repo root).
+
+### Persist to database (API + worker)
+
+The API also persists these rows in Postgres so the UI can query them without reading repo files.
+
+- **DB table**: `pratipakchya_promises` (created by migration `apps/api/src/db/migrations/0007_pratipakchya_promises.sql`)
+- **Ingest endpoint (worker-only)**: `POST /v1/ingest/politics/pratipakchya/promises` (requires `WORKER_SECRET` if set)
+- **Read endpoints**:
+  - `GET /v1/politics/pratipakchya/promises?limit=200`
+  - `GET /v1/politics/pratipakchya/promises/:id`
+
+Worker cadence: runs about **3x/day** (every ~8 hours), aligned with the main live cycle schedule.
+
 ## Docker
 
 Run API, Worker, and Postgres with Docker. Web runs locally for dev (hot reload).

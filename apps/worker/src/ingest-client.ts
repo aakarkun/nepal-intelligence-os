@@ -32,6 +32,7 @@ const ENDPOINTS = {
   economyAssets: "/v1/ingest/economy/assets",
   economyNepse: "/v1/ingest/economy/nepse",
   economyMarketPortal: "/v1/ingest/economy/market-portal",
+  economyUpcomingIssues: "/v1/ingest/economy/upcoming-issues",
   crisisFloodAlerts: "/v1/ingest/crisis/flood-alerts",
   politicsCabinetEvents: "/v1/ingest/politics/cabinet-events",
   politicsParliamentSession: "/v1/ingest/politics/parliament-session",
@@ -39,6 +40,7 @@ const ENDPOINTS = {
   politicalPulseEvent: "/v1/ingest/political-pulse/event",
   politicalPulseBill: "/v1/ingest/political-pulse/bill",
   politicalPulseWeeklyDigest: "/v1/ingest/political-pulse/weekly-digest",
+  pratipakchyaPromises: "/v1/ingest/politics/pratipakchya/promises",
 } as const;
 
 async function post(
@@ -145,6 +147,26 @@ export async function postMarketPortalSnapshot(
   return post(apiUrl, ENDPOINTS.economyMarketPortal, snapshot);
 }
 
+export type UpcomingIssueIngestRow = {
+  category: string;
+  sn: number;
+  symbol: string;
+  company: string;
+  units: number;
+  sector: string;
+  remark: string;
+  sourceUrl?: string | null;
+  fetchedAt?: string;
+  updatedAt?: string;
+};
+
+export async function postUpcomingIssues(
+  apiUrl: string,
+  rows: UpcomingIssueIngestRow[]
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.economyUpcomingIssues, rows);
+}
+
 export async function postFloodAlerts(
   apiUrl: string,
   payload: FloodAlertsPayload
@@ -206,6 +228,32 @@ export async function postWeeklyDigest(
   }
 ): Promise<boolean> {
   return post(apiUrl, ENDPOINTS.politicalPulseWeeklyDigest, digest);
+}
+
+export type PratipakchyaPromiseIngestRow = {
+  id: number;
+  category: string;
+  categoryNe: string | null;
+  categoryEn: string | null;
+  titleNe: string | null;
+  titleEn: string | null;
+  deadline: string | null;
+  deadlineDate: string | null;
+  status: string;
+  progress: number;
+  lastUpdated: string | null;
+  evidence: string | null;
+  notes: string | null;
+  payload: unknown;
+  fetchedAt?: string;
+  updatedAt?: string;
+};
+
+export async function postPratipakchyaPromises(
+  apiUrl: string,
+  rows: PratipakchyaPromiseIngestRow[]
+): Promise<boolean> {
+  return post(apiUrl, ENDPOINTS.pratipakchyaPromises, rows);
 }
 
 export type NewsFeedSourceRow = {

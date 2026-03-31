@@ -79,8 +79,11 @@ const RAIL_SLOT_PX_EXPANDED = 40;
 
 /** Active marker: vertical bar when sidebar is open; small dot at the left edge when icon-collapsed. */
 function NavMenuItems({ items, pathname }: { items: NavItem[]; pathname: string }) {
-  const { state } = useSidebar();
+  const { state, isMobile, openMobile } = useSidebar();
   const collapsed = state === "collapsed";
+  // At desktop: "collapsed" means icon rail only; links should not be reachable via Tab.
+  // At mobile: when the Sheet is closed (openMobile=false), links should not be reachable via Tab.
+  const disableNavTabOrder = collapsed || (isMobile && !openMobile);
 
   const containerRef = useRef<HTMLDivElement>(null);
   /** Plain object — avoids runtime issues with `Map` + ref callbacks in some React/Turbopack builds. */
@@ -199,6 +202,7 @@ function NavMenuItems({ items, pathname }: { items: NavItem[]; pathname: string 
                 variant="nav"
                 isActive={isActive}
                 tooltip={item.label}
+                tabIndex={disableNavTabOrder ? -1 : undefined}
                 className={cn(
                   "min-w-0 flex-1 rounded-xl border border-transparent transition-[background-color,border-color] duration-150",
                   "group-data-[collapsible=icon]:rounded-full",

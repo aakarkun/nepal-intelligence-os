@@ -220,6 +220,33 @@ export function fetchMarketPortalSnapshot(): Promise<MarketPortalSnapshot | null
   return fetchJSON<MarketPortalSnapshot | null>("/v1/economy/market-portal");
 }
 
+export type UpcomingIssueApiRow = {
+  symbol: string;
+  company: string;
+  units: number;
+  sector: string;
+  remark?: string | null;
+};
+
+export type UpcomingIssuesApiMeta = {
+  asOf?: string | null;
+  ingestedAt?: string | null;
+  source?: string | null;
+};
+
+export type UpcomingIssuesApiData = Record<string, UpcomingIssueApiRow[]>;
+
+export type UpcomingIssuesApiResponse =
+  | UpcomingIssuesApiData
+  | {
+      data: UpcomingIssuesApiData;
+      meta?: UpcomingIssuesApiMeta | null;
+    };
+
+export function fetchUpcomingIssues(): Promise<UpcomingIssuesApiResponse> {
+  return fetchJSON("/v1/economy/upcoming-issues");
+}
+
 export type NepseSnapshotHistoryRow = {
   id: string;
   indexValue: number | null;

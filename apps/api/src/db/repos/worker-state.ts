@@ -21,6 +21,8 @@ export type WorkerStateRow = {
   lastGazetteRunAt: number | null;
   lastWeeklyDigestRunAt: number | null;
   lastMinisterBioRunAt: number | null;
+  lastUpcomingIssuesRunAt: number | null;
+  lastPratipakchyaPromisesRunAt: number | null;
   updatedAt: Date | string;
 };
 
@@ -50,6 +52,8 @@ export async function getWorkerState(): Promise<WorkerStateRow | null> {
     lastGazetteRunAt: toNum(r.lastGazetteRunAt),
     lastWeeklyDigestRunAt: toNum(r.lastWeeklyDigestRunAt),
     lastMinisterBioRunAt: toNum(r.lastMinisterBioRunAt),
+    lastUpcomingIssuesRunAt: toNum(r.lastUpcomingIssuesRunAt),
+    lastPratipakchyaPromisesRunAt: toNum(r.lastPratipakchyaPromisesRunAt),
     updatedAt: r.updatedAt,
   };
 }
@@ -77,5 +81,9 @@ export async function updateWorkerState(partial: Partial<Omit<WorkerStateRow, "i
     set.lastWeeklyDigestRunAt = partial.lastWeeklyDigestRunAt;
   if (partial.lastMinisterBioRunAt !== undefined)
     set.lastMinisterBioRunAt = partial.lastMinisterBioRunAt;
+  if (partial.lastUpcomingIssuesRunAt !== undefined)
+    set.lastUpcomingIssuesRunAt = partial.lastUpcomingIssuesRunAt;
+  if (partial.lastPratipakchyaPromisesRunAt !== undefined)
+    set.lastPratipakchyaPromisesRunAt = partial.lastPratipakchyaPromisesRunAt;
   await db.update(workerState).set(set as typeof workerState.$inferInsert).where(eq(workerState.id, "singleton"));
 }

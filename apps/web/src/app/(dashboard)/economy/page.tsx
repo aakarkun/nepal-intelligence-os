@@ -25,6 +25,7 @@ import {
   railRowFlat,
 } from "@/components/layout/intel-rail";
 import { discoverShellClass } from "@/components/discover/discover-rail-tokens";
+import { UpcomingIssuePanel } from "@/components/economy/upcoming-issue-panel";
 import { cn } from "@/lib/utils";
 import type { MarketAssetQuote } from "@repo/shared";
 
@@ -363,6 +364,8 @@ export default function EconomyPage() {
 
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1 space-y-4">
+          <UpcomingIssuePanel />
+
           {/* NRB official bulletin (macro slice — FX publication + headline anchors) */}
           <div className={discoverShellClass}>
             <FlatRailPanelHeader

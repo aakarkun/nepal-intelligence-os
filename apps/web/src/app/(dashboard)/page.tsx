@@ -201,7 +201,7 @@ export default function DiscoverPage() {
       )}
     >
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2 overflow-x-auto md:flex-nowrap">
+        <div className="flex flex-wrap items-center gap-2 overflow-x-hidden">
           <button
             type="button"
             onClick={() => setTab("for-you")}

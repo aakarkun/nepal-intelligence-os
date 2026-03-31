@@ -85,6 +85,7 @@ import { getCircuitBreaker } from "./lib/circuit-breaker";
 import * as workerStateRepo from "./db/repos/worker-state.js";
 import * as politicalPulseRepo from "./db/repos/political-pulse.js";
 import * as pratipakchyaPromisesRepo from "./db/repos/pratipakchya-promises.js";
+import * as upcomingIssuesRepo from "./db/repos/economy-upcoming-issues.js";
 import {
   PoliticalPulseEventSchema,
   LegislativeBillRowSchema,
@@ -356,11 +357,25 @@ api.patch("/worker-state", async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
   const partial: Parameters<typeof workerStateRepo.updateWorkerState>[0] = {};
   const keys = [
-    "lastNepseRunAt", "lastCoingeckoRunAt", "lastMetalsRunAt", "lastNrbRunAt",
-    "lastNewsRunAt", "lastRssNepalRunAt", "lastParliamentRunAt", "lastDhmRunAt",
-    "lastGdacsRunAt", "lastGdeltRunAt", "lastUnRssRunAt", "lastUsgsRunAt",
-    "lastPoliticalRssRunAt", "lastParliamentBillsRunAt", "lastGazetteRunAt",
-    "lastWeeklyDigestRunAt", "lastMinisterBioRunAt", "lastPratipakchyaPromisesRunAt",
+    "lastNepseRunAt",
+    "lastCoingeckoRunAt",
+    "lastMetalsRunAt",
+    "lastNrbRunAt",
+    "lastNewsRunAt",
+    "lastRssNepalRunAt",
+    "lastParliamentRunAt",
+    "lastDhmRunAt",
+    "lastGdacsRunAt",
+    "lastGdeltRunAt",
+    "lastUnRssRunAt",
+    "lastUsgsRunAt",
+    "lastPoliticalRssRunAt",
+    "lastParliamentBillsRunAt",
+    "lastGazetteRunAt",
+    "lastWeeklyDigestRunAt",
+    "lastMinisterBioRunAt",
+    "lastUpcomingIssuesRunAt",
+    "lastPratipakchyaPromisesRunAt",
   ] as const;
   for (const k of keys) {
     if (body[k] !== undefined && typeof body[k] === "number") partial[k] = body[k];
@@ -666,6 +681,34 @@ api.get("/economy/summary", (c) => {
 
 api.get("/economy/assets", (c) => {
   return c.json(getMarketAssetQuotes());
+});
+
+api.get("/economy/upcoming-issues", async (c) => {
+  const grouped = await upcomingIssuesRepo.listUpcomingIssues();
+  const meta = await upcomingIssuesRepo.getUpcomingIssuesMeta();
+  const response: Record<
+    string,
+    Array<{
+      symbol: string;
+      company: string;
+      units: number;
+      sector: string;
+      remark?: string | null;
+    }>
+  > = {};
+
+  for (const [category, rows] of Object.entries(grouped)) {
+    response[category] = rows.map((r) => ({
+      symbol: r.symbol,
+      company: r.company,
+      units: r.units,
+      sector: r.sector,
+      remark: r.remark,
+    }));
+  }
+
+  // Backwards compatible: UI can consume either raw record or { data, meta } wrapper.
+  return c.json({ data: response, meta });
 });
 
 api.get("/economy/nepse", (c) => {
@@ -1109,6 +1152,39 @@ api.post("/ingest/economy/market-portal", async (c) => {
 
   await updateMarketPortalSnapshot(parsed.data);
   return c.json({ ok: true });
+});
+
+const UpcomingIssueIngestSchema = z.object({
+  category: z.string().min(1),
+  sn: z.number().int().min(1),
+  symbol: z.string().min(1),
+  company: z.string().min(1),
+  units: z.number(),
+  sector: z.string().min(1),
+  remark: z.string().default(""),
+  sourceUrl: z.string().url().nullable().optional(),
+  fetchedAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
+api.post("/ingest/economy/upcoming-issues", async (c) => {
+  if (!requireWorkerSecret(c)) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  const body = await c.req.json();
+  const parsed = UpcomingIssueIngestSchema.array().safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid payload", issues: parsed.error.issues }, 400);
+  }
+  const result = await upcomingIssuesRepo.upsertUpcomingIssues(
+    parsed.data.map((r) => ({
+      ...r,
+      sourceUrl: r.sourceUrl ?? null,
+      remark: r.remark ?? "",
+    }))
+  );
+  await workerStateRepo.updateWorkerState({ lastUpcomingIssuesRunAt: Date.now() });
+  return c.json({ ok: true, ...result });
 });
 
 api.post("/ingest/reset-election", async (c) => {

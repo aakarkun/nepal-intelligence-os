@@ -414,6 +414,114 @@ export const politicalWeeklyDigest = pgTable("political_weekly_digest", {
   generatedAt: text("generated_at").notNull(),
 });
 
+export const pratipakchyaPromises = pgTable(
+  "pratipakchya_promises",
+  {
+    /** Source promise id from `PROMISES` array. */
+    id: integer("id").primaryKey(),
+    category: text("category").notNull(),
+    categoryNe: text("category_ne"),
+    categoryEn: text("category_en"),
+    titleNe: text("title_ne"),
+    titleEn: text("title_en"),
+    deadline: text("deadline"),
+    deadlineDate: date("deadline_date"),
+    status: text("status").notNull(),
+    progress: integer("progress").notNull().default(0),
+    lastUpdated: date("last_updated"),
+    evidence: text("evidence"),
+    notes: text("notes"),
+    /** Raw row for forward-compat (minor upstream field additions). */
+    payload: jsonb("payload").notNull(),
+    fetchedAt: text("fetched_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    index("idx_pratipakchya_status").on(t.status),
+    index("idx_pratipakchya_category").on(t.category),
+    index("idx_pratipakchya_deadline_date").on(t.deadlineDate),
+    index("idx_pratipakchya_updated_at").on(t.updatedAt),
+  ]
+);
+
+export const economyUpcomingIssues = pgTable(
+  "economy_upcoming_issues",
+  {
+    id: text("id").primaryKey(),
+    category: text("category").notNull(),
+    sn: integer("sn").notNull(),
+    symbol: text("symbol").notNull(),
+    company: text("company").notNull(),
+    units: doublePrecision("units").notNull(),
+    sector: text("sector").notNull(),
+    remark: text("remark").notNull(),
+    sourceUrl: text("source_url"),
+    fetchedAt: text("fetched_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    index("idx_economy_upcoming_issues_category").on(t.category),
+    index("idx_economy_upcoming_issues_updated_at").on(t.updatedAt),
+    uniqueIndex("idx_economy_upcoming_issues_cat_symbol_company").on(
+      t.category,
+      t.symbol,
+      t.company
+    ),
+  ]
+);
+
+export const remittanceProviders = pgTable(
+  "remittance_providers",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    websiteUrl: text("website_url"),
+    logoUrl: text("logo_url"),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("idx_remittance_providers_name").on(t.name),
+    index("idx_remittance_providers_active").on(t.isActive),
+  ]
+);
+
+export const remittanceQuoteSnapshots = pgTable(
+  "remittance_quote_snapshots",
+  {
+    id: text("id").primaryKey(),
+    providerId: text("provider_id")
+      .notNull()
+      .references(() => remittanceProviders.id, { onDelete: "cascade" }),
+    corridorSendCurrency: text("corridor_send_currency").notNull(),
+    corridorReceiveCurrency: text("corridor_receive_currency").notNull(),
+    sendAmount: doublePrecision("send_amount").notNull(),
+    feeAmount: doublePrecision("fee_amount"),
+    feeCurrency: text("fee_currency"),
+    receiveAmount: doublePrecision("receive_amount"),
+    rate: doublePrecision("rate"),
+    paymentMethod: text("payment_method"),
+    payoutMethod: text("payout_method"),
+    speedTier: text("speed_tier"),
+    collectedAt: text("collected_at").notNull(),
+    rawPayload: jsonb("raw_payload"),
+    rawHash: text("raw_hash"),
+    notes: text("notes"),
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [
+    index("idx_remittance_quotes_provider").on(t.providerId),
+    index("idx_remittance_quotes_collected_at").on(t.collectedAt),
+    index("idx_remittance_quotes_corridor").on(t.corridorSendCurrency, t.corridorReceiveCurrency),
+    index("idx_remittance_quotes_provider_corridor").on(
+      t.providerId,
+      t.corridorSendCurrency,
+      t.corridorReceiveCurrency
+    ),
+  ]
+);
+
 export const workerState = pgTable("worker_state", {
   id: text("id").primaryKey().default("singleton"),
   lastNepseRunAt: bigint("last_nepse_run_at", { mode: "number" }),
@@ -433,6 +541,8 @@ export const workerState = pgTable("worker_state", {
   lastGazetteRunAt: bigint("last_gazette_run_at", { mode: "number" }),
   lastWeeklyDigestRunAt: bigint("last_weekly_digest_run_at", { mode: "number" }),
   lastMinisterBioRunAt: bigint("last_minister_bio_run_at", { mode: "number" }),
+  lastUpcomingIssuesRunAt: bigint("last_upcoming_issues_run_at", { mode: "number" }),
+  lastPratipakchyaPromisesRunAt: bigint("last_pratipakchya_promises_run_at", { mode: "number" }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

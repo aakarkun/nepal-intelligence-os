@@ -46,12 +46,17 @@
     @apply border-border;
   }
 
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
   /**
    * Base background: near-black fill + two soft radial blobs — soft purple + soft pink.
    * Fallback: `<html data-mesh="violet-blue">` — violet + blue blobs.
    */
   body {
-    @apply text-foreground font-sans antialiased;
+    @apply text-foreground font-sans antialiased overflow-x-hidden;
     font-variant-numeric: tabular-nums;
     min-height: 100svh;
     background-color: #020204;
