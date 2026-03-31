@@ -4,16 +4,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useQuery } from "@tanstack/react-query";
+import { env } from "@/lib/env";
 import { cn } from "@/lib/utils";
 import { fetchConstituencies } from "@/lib/api";
 import type { ConstituencyResult } from "@repo/shared";
-import { PARTY_MAP, PROVINCES } from "@repo/shared";
+import { PROVINCES } from "@repo/shared";
 import { useFilterStore } from "@/stores/filter-store";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import { MapTooltip } from "./map-tooltip";
 import { MapControls, type LayerVisibility } from "./map-controls";
 
-mapboxgl.accessToken =
-  process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
+mapboxgl.accessToken = env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 const NEPAL_CENTER: [number, number] = [84.124, 28.3949];
 const NEPAL_ZOOM = 6.5;
@@ -44,9 +45,13 @@ interface TooltipState {
   };
 }
 
+export type MapLayerMode = "election" | "seismic" | "incidents";
+
 interface NepalMapProps {
   className?: string;
+  layerMode?: MapLayerMode;
   onDistrictClick?: (districtName: string) => void;
+  onProvinceClick?: (provinceId: number) => void;
   onConstituencyClick?: (id: string) => void;
   interactive?: boolean;
   mini?: boolean;
@@ -186,7 +191,9 @@ function buildAnomalyGeoJSON(
 
 export function NepalMap({
   className,
+  layerMode = "election",
   onDistrictClick,
+  onProvinceClick,
   onConstituencyClick,
   interactive = true,
   mini = false,
@@ -200,6 +207,7 @@ export function NepalMap({
 
   const selectedProvince = useFilterStore((s) => s.selectedProvince);
   const setSelectedProvince = useFilterStore((s) => s.setSelectedProvince);
+  const { selectedDatasetId } = useElectionDatasetStore();
 
   const [tooltip, setTooltip] = useState<TooltipState>({
     visible: false,
@@ -215,8 +223,8 @@ export function NepalMap({
   });
 
   const { data: constituencies } = useQuery({
-    queryKey: ["constituencies"],
-    queryFn: () => fetchConstituencies(),
+    queryKey: ["constituencies", selectedDatasetId],
+    queryFn: () => fetchConstituencies({ dataset: selectedDatasetId }),
     staleTime: 30_000,
   });
 
@@ -265,6 +273,13 @@ export function NepalMap({
     mapRef.current?.zoomOut({ duration: 300 });
   }, []);
 
+  const handleResetView = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.fitBounds(NEPAL_BOUNDS, { padding: 40, duration: 600 });
+    setSelectedProvince(null);
+  }, [setSelectedProvince]);
+
   // When province filter changes, zoom to that province (if not null)
   useEffect(() => {
     const map = mapRef.current;
@@ -276,15 +291,8 @@ export function NepalMap({
       return;
     }
 
-    const features = map.querySourceFeatures("provinces", {
-      sourceLayer: undefined,
-      filter: ["==", "PROVINCE", selectedProvince],
-    });
-
-    if (!features.length) return;
-
-    const coords = features[0].geometry;
-    if (coords.type !== "Polygon" && coords.type !== "MultiPolygon") return;
+    const allFeatures = map.querySourceFeatures("provinces");
+    if (!allFeatures.length) return;
 
     const bounds = new mapboxgl.LngLatBounds();
 
@@ -296,7 +304,18 @@ export function NepalMap({
       }
     }
 
-    addCoords((coords as any).coordinates);
+    for (const feature of allFeatures) {
+      const raw = (feature.properties as any)?.PROVINCE as number | string | undefined;
+      if (raw == null) continue;
+      const id = typeof raw === "string" ? Number(raw) : raw;
+      if (Number.isNaN(id) || id !== selectedProvince) continue;
+
+      const geom = feature.geometry;
+      if (!geom) continue;
+      if (geom.type === "Polygon" || geom.type === "MultiPolygon") {
+        addCoords((geom as any).coordinates);
+      }
+    }
 
     if (!bounds.isEmpty()) {
       map.fitBounds(bounds, { padding: 60, duration: 700 });
@@ -392,6 +411,18 @@ export function NepalMap({
       map.setPaintProperty("province-fills", "fill-color", fillExpression);
     }
   }, [provinceColors]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    const showElection = layerMode === "election";
+    const visibility = showElection ? "visible" : "none";
+    for (const id of ["district-fills", "district-outlines", "province-fills", "province-outlines"]) {
+      if (map.getLayer(id)) {
+        map.setLayoutProperty(id, "visibility", visibility);
+      }
+    }
+  }, [layerMode]);
 
   function addGeoJsonLayers(map: mapboxgl.Map) {
     if (!geoJsonUrl) return;
@@ -630,6 +661,7 @@ export function NepalMap({
       const id = typeof province === "string" ? Number(province) : province;
       if (!Number.isNaN(id)) {
         selectProvince(id);
+        onProvinceClick?.(id);
       }
     });
   }
@@ -709,6 +741,7 @@ export function NepalMap({
             onZoomOut={handleZoomOut}
             selectedProvince={selectedProvince}
             onSelectProvince={setSelectedProvince}
+            onResetView={handleResetView}
           />
         </>
       )}

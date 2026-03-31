@@ -1,0 +1,572 @@
+import {
+  pgTable,
+  text,
+  varchar,
+  integer,
+  doublePrecision,
+  boolean,
+  jsonb,
+  bigint,
+  date,
+  timestamp,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
+
+export const signalEvents = pgTable(
+  "signal_events",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    body: text("body"),
+    source: text("source"),
+    url: text("url"),
+    type: text("type").notNull().default("news"),
+    severity: text("severity").notNull().default("info"),
+    entities: jsonb("entities"),
+    district: text("district"),
+    province: integer("province"),
+    lat: doublePrecision("lat"),
+    lng: doublePrecision("lng"),
+    publishedAt: text("published_at").notNull(), // stored as TIMESTAMPTZ in migration
+    ingestedAt: text("ingested_at").notNull(),
+  },
+  (t) => [
+    index("idx_signal_events_type").on(t.type),
+    index("idx_signal_events_severity").on(t.severity),
+    index("idx_signal_events_published_at").on(t.publishedAt),
+  ]
+);
+
+export const socialSignalEvents = pgTable(
+  "social_signal_events",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    body: text("body"),
+    source: text("source"),
+    url: text("url"),
+    type: text("type").notNull().default("news"),
+    severity: text("severity").notNull().default("info"),
+    entities: jsonb("entities"),
+    publishedAt: text("published_at").notNull(),
+    ingestedAt: text("ingested_at").notNull(),
+  },
+  (t) => [index("idx_social_published_at").on(t.publishedAt)]
+);
+
+export const worldArticles = pgTable(
+  "world_articles",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    url: text("url"),
+    source: text("source"),
+    panel: text("panel"),
+    tone: doublePrecision("tone"),
+    language: text("language"),
+    imageUrl: text("image_url"),
+    publishedAt: text("published_at").notNull(),
+    fetchedAt: text("fetched_at").notNull(),
+  },
+  (t) => [
+    index("idx_world_panel").on(t.panel),
+    index("idx_world_published_at").on(t.publishedAt),
+  ]
+);
+
+export const newsArticles = pgTable(
+  "news_articles",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    body: text("body"),
+    source: text("source"),
+    url: text("url"),
+    severity: text("severity").notNull().default("info"),
+    type: text("type").notNull().default("news"),
+    entities: jsonb("entities"),
+    publishedAt: text("published_at").notNull(),
+    ingestedAt: text("ingested_at").notNull(),
+  },
+  (t) => [
+    index("idx_news_published_at").on(t.publishedAt),
+    index("idx_news_severity").on(t.severity),
+  ]
+);
+
+export const watchlistItems = pgTable("watchlist_items", {
+  id: text("id").primaryKey(),
+  label: text("label").notNull(),
+  type: text("type").notNull(),
+  value: text("value").notNull(),
+  threshold: doublePrecision("threshold"),
+  telegramChatId: text("telegram_chat_id"),
+  active: boolean("active").notNull().default(true),
+  createdAt: text("created_at").notNull(),
+  lastTriggeredAt: text("last_triggered_at"),
+  lastTriggeredSignalId: text("last_triggered_signal_id"),
+});
+
+export const reactions = pgTable(
+  "reactions",
+  {
+    id: text("id").primaryKey(),
+    itemId: text("item_id").notNull(),
+    itemTitle: text("item_title").notNull(),
+    reaction: text("reaction").notNull().default("like"),
+    email: text("email"),
+    fingerprint: text("fingerprint").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("idx_reactions_fp_item").on(t.fingerprint, t.itemId),
+    index("idx_reactions_item_id").on(t.itemId),
+    index("idx_reactions_fingerprint").on(t.fingerprint),
+  ]
+);
+
+export const cabinetEvents = pgTable(
+  "cabinet_events",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    summary: text("summary"),
+    source: text("source"),
+    type: text("type").notNull().default("other"),
+    keywords: jsonb("keywords"),
+    publishedAt: text("published_at").notNull(),
+    ingestedAt: text("ingested_at").notNull(),
+  },
+  (t) => [index("idx_cabinet_published_at").on(t.publishedAt)]
+);
+
+export const parliamentSessions = pgTable("parliament_sessions", {
+  id: text("id").primaryKey().default("current"),
+  sessionName: text("session_name"),
+  sessionStart: date("session_start"),
+  nextSittingDate: date("next_sitting_date"),
+  pendingBills: integer("pending_bills"),
+  status: text("status").notNull().default("active"),
+  scrapedAt: text("scraped_at").notNull(),
+});
+
+export const nepseSnapshots = pgTable(
+  "nepse_snapshots",
+  {
+    id: text("id").primaryKey(),
+    indexValue: doublePrecision("index_value"),
+    change: doublePrecision("change"),
+    changePercent: doublePrecision("change_percent"),
+    turnover: doublePrecision("turnover"),
+    marketStatus: text("market_status"),
+    topGainers: jsonb("top_gainers"),
+    topLosers: jsonb("top_losers"),
+    scrapedAt: text("scraped_at").notNull(),
+  },
+  (t) => [index("idx_nepse_scraped_at").on(t.scrapedAt)]
+);
+
+export const floodAlerts = pgTable(
+  "flood_alerts",
+  {
+    id: text("id").primaryKey(),
+    stationName: text("station_name").notNull(),
+    river: text("river"),
+    district: text("district"),
+    province: integer("province"),
+    waterLevel: doublePrecision("water_level"),
+    normalLevel: doublePrecision("normal_level"),
+    warningLevel: doublePrecision("warning_level"),
+    dangerLevel: doublePrecision("danger_level"),
+    status: text("status").notNull().default("normal"),
+    trend: text("trend"),
+    source: text("source").notNull().default("DHM"),
+    seasonInactive: boolean("season_inactive").notNull().default(false),
+    lat: doublePrecision("lat"),
+    lng: doublePrecision("lng"),
+    observedAt: text("observed_at").notNull(),
+    ingestedAt: text("ingested_at").notNull(),
+  },
+  (t) => [
+    index("idx_flood_status").on(t.status),
+    index("idx_flood_observed_at").on(t.observedAt),
+  ]
+);
+
+export const crisisIncidents = pgTable(
+  "crisis_incidents",
+  {
+    id: text("id").primaryKey(),
+    title: text("title").notNull(),
+    type: text("type").notNull(),
+    severity: text("severity").notNull().default("info"),
+    district: text("district"),
+    province: integer("province"),
+    lat: doublePrecision("lat"),
+    lng: doublePrecision("lng"),
+    source: text("source"),
+    url: text("url"),
+    reportedAt: text("reported_at").notNull(),
+    ingestedAt: text("ingested_at").notNull(),
+  },
+  (t) => [
+    index("idx_crisis_type").on(t.type),
+    index("idx_crisis_severity").on(t.severity),
+    index("idx_crisis_reported_at").on(t.reportedAt),
+  ]
+);
+
+export const seismicEvents = pgTable(
+  "seismic_events",
+  {
+    id: text("id").primaryKey(),
+    magnitude: doublePrecision("magnitude").notNull(),
+    place: text("place"),
+    depth: doublePrecision("depth"),
+    lat: doublePrecision("lat"),
+    lng: doublePrecision("lng"),
+    usgsUrl: text("usgs_url"),
+    sig: integer("sig"),
+    occurredAt: text("occurred_at").notNull(),
+    ingestedAt: text("ingested_at").notNull(),
+  },
+  (t) => [
+    index("idx_seismic_occurred_at").on(t.occurredAt),
+    index("idx_seismic_magnitude").on(t.magnitude),
+  ]
+);
+
+export const constituencyResults = pgTable(
+  "constituency_results",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    district: text("district"),
+    province: integer("province"),
+    leadingCandidate: text("leading_candidate"),
+    party: text("party"),
+    margin: integer("margin"),
+    totalVotes: integer("total_votes"),
+    percentReported: doublePrecision("percent_reported"),
+    status: text("status"),
+    /** Full {@link ConstituencyResult} when ingested; enables multi-candidate UI after hydrate. */
+    payload: jsonb("payload"),
+    dataset: text("dataset").notNull().default("current"),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    index("idx_constituency_district").on(t.district),
+    index("idx_constituency_party").on(t.party),
+    index("idx_constituency_dataset").on(t.dataset),
+  ]
+);
+
+export const nationalSummaries = pgTable("national_summaries", {
+  datasetId: text("dataset_id").primaryKey(),
+  payload: jsonb("payload").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const sourceHealth = pgTable("source_health", {
+  sourceId: text("source_id").primaryKey(),
+  label: text("label").notNull(),
+  lastSuccessAt: text("last_success_at"),
+  lastErrorAt: text("last_error_at"),
+  consecutiveFailures: integer("consecutive_failures").notNull().default(0),
+  totalUpdates: integer("total_updates").notNull().default(0),
+  errorRate: doublePrecision("error_rate").notNull().default(0),
+  circuitOpen: boolean("circuit_open").notNull().default(false),
+  intervalLabel: text("interval_label"),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const anomalies = pgTable(
+  "anomalies",
+  {
+    id: text("id").primaryKey(),
+    type: text("type").notNull(),
+    description: text("description").notNull(),
+    source: text("source"),
+    severity: text("severity").notNull().default("warning"),
+    resolved: boolean("resolved").notNull().default(false),
+    detectedAt: text("detected_at").notNull(),
+    resolvedAt: text("resolved_at"),
+  },
+  (t) => [
+    index("idx_anomalies_resolved").on(t.resolved),
+    index("idx_anomalies_detected_at").on(t.detectedAt),
+  ]
+);
+
+export const parties = pgTable("parties", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  shortName: text("short_name").notNull(),
+  ideology: text("ideology"),
+  formedYear: integer("formed_year"),
+  chairperson: text("chairperson"),
+  parliamentaryLeader: text("parliamentary_leader"),
+  officialWebsite: text("official_website"),
+  socialMedia: jsonb("social_media"),
+  manifestoUrl: text("manifesto_url"),
+  colorHex: text("color_hex"),
+  isGoverning: boolean("is_governing").notNull().default(false),
+  seatsUpdatedAt: text("seats_updated_at"),
+  fptpSeats: integer("fptp_seats").notNull().default(0),
+  prSeats: integer("pr_seats").notNull().default(0),
+  totalSeats: integer("total_seats").notNull().default(0),
+});
+
+export const mps = pgTable(
+  "mps",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    partyId: text("party_id")
+      .notNull()
+      .references(() => parties.id, { onDelete: "cascade" }),
+    ministryRole: text("ministry_role"),
+    committeeAssignments: jsonb("committee_assignments"),
+    billsSponsored: integer("bills_sponsored").notNull().default(0),
+    contactEmail: text("contact_email"),
+    socialMedia: jsonb("social_media"),
+    photoUrl: text("photo_url"),
+    constituency: text("constituency"),
+    electionType: text("election_type"),
+    createdAt: text("created_at").notNull(),
+    bioText: text("bio_text"),
+    bioSource: varchar("bio_source", { length: 50 }).default("wikipedia"),
+    bioFetchedAt: timestamp("bio_fetched_at", { withTimezone: true }),
+    tags: text("tags").array(),
+  },
+  (t) => [index("idx_mps_party_id").on(t.partyId)]
+);
+
+export const politicalEvents = pgTable(
+  "political_events",
+  {
+    id: text("id").primaryKey(),
+    eventType: text("event_type").notNull(),
+    title: text("title").notNull(),
+    summary: text("summary"),
+    fullContent: text("full_content"),
+    sourceName: text("source_name"),
+    sourceUrl: text("source_url"),
+    partyIds: jsonb("party_ids"),
+    mpIds: jsonb("mp_ids"),
+    ministry: text("ministry"),
+    billNumber: text("bill_number"),
+    billStatus: text("bill_status"),
+    tags: jsonb("tags"),
+    publishedAt: text("published_at").notNull(),
+    fetchedAt: text("fetched_at").notNull(),
+    isVerified: boolean("is_verified").notNull().default(false),
+    importanceScore: integer("importance_score").notNull().default(0),
+  },
+  (t) => [
+    index("idx_political_events_published_at").on(t.publishedAt),
+    index("idx_political_events_event_type").on(t.eventType),
+  ]
+);
+
+export const newsFeedSources = pgTable(
+  "news_feed_sources",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    rssUrl: text("rss_url").notNull(),
+    websiteUrl: text("website_url"),
+    language: text("language").default("en"),
+    category: text("category"),
+    isActive: boolean("is_active").notNull().default(true),
+    lastPolledAt: text("last_polled_at"),
+    pollIntervalMinutes: integer("poll_interval_minutes").notNull().default(30),
+  },
+  (t) => [uniqueIndex("idx_news_feed_sources_rss_url").on(t.rssUrl)]
+);
+
+export const legislativeBills = pgTable(
+  "legislative_bills",
+  {
+    id: text("id").primaryKey(),
+    billNumber: text("bill_number").notNull(),
+    title: text("title").notNull(),
+    status: text("status").notNull(),
+    introducedBy: text("introduced_by"),
+    introducedAt: text("introduced_at"),
+    updatedAt: text("updated_at").notNull(),
+    sourceUrl: text("source_url"),
+    partyId: text("party_id").references(() => parties.id, { onDelete: "set null" }),
+    rawExcerpt: text("raw_excerpt"),
+  },
+  (t) => [
+    uniqueIndex("idx_legislative_bills_bill_number").on(t.billNumber),
+    index("idx_legislative_bills_status").on(t.status),
+  ]
+);
+
+export const politicalWeeklyDigest = pgTable("political_weekly_digest", {
+  id: text("id").primaryKey().default("current"),
+  content: text("content").notNull(),
+  periodStart: text("period_start").notNull(),
+  periodEnd: text("period_end").notNull(),
+  generatedAt: text("generated_at").notNull(),
+});
+
+export const pratipakchyaPromises = pgTable(
+  "pratipakchya_promises",
+  {
+    /** Source promise id from `PROMISES` array. */
+    id: integer("id").primaryKey(),
+    category: text("category").notNull(),
+    categoryNe: text("category_ne"),
+    categoryEn: text("category_en"),
+    titleNe: text("title_ne"),
+    titleEn: text("title_en"),
+    deadline: text("deadline"),
+    deadlineDate: date("deadline_date"),
+    status: text("status").notNull(),
+    progress: integer("progress").notNull().default(0),
+    lastUpdated: date("last_updated"),
+    evidence: text("evidence"),
+    notes: text("notes"),
+    /** Raw row for forward-compat (minor upstream field additions). */
+    payload: jsonb("payload").notNull(),
+    fetchedAt: text("fetched_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    index("idx_pratipakchya_status").on(t.status),
+    index("idx_pratipakchya_category").on(t.category),
+    index("idx_pratipakchya_deadline_date").on(t.deadlineDate),
+    index("idx_pratipakchya_updated_at").on(t.updatedAt),
+  ]
+);
+
+export const economyUpcomingIssues = pgTable(
+  "economy_upcoming_issues",
+  {
+    id: text("id").primaryKey(),
+    category: text("category").notNull(),
+    sn: integer("sn").notNull(),
+    symbol: text("symbol").notNull(),
+    company: text("company").notNull(),
+    units: doublePrecision("units").notNull(),
+    sector: text("sector").notNull(),
+    remark: text("remark").notNull(),
+    sourceUrl: text("source_url"),
+    fetchedAt: text("fetched_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    index("idx_economy_upcoming_issues_category").on(t.category),
+    index("idx_economy_upcoming_issues_updated_at").on(t.updatedAt),
+    uniqueIndex("idx_economy_upcoming_issues_cat_symbol_company").on(
+      t.category,
+      t.symbol,
+      t.company
+    ),
+  ]
+);
+
+export const remittanceProviders = pgTable(
+  "remittance_providers",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    websiteUrl: text("website_url"),
+    logoUrl: text("logo_url"),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("idx_remittance_providers_name").on(t.name),
+    index("idx_remittance_providers_active").on(t.isActive),
+  ]
+);
+
+export const remittanceQuoteSnapshots = pgTable(
+  "remittance_quote_snapshots",
+  {
+    id: text("id").primaryKey(),
+    providerId: text("provider_id")
+      .notNull()
+      .references(() => remittanceProviders.id, { onDelete: "cascade" }),
+    corridorSendCurrency: text("corridor_send_currency").notNull(),
+    corridorReceiveCurrency: text("corridor_receive_currency").notNull(),
+    sendAmount: doublePrecision("send_amount").notNull(),
+    feeAmount: doublePrecision("fee_amount"),
+    feeCurrency: text("fee_currency"),
+    receiveAmount: doublePrecision("receive_amount"),
+    rate: doublePrecision("rate"),
+    paymentMethod: text("payment_method"),
+    payoutMethod: text("payout_method"),
+    speedTier: text("speed_tier"),
+    collectedAt: text("collected_at").notNull(),
+    rawPayload: jsonb("raw_payload"),
+    rawHash: text("raw_hash"),
+    notes: text("notes"),
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [
+    index("idx_remittance_quotes_provider").on(t.providerId),
+    index("idx_remittance_quotes_collected_at").on(t.collectedAt),
+    index("idx_remittance_quotes_corridor").on(t.corridorSendCurrency, t.corridorReceiveCurrency),
+    index("idx_remittance_quotes_provider_corridor").on(
+      t.providerId,
+      t.corridorSendCurrency,
+      t.corridorReceiveCurrency
+    ),
+  ]
+);
+
+export const workerState = pgTable("worker_state", {
+  id: text("id").primaryKey().default("singleton"),
+  lastNepseRunAt: bigint("last_nepse_run_at", { mode: "number" }),
+  lastCoingeckoRunAt: bigint("last_coingecko_run_at", { mode: "number" }),
+  lastMetalsRunAt: bigint("last_metals_run_at", { mode: "number" }),
+  lastNrbRunAt: bigint("last_nrb_run_at", { mode: "number" }),
+  lastNewsRunAt: bigint("last_news_run_at", { mode: "number" }),
+  lastRssNepalRunAt: bigint("last_rss_nepal_run_at", { mode: "number" }),
+  lastParliamentRunAt: bigint("last_parliament_run_at", { mode: "number" }),
+  lastDhmRunAt: bigint("last_dhm_run_at", { mode: "number" }),
+  lastGdacsRunAt: bigint("last_gdacs_run_at", { mode: "number" }),
+  lastGdeltRunAt: bigint("last_gdelt_run_at", { mode: "number" }),
+  lastUnRssRunAt: bigint("last_un_rss_run_at", { mode: "number" }),
+  lastUsgsRunAt: bigint("last_usgs_run_at", { mode: "number" }),
+  lastPoliticalRssRunAt: bigint("last_political_rss_run_at", { mode: "number" }),
+  lastParliamentBillsRunAt: bigint("last_parliament_bills_run_at", { mode: "number" }),
+  lastGazetteRunAt: bigint("last_gazette_run_at", { mode: "number" }),
+  lastWeeklyDigestRunAt: bigint("last_weekly_digest_run_at", { mode: "number" }),
+  lastMinisterBioRunAt: bigint("last_minister_bio_run_at", { mode: "number" }),
+  lastUpcomingIssuesRunAt: bigint("last_upcoming_issues_run_at", { mode: "number" }),
+  lastPratipakchyaPromisesRunAt: bigint("last_pratipakchya_promises_run_at", { mode: "number" }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Append-only ingest history for market portal (never deleted; retention is manual if ever needed). */
+export const marketPortalSnapshots = pgTable(
+  "market_portal_snapshots",
+  {
+    id: text("id").primaryKey(),
+    scrapedAt: text("scraped_at").notNull(),
+    data: jsonb("data").notNull(),
+    ingestedAt: text("ingested_at").notNull(),
+  },
+  (t) => [index("idx_market_portal_scraped_at").on(t.scrapedAt)]
+);
+
+export const snapshots = pgTable(
+  "snapshots",
+  {
+    slug: text("slug").primaryKey(),
+    type: text("type").notNull(),
+    title: text("title").notNull(),
+    data: jsonb("data").notNull(),
+    createdAt: text("created_at").notNull(),
+    expiresAt: text("expires_at").notNull(),
+  },
+  (t) => [index("idx_snapshots_expires_at").on(t.expiresAt)]
+);

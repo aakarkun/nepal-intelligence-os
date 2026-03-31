@@ -69,6 +69,7 @@ export function useSSE() {
       eventSourceRef.current = null;
       store.setConnectionStatus("error");
 
+      // Exponential backoff: 1s, 2s, 4s, … max 30s
       const delay = Math.min(
         1000 * Math.pow(2, reconnectAttempts.current),
         30_000

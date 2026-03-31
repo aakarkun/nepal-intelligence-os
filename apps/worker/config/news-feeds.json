@@ -4,10 +4,6 @@
     "url": "https://news.google.com/rss/search?q=nepal+election"
   },
   {
-    "name": "Online Khabar (English)",
-    "url": "https://english.onlinekhabar.com/feed"
-  },
-  {
     "name": "Online Khabar",
     "url": "https://www.onlinekhabar.com/feed"
   },
@@ -22,6 +18,37 @@
   {
     "name": "Annapurna Post",
     "url": "https://annapurnapost.com/rss"
+  },
+  {
+    "name": "Nagarik",
+    "url": "https://nagariknews.nagariknetwork.com/rss"
+  },
+  {
+    "name": "Nepali Times",
+    "url": "https://www.nepalitimes.com/feed/"
+  },
+  {
+    "name": "Online Khabar English",
+    "url": "https://english.onlinekhabar.com/feed"
+  },
+  {
+    "name": "Baahrakhari",
+    "url": "https://www.baahrakhari.com/feed"
+  },
+  {
+    "name": "Makalu Khabar",
+    "url": "https://makalukhabar.com/feed"
+  },
+  {
+    "name": "News Polar",
+    "url": "https://newspolar.com/feed"
+  },
+  {
+    "name": "Himal Press",
+    "url": "https://himalpress.com/feed"
+  },
+  {
+    "name": "Nepal Live",
+    "url": "https://nepallive.com/feed"
   }
 ]
-

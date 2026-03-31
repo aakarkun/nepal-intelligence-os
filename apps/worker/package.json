@@ -3,8 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "docker:up": "docker compose -f ../../docker-compose.yml up --build",
+    "docker:up:d": "docker compose -f ../../docker-compose.yml up -d --build",
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
+    "push:market-portal": "bun run scripts/push-market-portal.ts",
+    "extract:pratipakchya-promises": "bun run scripts/extract-pratipakchya-promises.ts",
     "build": "echo 'No build step — Bun runs TS directly'",
     "test": "bun test"
   },

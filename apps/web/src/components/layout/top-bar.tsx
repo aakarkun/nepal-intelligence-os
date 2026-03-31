@@ -1,21 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Command, PanelRight } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Command, PanelRight, Sparkles } from "@/components/icons";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { TopBarHeading } from "@/components/layout/top-bar-heading";
 import { cn } from "@/lib/utils";
 import { formatNepalTime } from "@/lib/utils";
 import { useRealtimeStore } from "@/stores/realtime-store";
+import { useDispatch, useSelector } from "react-redux";
 import { useFilterStore } from "@/stores/filter-store";
-
-const MODULES = [
-  { id: "election", label: "Election", ready: true },
-  { id: "parliament", label: "Parliament", ready: false },
-  { id: "economy", label: "Economy", ready: false },
-  { id: "crisis", label: "Crisis", ready: false },
-  { id: "media", label: "Media", ready: false },
-] as const;
-
+import { setBriefingPanelOpen, toggleIntelRail } from "@/store/slices/uiSlice";
+import { useLanguage } from "@/providers/language-provider";
+import type { RootState } from "@/store";
 const STATUS_CONFIG = {
   live: { color: "bg-status-live", label: "LIVE" },
   stale: { color: "bg-status-stale", label: "STALE" },
@@ -28,10 +25,14 @@ interface TopBarProps {
 
 export function TopBar({ onCommandOpen }: TopBarProps) {
   const [time, setTime] = useState<string | null>(null);
+  const pathname = usePathname();
   const connectionStatus = useRealtimeStore((s) => s.connectionStatus);
-  const activeModule = useFilterStore((s) => s.activeModule);
   const setActiveModule = useFilterStore((s) => s.setActiveModule);
-  const toggleIntelRail = useFilterStore((s) => s.toggleIntelRail);
+  const dispatch = useDispatch();
+  const openBriefing = () => dispatch(setBriefingPanelOpen(true));
+  const togglePanel = () => dispatch(toggleIntelRail());
+  const intelRailOpen = useSelector((s: RootState) => s.ui.intelRailOpen);
+  const { language, toggleLanguage } = useLanguage();
 
   useEffect(() => {
     function tick() {
@@ -42,93 +43,143 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (pathname === "/") {
+      setActiveModule("discover");
+      return;
+    }
+    if (pathname.startsWith("/political-pulse") || pathname.startsWith("/map") || pathname.startsWith("/constituencies")) {
+      setActiveModule("parliament");
+      return;
+    }
+    if (pathname.startsWith("/parliament")) {
+      setActiveModule("parliament");
+      return;
+    }
+    if (pathname.startsWith("/economy")) {
+      setActiveModule("economy");
+      return;
+    }
+    if (pathname.startsWith("/disasters")) {
+      setActiveModule("crisis");
+      return;
+    }
+    if (pathname.startsWith("/world")) {
+      setActiveModule("world");
+      return;
+    }
+    if (pathname.startsWith("/news-room")) {
+      setActiveModule("media");
+      return;
+    }
+  }, [pathname, setActiveModule]);
+
   const status = STATUS_CONFIG[connectionStatus];
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center justify-between border-b border-border bg-background/80 px-3 backdrop-blur sm:px-4">
-      {/* Left — Logo */}
-      <Link
-        href="/"
-        className="flex items-center gap-2 font-display text-xs font-semibold tracking-tight text-foreground transition-colors hover:text-nepal-red sm:text-sm"
-      >
-        Nepal Intelligence OS
-      </Link>
-
-      {/* Center — Module pills (hidden on very small screens) */}
-      <nav className="hidden items-center gap-1 md:flex">
-        {MODULES.map((mod) => (
-          <button
-            key={mod.id}
-            disabled={!mod.ready}
-            onClick={() => mod.ready && setActiveModule(mod.id)}
-            className={cn(
-              "relative rounded-md px-3 py-1 text-xs font-medium transition-colors",
-              activeModule === mod.id
-                ? "bg-nepal-red/15 text-nepal-red"
-                : mod.ready
-                  ? "text-muted-foreground hover:text-foreground"
-                  : "cursor-not-allowed text-muted-foreground/50"
-            )}
-            title={!mod.ready ? "Soon" : undefined}
-          >
-            {mod.label}
-            {!mod.ready && (
-              <span className="absolute -right-1 -top-1 rounded-full bg-muted px-1 text-[9px] leading-tight text-muted-foreground">
-                Soon
+    <header className="sticky top-0 z-50 flex min-h-12 shrink-0 items-center justify-between gap-3 border-b border-white/[0.06] bg-transparent px-3 py-2 sm:px-4">
+      <TopBarHeading />
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        {/* Language toggle */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+            >
+              <span className="font-sans text-[12px] uppercase">
+                {language === "en" ? "EN" : "NP"}
               </span>
-            )}
-          </button>
-        ))}
-      </nav>
-
-      {/* Right — Intel toggle, Command, Status, Clock */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Intel rail toggle */}
-        <button
-          onClick={toggleIntelRail}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
-        >
-          <PanelRight className="h-3 w-3" />
-          <span className="hidden xs:inline sm:inline">Intel</span>
-        </button>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Toggle news language</TooltipContent>
+        </Tooltip>
+        {/* AI Briefing (Sparkles) — opens briefing modal */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={openBriefing}
+              className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+            >
+              <Sparkles className="h-3 w-3" />
+              <span className="hidden xs:inline sm:inline">Briefing</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Generate briefing</TooltipContent>
+        </Tooltip>
+        {/* Panel rail toggle — show/hide right sidebar */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={togglePanel}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full border px-2 py-1 text-[13px] transition-colors",
+                intelRailOpen
+                  ? "border-white/[0.12] bg-white/[0.08] text-foreground"
+                  : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground"
+              )}
+            >
+              <PanelRight className="h-3 w-3" />
+              <span className="hidden xs:inline sm:inline">Panel</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Toggle right panel</TooltipContent>
+        </Tooltip>
         {/* ⌘K trigger (icon-only on xs) */}
-        <button
-          onClick={onCommandOpen}
-          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
-        >
-          <Command className="h-3 w-3" />
-          <span className="hidden sm:inline">
-            <kbd className="font-mono text-[10px]">K</kbd>
-          </span>
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={onCommandOpen}
+              className="flex items-center gap-1.5 rounded-full border border-border px-2 py-1 text-[13px] text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground"
+            >
+              <Command className="h-3 w-3" />
+              <span className="hidden sm:inline">
+                <kbd className="font-sans text-[12px]">K</kbd>
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Command palette (⌘K)</TooltipContent>
+        </Tooltip>
 
-        {/* LIVE indicator */}
-        <div className="flex items-center gap-1.5">
-          <span
-            className={cn(
-              "inline-block h-2 w-2 rounded-full animate-pulse-live",
-              status.color
-            )}
-          />
-          <span
-            className={cn(
-              "text-[10px] font-semibold uppercase tracking-wider",
-              connectionStatus === "live" && "text-status-live",
-              connectionStatus === "stale" && "text-status-stale",
-              connectionStatus === "error" && "text-status-error"
-            )}
-          >
-            {status.label}
-          </span>
-        </div>
+        {/* LIVE indicator — SSE stream only; World articles etc. use REST (see tooltip). */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex cursor-default items-center gap-1.5">
+              <span
+                className={cn(
+                  "inline-block h-2 w-2 rounded-full animate-pulse-live",
+                  status.color
+                )}
+              />
+              <span
+                className={cn(
+                  "text-[12px] font-semibold uppercase tracking-wider",
+                  connectionStatus === "live" && "text-status-live",
+                  connectionStatus === "stale" && "text-status-stale",
+                  connectionStatus === "error" && "text-status-error"
+                )}
+              >
+                {status.label}
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[20rem] text-left">
+            Realtime signal stream (SSE). Other data (e.g. World desk articles from the API) can
+            still load when this shows OFFLINE.
+          </TooltipContent>
+        </Tooltip>
 
         {/* Nepal time */}
         <time
-          className="hidden min-w-[5rem] text-right font-mono text-xs tabular-nums text-muted-foreground sm:inline"
+          className="hidden min-w-[5rem] text-right font-sans text-xs tabular-nums text-muted-foreground sm:inline"
           suppressHydrationWarning
         >
           {time ?? "—:—:—"}
-          <span className="ml-1 text-[9px] text-muted-foreground/60">NPT</span>
+          <span className="ml-1 text-[11px] text-muted-foreground/60">NPT</span>
         </time>
       </div>
     </header>

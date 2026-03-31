@@ -1,0 +1,6 @@
+ALTER TABLE "mps" ADD COLUMN IF NOT EXISTS "bio_text" TEXT;
+ALTER TABLE "mps" ADD COLUMN IF NOT EXISTS "bio_source" VARCHAR(50) DEFAULT 'wikipedia';
+ALTER TABLE "mps" ADD COLUMN IF NOT EXISTS "bio_fetched_at" TIMESTAMPTZ;
+ALTER TABLE "mps" ADD COLUMN IF NOT EXISTS "tags" TEXT[];
+
+ALTER TABLE "worker_state" ADD COLUMN IF NOT EXISTS "last_minister_bio_run_at" BIGINT;

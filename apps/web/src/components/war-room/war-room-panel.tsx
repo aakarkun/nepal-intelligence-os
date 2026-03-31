@@ -8,11 +8,15 @@ import {
   PhoneOff,
   Lock,
   Radio,
-} from "lucide-react";
+} from "@/components/icons";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { env } from "@/lib/env";
+import { fetchNationalSummary, fetchSourceHealth } from "@/lib/api";
+import { cn, timeAgo } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 
 const MOCK_PARTICIPANTS = [
   { id: "1", name: "Analyst 1", initials: "A1", muted: false },
@@ -61,7 +65,7 @@ function VoiceRoom() {
                 ) : (
                   <Mic className="h-3.5 w-3.5 text-green-500" />
                 )}
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[12px] text-muted-foreground">
                   {p.muted ? "Muted" : "Speaking"}
                 </span>
               </div>
@@ -128,47 +132,73 @@ function VoiceRoom() {
 }
 
 function AIBriefingPanel() {
+  const { selectedDatasetId } = useElectionDatasetStore();
+  const { data: summary } = useQuery({
+    queryKey: ["war-room-summary", selectedDatasetId],
+    queryFn: () => fetchNationalSummary(selectedDatasetId),
+    refetchInterval: 15_000,
+  });
+  const { data: sourceHealth = [] } = useQuery({
+    queryKey: ["war-room-source-health"],
+    queryFn: fetchSourceHealth,
+    refetchInterval: 15_000,
+  });
+
+  const topParty = summary?.partyResults[0];
+  const runnerUp = summary?.partyResults[1];
+  const liveSources = sourceHealth.filter((source) => source.status === "live");
+  const weakSources = sourceHealth.filter((source) => source.status !== "live");
+  const majorityGap = topParty ? Math.max(0, 138 - (topParty.seatsWon + topParty.seatsLeading)) : null;
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-display">AI Briefing</CardTitle>
-          <Badge variant="stale">Updated 5m ago</Badge>
+          <Badge variant="stale">
+            {summary ? `Updated ${timeAgo(summary.timestamp)}` : "Waiting"}
+          </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Based on analysis of 140 constituencies counted, CPN (UML) maintains a
-          narrow lead with 57 seats won, followed by Nepali Congress at 50 seats.
+          {summary && topParty
+            ? `${summary.countedConstituencies} of ${summary.totalConstituencies} constituencies are currently reflected in the selected dataset. ${topParty.partyName} is the leading bloc with ${topParty.seatsWon} seats won and ${topParty.seatsLeading} seats leading.`
+            : "Waiting for the latest election summary to generate a tactical briefing."}
         </p>
         <div className="space-y-2">
           <div className="flex items-start gap-2 text-xs">
             <span className="text-nepal-red mt-0.5">1.</span>
             <p className="text-muted-foreground">
-              <span className="text-foreground font-medium">Kathmandu sweep:</span>{" "}
-              NC has won 3 of 4 Kathmandu constituencies, signaling urban voter
-              shift.
+              <span className="text-foreground font-medium">Lead picture:</span>{" "}
+              {topParty && runnerUp
+                ? `${topParty.partyShortName} is ahead of ${runnerUp.partyShortName} by ${(topParty.seatsWon + topParty.seatsLeading) - (runnerUp.seatsWon + runnerUp.seatsLeading)} seats in the current board.`
+                : "Waiting for at least two party aggregates before computing the lead picture."}
             </p>
           </div>
           <div className="flex items-start gap-2 text-xs">
             <span className="text-nepal-red mt-0.5">2.</span>
             <p className="text-muted-foreground">
-              <span className="text-foreground font-medium">Madhesh battleground:</span>{" "}
-              Province 2 remains highly competitive with JSPN gaining ground in
-              Dhanusha and Siraha.
+              <span className="text-foreground font-medium">Government math:</span>{" "}
+              {majorityGap !== null
+                ? majorityGap === 0
+                  ? `${topParty?.partyShortName} has enough won + leading seats to cross the majority line.`
+                  : `${topParty?.partyShortName} still needs ${majorityGap} more seats to clear the 138-seat majority threshold on its own.`
+                : "Majority gap will appear once summary totals load."}
             </p>
           </div>
           <div className="flex items-start gap-2 text-xs">
             <span className="text-nepal-red mt-0.5">3.</span>
             <p className="text-muted-foreground">
-              <span className="text-foreground font-medium">Coalition math:</span>{" "}
-              Neither UML nor NC can form government alone. A UML+MC coalition would
-              reach ~100 seats, still short of 138.
+              <span className="text-foreground font-medium">Source posture:</span>{" "}
+              {liveSources.length > 0
+                ? `${liveSources.length} sources are currently live. ${weakSources.length > 0 ? `${weakSources.length} sources are stale or error and should be watched.` : "No weak sources are currently flagged."}`
+                : "No live sources are currently reporting healthy status."}
             </p>
           </div>
         </div>
         <div className="pt-2 border-t border-border">
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[12px] text-muted-foreground">
             This briefing is AI-generated from current data feeds. Not for
             official citation.
           </p>
@@ -179,7 +209,7 @@ function AIBriefingPanel() {
 }
 
 export function WarRoomPanel() {
-  const enabled = process.env.NEXT_PUBLIC_ENABLE_WAR_ROOM === "true";
+  const enabled = env.NEXT_PUBLIC_ENABLE_WAR_ROOM;
 
   if (!enabled) return <LockedState />;
 
