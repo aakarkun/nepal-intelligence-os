@@ -3,6 +3,11 @@ import { cors } from "hono/cors";
 import { api } from "./routes";
 import { createSSEResponse, startHeartbeat } from "./sse";
 import { seedFromFixturesIfEmpty } from "./seed";
+import { ensureHor2082OfficialSummary } from "./seed-hor-2082.js";
+import { ensurePoliticalPulseSeed } from "./seed-political-pulse.js";
+import { runMigrations } from "./db/migrate.js";
+import { closeDb } from "./db/client.js";
+import { hydrateElectionFromDb, hydrateOperationalCacheFromDb } from "./store.js";
 
 const app = new Hono();
 
@@ -20,7 +25,23 @@ app.get("/health", (c) => {
 
 const port = Number(process.env.API_PORT) || 3001;
 
+await runMigrations();
+console.log("[api] migrations complete");
+
 await seedFromFixturesIfEmpty();
+await ensureHor2082OfficialSummary();
+await ensurePoliticalPulseSeed();
+await hydrateElectionFromDb();
+await hydrateOperationalCacheFromDb();
+
+process.on("SIGTERM", async () => {
+  await closeDb();
+  process.exit(0);
+});
+process.on("SIGINT", async () => {
+  await closeDb();
+  process.exit(0);
+});
 
 Bun.serve({
   port,

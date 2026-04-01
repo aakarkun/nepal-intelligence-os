@@ -16,31 +16,31 @@ export const PROVINCES: Province[] = [
 ];
 
 export const PARTIES: Party[] = [
-  { id: "ncp-uml", name: "CPN (UML)", shortName: "UML", color: "#dc143c" },
-  { id: "nc", name: "Nepali Congress", shortName: "NC", color: "#0066cc" },
+  { id: "ncp-uml", name: "CPN (UML)", shortName: "UML", color: "#ee1c25" },
+  { id: "nc", name: "Nepali Congress", shortName: "NC", color: "#3f653b" },
   {
     id: "ncp-mc",
     name: "CPN (Maoist Centre)",
     shortName: "MC",
-    color: "#cc0000",
+    color: "#ef4444",
   },
   {
     id: "rsp",
     name: "Rastriya Swatantra Party",
     shortName: "RSP",
-    color: "#ff6600",
+    color: "#1a97d5",
   },
   {
     id: "rppp",
     name: "Rastriya Prajatantra Party",
     shortName: "RPP",
-    color: "#ff9900",
+    color: "#f97316",
   },
   {
     id: "jspn",
     name: "Janata Samajbadi Party",
     shortName: "JSPN",
-    color: "#009933",
+    color: "#ef4444",
   },
   {
     id: "lsp",

@@ -4,22 +4,13 @@ import { useEffect, useMemo } from "react";
 import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import {
-  LayoutDashboard,
-  Map,
-  TableProperties,
-  Building2,
-  Radio,
-  Newspaper,
-  TrendingUp,
-  AlertTriangle,
-  Headphones,
-  Diff,
-  PanelRight,
-  Trash2,
-} from "lucide-react";
+import { Diff, PanelRight, TableProperties, Trash2 } from "@/components/icons";
+import { flattenNavItems } from "@/components/layout/nav-config";
 import { fetchConstituencies } from "@/lib/api";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
+import { useDispatch } from "react-redux";
 import { useFilterStore } from "@/stores/filter-store";
+import { toggleIntelRail } from "@/store/slices/uiSlice";
 import { useRealtimeStore } from "@/stores/realtime-store";
 
 interface CommandPaletteProps {
@@ -27,27 +18,24 @@ interface CommandPaletteProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const NAV_ITEMS = [
-  { label: "Situation Room", path: "/", icon: LayoutDashboard },
-  { label: "Tactical Map", path: "/map", icon: Map },
-  { label: "Constituencies", path: "/constituencies", icon: TableProperties },
-  { label: "Parliament", path: "/parliament", icon: Building2 },
-  { label: "Signals Feed", path: "/feed", icon: Radio },
-  { label: "News Room", path: "/news-room", icon: Newspaper },
-  { label: "Economy", path: "/economy", icon: TrendingUp },
-  { label: "Crisis Monitor", path: "/disasters", icon: AlertTriangle },
-  { label: "War Room", path: "/war-room", icon: Headphones },
-];
+/** Same routes/order as sidebar `NAV_SECTIONS` (flattenNavItems). */
+const NAV_ITEMS = flattenNavItems().map((item) => ({
+  label: item.label,
+  path: item.href,
+  icon: item.icon,
+}));
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
+  const { selectedDatasetId } = useElectionDatasetStore();
   const toggleDiffMode = useFilterStore((s) => s.toggleDiffMode);
-  const toggleIntelRail = useFilterStore((s) => s.toggleIntelRail);
+  const dispatch = useDispatch();
+  const togglePanel = () => dispatch(toggleIntelRail());
   const clearAnomalies = useRealtimeStore((s) => s.clearAnomalies);
 
   const { data: constituencies } = useQuery({
-    queryKey: ["constituencies"],
-    queryFn: () => fetchConstituencies(),
+    queryKey: ["constituencies", selectedDatasetId],
+    queryFn: () => fetchConstituencies({ dataset: selectedDatasetId }),
     enabled: open,
   });
 
@@ -140,12 +128,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                 Toggle Diff Mode
               </Command.Item>
               <Command.Item
-                value="Toggle Intel Rail"
-                onSelect={() => action(toggleIntelRail)}
+                value="Toggle right panel"
+                onSelect={() => action(togglePanel)}
                 className="flex items-center gap-3 px-3 py-2 rounded-md text-sm cursor-pointer data-[selected=true]:bg-muted"
               >
                 <PanelRight className="h-4 w-4 text-muted-foreground" />
-                Toggle Intel Rail
+                Toggle right panel
               </Command.Item>
               <Command.Item
                 value="Clear anomalies"

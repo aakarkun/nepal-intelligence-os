@@ -25,7 +25,8 @@ export function normalizeEcnToSummary(
       return null;
     }
     const partyResults = (first.partyResults as PartyResult[] | undefined) ?? [];
-    const totalSeats = Number(first.totalSeats) || 165;
+    // House of Representatives: 275 total seats = 165 constituency (FPTP) + 110 PR
+    const totalSeats = Number(first.totalSeats) || 275;
     const totalConstituencies = Number(first.totalConstituencies) || 165;
     const countedConstituencies =
       Number(first.countedConstituencies) ?? partyResults.reduce((s, p) => s + (Number(p.seatsWon) || 0) + (Number(p.seatsLeading) || 0), 0);

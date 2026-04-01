@@ -15,8 +15,9 @@ dist/
 out/
 .turbo/
 
-# Environment
+# Environment (root and per-app; .env.example is committed)
 .env
+**/.env
 .env.local
 .env.*.local
 
@@ -34,6 +35,15 @@ Thumbs.db
 *.db-journal
 *.sqlite
 .replay-cursor.sqlite
+.live-worker-state.json
+.live-api-state.json
+
+# Generated ingestion artifacts
+apps/worker/.cache/
+data/pratipakchya/promises.json
+
+# Git worktrees (isolated feature branches)
+.worktrees/
 
 # Debug
 npm-debug.log*
@@ -42,3 +52,7 @@ yarn-error.log*
 
 # Testing
 coverage/
+
+# Python
+__pycache__/
+*.pyc

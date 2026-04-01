@@ -1,0 +1,45 @@
+# Example: run API + Worker in Docker; DB = Neon (set DATABASE_URL) or local Postgres.
+# Copy to docker-compose.yml and set env vars.
+#
+# Build from repo root: docker compose -f docker-compose.example.yml build
+# Run: docker compose -f docker-compose.example.yml up
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}   # Neon or postgresql://postgres:postgres@db:5432/nepal_intel
+      - API_PORT=3001
+      - WORKER_SECRET=${WORKER_SECRET}
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      - API_URL=http://api:3001
+      - WORKER_SECRET=${WORKER_SECRET}
+      - MODE=live
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # Optional: local Postgres instead of Neon. Uncomment and set DATABASE_URL=postgresql://postgres:postgres@db:5432/nepal_intel
+  # db:
+  #   image: postgres:16
+  #   environment:
+  #     POSTGRES_DB: nepal_intel
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+# volumes:
+#   pgdata:

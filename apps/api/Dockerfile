@@ -5,10 +5,13 @@ COPY package.json bun.lock ./
 COPY packages/shared/package.json packages/shared/
 COPY apps/api/package.json apps/api/
 
-RUN bun install --frozen-lockfile
+# No --frozen-lockfile: Docker copies only a subset of the workspace (api + shared), so the root lockfile can disagree with that subset and cause "lockfile had changes".
+RUN bun install
 
 COPY packages/shared packages/shared
 COPY apps/api apps/api
+# Needed for API startup seeding (election fixtures)
+COPY apps/worker/fixtures apps/worker/fixtures
 
 EXPOSE 3001
 CMD ["bun", "run", "apps/api/src/index.ts"]

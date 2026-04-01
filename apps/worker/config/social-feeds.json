@@ -5,13 +5,10 @@
       "query": "nepal election lang:en -is:retweet"
     }
   ],
-  "reddit": [
-    { "name": "r/nepal", "subreddit": "nepal" },
-    { "name": "r/NepalPolitics", "subreddit": "NepalPolitics" },
-    { "name": "r/Nepal", "subreddit": "Nepal" },
-    { "name": "r/NepalStock", "subreddit": "NepalStock" },
-    { "name": "r/Nepali", "subreddit": "Nepali" },
-    { "name": "r/Nepalese", "subreddit": "Nepalese" },
-    { "name": "r/NepalInvestors", "subreddit": "NepalInvestors" }
+  "nitter": [
+    {
+      "name": "Nepal election (X via Nitter RSS)",
+      "query": "nepal election"
+    }
   ]
 }

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { fetchConstituencies } from "@/lib/api";
 import { cn, formatNumber } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useElectionDatasetStore } from "@/stores/election-dataset-store";
 import type { ConstituencyResult } from "@repo/shared";
 
 function getMargin(c: ConstituencyResult): number {
@@ -15,18 +15,19 @@ function getMargin(c: ConstituencyResult): number {
 
 export function BattleSeats() {
   const router = useRouter();
+  const { selectedDatasetId, datasets } = useElectionDatasetStore();
+  const selectedDataset = datasets.find((dataset) => dataset.id === selectedDatasetId);
+  const isCurrentDataset = selectedDataset?.isCurrent ?? true;
 
   const { data: constituencies, isLoading } = useQuery({
-    queryKey: ["constituencies"],
-    queryFn: () => fetchConstituencies(),
-    refetchInterval: 15_000,
+    queryKey: ["constituencies", selectedDatasetId],
+    queryFn: () => fetchConstituencies({ dataset: selectedDatasetId }),
+    refetchInterval: isCurrentDataset ? 15_000 : false,
   });
 
   if (isLoading || !constituencies) {
     return (
-      <Card className="animate-pulse">
-        <CardContent className="h-48 p-6" />
-      </Card>
+      <div className="h-48 animate-pulse rounded-xl bg-white/[0.06]" />
     );
   }
 
@@ -36,13 +37,11 @@ export function BattleSeats() {
     .slice(0, 5);
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="font-display text-base font-semibold">
-          Closest Races
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
+    <div className="rounded-xl bg-[#181818]/60 p-3">
+      <div className="mb-3 font-sans text-[13px] uppercase tracking-wider text-[#a1a1aa]">
+        Closest races
+      </div>
+      <div className="space-y-2">
         {battleSeats.map((seat) => {
           const sorted = [...seat.candidates].sort(
             (a, b) => b.votes - a.votes
@@ -60,15 +59,15 @@ export function BattleSeats() {
                 router.push(`/constituencies/${seat.constituencyId}`)
               }
               className={cn(
-                "w-full rounded-sm border border-border p-2.5 text-left transition-colors",
-                "hover:bg-muted/40"
+                "w-full rounded-lg bg-surface-page/60 p-3 text-left transition-colors",
+                "hover:bg-white/[0.04]"
               )}
             >
               <div className="flex items-center justify-between">
-                <p className="truncate text-sm font-medium">
+                <p className="truncate text-sm font-medium text-[#e5e5e5]">
                   {seat.constituencyName}
                 </p>
-                <span className="ml-2 shrink-0 font-mono text-xs font-bold tabular-nums text-[#dc143c]">
+                <span className="ml-2 shrink-0 font-sans text-xs font-bold tabular-nums text-[#dc143c]">
                   ±{formatNumber(margin)}
                 </span>
               </div>
@@ -91,19 +90,19 @@ export function BattleSeats() {
                 />
               </div>
 
-              <div className="mt-1.5 flex items-center justify-between text-[10px] text-muted-foreground">
+              <div className="mt-1.5 flex items-center justify-between text-[12px] text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <span
                     className="inline-block h-1.5 w-1.5 rounded-full"
                     style={{ backgroundColor: first.partyColor }}
                   />
                   {first.partyName}
-                  <span className="font-mono tabular-nums">
+                  <span className="font-sans tabular-nums">
                     {formatNumber(first.votes)}
                   </span>
                 </span>
                 <span className="flex items-center gap-1">
-                  <span className="font-mono tabular-nums">
+                  <span className="font-sans tabular-nums">
                     {formatNumber(second.votes)}
                   </span>
                   {second.partyName}
@@ -116,7 +115,7 @@ export function BattleSeats() {
             </button>
           );
         })}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

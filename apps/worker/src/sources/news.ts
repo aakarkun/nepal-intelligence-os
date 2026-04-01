@@ -3,9 +3,9 @@
  */
 
 import Parser from "rss-parser";
+import { env } from "../env";
 
-const DEFAULT_FEED_URL =
-  process.env.NEWS_FEED_URL ?? "https://english.onlinekhabar.com/feed";
+const DEFAULT_FEED_URL = env.NEWS_FEED_URL;
 
 export type NewsRawItem = {
   title: string;
@@ -51,7 +51,7 @@ export async function fetchNewsRaw(options?: {
   });
 
   // Optional debug logging to inspect timestamps from feeds.
-  if (process.env.DEBUG_NEWS_TIMES === "true") {
+  if (env.DEBUG_NEWS_TIMES) {
     console.log("[news] Feed:", feedUrl);
     for (const [idx, item] of rawItems.slice(0, 5).entries()) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
