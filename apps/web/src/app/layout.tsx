@@ -4,6 +4,7 @@ import { StoreProvider } from "@/providers/store-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { SSEProvider } from "@/providers/sse-provider";
 import { LanguageProvider } from "@/providers/language-provider";
+import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 const inter = Inter({
@@ -20,6 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()),
   title: "Nepal Intelligence OS",
   description:
     "A permanent national intelligence platform — election monitoring, parliament tracker, economic pulse, and crisis monitor.",
