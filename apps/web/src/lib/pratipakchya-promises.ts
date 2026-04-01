@@ -18,8 +18,28 @@ function repoRootFromWebAppCwd(cwd: string): string {
 export const getPratipakchyaPromises = cache(async (): Promise<PratipakchyaPromise[]> => {
   const root = repoRootFromWebAppCwd(process.cwd());
   const filePath = path.join(root, "data", "pratipakchya", "promises.json");
-  const raw = await readFile(filePath, "utf8");
-  const parsed: unknown = JSON.parse(raw);
+  let raw: string;
+  try {
+    raw = await readFile(filePath, "utf8");
+  } catch (err) {
+    // Build/runtime should not hard-fail if the repo-local artifact hasn't been generated.
+    if (
+      err &&
+      typeof err === "object" &&
+      "code" in err &&
+      (err as { code?: string }).code === "ENOENT"
+    ) {
+      return [];
+    }
+    throw err;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
   if (!Array.isArray(parsed)) return [];
 
   return parsed
