@@ -101,3 +101,23 @@ Dockerfiles used:
 - `apps/worker/Dockerfile`
 
 No extra setup is required; `docker compose up --build` is enough to host API + Worker + DB.
+
+---
+
+## 7. Prebuilt images (GHCR)
+
+CI (`.github/workflows/docker-publish.yml`) builds and pushes **api**, **worker**, and **web** to GitHub Container Registry:
+
+`ghcr.io/<github-owner>/nepal-intelligence-os/{api,worker,web}`
+
+- **Branch pushes** to `main` or `dev`: tags `dev-latest` and `dev-<shortsha>` on each image.
+- **Version tags** `v*`: each image is tagged with the same git tag (e.g. `v1.2.3-beta`). A GitHub Release is created with auto-generated notes.
+
+To run from prebuilt images instead of local `docker build`:
+
+```bash
+# default: dev-latest; override tag with NIO_IMAGE_TAG=dev-abc1234
+NIO_IMAGE_TAG=dev-latest docker compose -f docker-compose.ghcr.yml up -d
+```
+
+For a fork, set `GHCR_OWNER` if images live under a different owner than your default. **DB** stays `postgres:16` (no custom DB image).

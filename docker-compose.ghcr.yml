@@ -1,0 +1,65 @@
+# Pull prebuilt images from GHCR (built by `.github/workflows/docker-publish.yml`).
+# Default tag: dev-latest (also published as dev-<shortsha> per commit on main/dev).
+#
+# Usage from repo root:
+#   NIO_IMAGE_TAG=dev-latest docker compose -f docker-compose.ghcr.yml up -d
+#   NIO_IMAGE_TAG=dev-abc1234 docker compose -f docker-compose.ghcr.yml up -d
+#
+# Registry path: ghcr.io/<github-owner>/nepal-intelligence-os/{api,worker,web}
+# Set GHCR_OWNER if your fork uses a different owner than the image registry.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: nepal_intel
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nepal_intel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    image: ghcr.io/${GHCR_OWNER:-aakarkun}/nepal-intelligence-os/api:${NIO_IMAGE_TAG:-dev-latest}
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/nepal_intel
+      API_PORT: 3001
+      WORKER_SECRET: ${WORKER_SECRET:-}
+      ADMIN_SECRET: ${ADMIN_SECRET:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    image: ghcr.io/${GHCR_OWNER:-aakarkun}/nepal-intelligence-os/worker:${NIO_IMAGE_TAG:-dev-latest}
+    environment:
+      API_URL: http://api:3001
+      WORKER_SECRET: ${WORKER_SECRET:-}
+      ADMIN_SECRET: ${ADMIN_SECRET:-}
+      MODE: live
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  web:
+    image: ghcr.io/${GHCR_OWNER:-aakarkun}/nepal-intelligence-os/web:${NIO_IMAGE_TAG:-dev-latest}
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:
