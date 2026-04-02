@@ -266,7 +266,24 @@ export function UpcomingIssuePanel({
                       ) : rows.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="px-2 py-6 text-center font-sans text-[13px] text-[#555]">
-                            No upcoming issues.
+                            <div>No upcoming issues in this category.</div>
+                            {meta?.totalRows === 0 ? (
+                              <div className="mt-2 max-w-xl mx-auto text-[12px] leading-relaxed text-[#777]">
+                                Database has no upcoming-issue rows yet. Run the worker with{" "}
+                                <code className="rounded bg-white/[0.06] px-1 py-0.5 font-mono text-[11px]">
+                                  UPCOMING_ISSUES_SOURCE_URL
+                                </code>{" "}
+                                (default ShareSansar URL in{" "}
+                                <code className="rounded bg-white/[0.06] px-1 py-0.5 font-mono text-[11px]">
+                                  .env.example
+                                </code>
+                                ), confirm POST{" "}
+                                <code className="rounded bg-white/[0.06] px-1 py-0.5 font-mono text-[11px]">
+                                  /v1/ingest/economy/upcoming-issues
+                                </code>{" "}
+                                succeeds, then reload.
+                              </div>
+                            ) : null}
                           </td>
                         </tr>
                       ) : (

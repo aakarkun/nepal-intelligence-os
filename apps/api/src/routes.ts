@@ -686,6 +686,7 @@ api.get("/economy/assets", (c) => {
 api.get("/economy/upcoming-issues", async (c) => {
   const grouped = await upcomingIssuesRepo.listUpcomingIssues();
   const meta = await upcomingIssuesRepo.getUpcomingIssuesMeta();
+  const totalRows = Object.values(grouped).reduce((acc, rows) => acc + rows.length, 0);
   const response: Record<
     string,
     Array<{
@@ -708,7 +709,7 @@ api.get("/economy/upcoming-issues", async (c) => {
   }
 
   // Backwards compatible: UI can consume either raw record or { data, meta } wrapper.
-  return c.json({ data: response, meta });
+  return c.json({ data: response, meta: { ...meta, totalRows } });
 });
 
 api.get("/economy/nepse", (c) => {

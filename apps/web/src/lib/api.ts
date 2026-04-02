@@ -232,6 +232,8 @@ export type UpcomingIssuesApiMeta = {
   asOf?: string | null;
   ingestedAt?: string | null;
   source?: string | null;
+  /** Total DB rows across all categories (0 = worker has not ingested yet or table empty). */
+  totalRows?: number;
 };
 
 export type UpcomingIssuesApiData = Record<string, UpcomingIssueApiRow[]>;
