@@ -19,6 +19,8 @@ export type UpcomingIssueRow = {
 export type UpcomingIssuesByCategory = Record<string, UpcomingIssueRow[]>;
 
 export type UpcomingIssuesMeta = {
+  /** When upstream data was fetched (max row `fetched_at`). */
+  asOf: string | null;
   ingestedAt: string | null;
   source: string | null;
 };
@@ -63,6 +65,7 @@ export async function getUpcomingIssuesMeta(): Promise<UpcomingIssuesMeta> {
   const rows = await db
     .select({
       updatedAt: economyUpcomingIssues.updatedAt,
+      fetchedAt: economyUpcomingIssues.fetchedAt,
       sourceUrl: economyUpcomingIssues.sourceUrl,
     })
     .from(economyUpcomingIssues)
@@ -71,6 +74,7 @@ export async function getUpcomingIssuesMeta(): Promise<UpcomingIssuesMeta> {
 
   const row = rows[0];
   return {
+    asOf: row?.fetchedAt ?? null,
     ingestedAt: row?.updatedAt ?? null,
     source: row?.sourceUrl ?? null,
   };
