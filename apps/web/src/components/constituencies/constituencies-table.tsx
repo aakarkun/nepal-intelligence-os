@@ -302,11 +302,12 @@ export function ConstituenciesTable() {
         </p>
 
         <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
-          <div
-            className="inline-flex items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.04] p-1"
-            role="tablist"
-            aria-label="Filter constituencies"
-          >
+          <div className="max-w-full overflow-x-auto pb-1 scrollbar-thin [-webkit-overflow-scrolling:touch] sm:pb-0">
+            <div
+              className="inline-flex w-max items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.04] p-1"
+              role="tablist"
+              aria-label="Filter constituencies"
+            >
             {FILTER_TABS.map(({ id, label }) => {
               const active = activeTab === id;
               const count =
@@ -325,7 +326,7 @@ export function ConstituenciesTable() {
                   aria-selected={active}
                   onClick={() => setActiveTab(id)}
                   className={cn(
-                    "rounded-full px-2.5 py-1.5 font-sans text-[11px] font-medium uppercase tracking-wide transition-colors",
+                    "shrink-0 touch-manipulation rounded-full px-2.5 py-1.5 font-sans text-[11px] font-medium uppercase tracking-wide transition-colors",
                     active
                       ? "bg-white/[0.14] text-[#e5e5e5] shadow-sm shadow-black/20"
                       : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
@@ -336,6 +337,7 @@ export function ConstituenciesTable() {
                 </button>
               );
             })}
+            </div>
           </div>
 
           <div className="relative w-full sm:max-w-[16rem]">

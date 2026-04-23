@@ -227,7 +227,7 @@ export function SignalsConsole({ allowedTypes }: SignalsConsoleProps) {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+    <div className="grid min-h-0 gap-4 lg:grid-cols-[1.35fr_1fr]">
       <div className="flex min-h-0 min-w-0 flex-col gap-3">
         <div className="relative w-full min-w-0">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#666]" />
@@ -242,8 +242,9 @@ export function SignalsConsole({ allowedTypes }: SignalsConsoleProps) {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="max-w-full overflow-x-auto pb-1 scrollbar-thin [-webkit-overflow-scrolling:touch] sm:overflow-visible sm:pb-0">
           <div
-            className="inline-flex w-max max-w-full min-w-0 flex-wrap items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.04] p-1"
+            className="inline-flex w-max min-w-0 items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.04] p-1"
             role="tablist"
             aria-label="Signal queue"
           >
@@ -259,7 +260,7 @@ export function SignalsConsole({ allowedTypes }: SignalsConsoleProps) {
                   aria-selected={active}
                   onClick={() => setTab(id)}
                   className={cn(
-                    "rounded-full px-2.5 py-1.5 font-sans text-[11px] font-medium uppercase tracking-wide transition-colors",
+                    "shrink-0 touch-manipulation rounded-full px-2.5 py-1.5 font-sans text-[11px] font-medium uppercase tracking-wide transition-colors",
                     active
                       ? "bg-white/[0.14] text-[#e5e5e5] shadow-sm shadow-black/20"
                       : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
@@ -270,6 +271,7 @@ export function SignalsConsole({ allowedTypes }: SignalsConsoleProps) {
                 </button>
               );
             })}
+          </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-end gap-2 sm:ml-auto">
@@ -385,9 +387,9 @@ export function SignalsConsole({ allowedTypes }: SignalsConsoleProps) {
             ref={listRef}
             className={cn(
               "mx-3 mb-3 mt-1 min-h-0 flex-1 space-y-2 overflow-y-auto overflow-x-hidden rounded-xl bg-white/[0.06] px-2 pb-3 pt-2.5 text-[#ccc]",
-              "shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+              "shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]",
+              "max-h-[min(55dvh,calc(100dvh-14rem))] lg:max-h-[calc(100vh-14rem)]"
             )}
-            style={{ maxHeight: "calc(100vh - 14rem)" }}
             onScroll={() => {
               if (mode !== "live") return;
               const el = listRef.current;
@@ -424,7 +426,7 @@ export function SignalsConsole({ allowedTypes }: SignalsConsoleProps) {
       <div
         className={cn(
           discoverShellClass,
-          "sticky top-12 flex max-h-[calc(100vh-4rem)] min-h-0 flex-col self-start overflow-hidden"
+          "flex min-h-0 flex-col overflow-hidden lg:sticky lg:top-12 lg:max-h-[calc(100vh-4rem)] lg:self-start"
         )}
       >
         <FlatRailPanelHeader title="Detail" leadingDotClass="bg-violet-400" />

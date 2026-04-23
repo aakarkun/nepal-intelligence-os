@@ -9,6 +9,10 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+  		screens: {
+  			/** Narrow phones — used for progressive disclosure of top-bar labels */
+  			xs: "475px",
+  		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

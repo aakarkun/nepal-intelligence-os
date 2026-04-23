@@ -19,8 +19,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isEconomyRoute = pathname.startsWith("/economy");
   const isWorldRoute = pathname.startsWith("/world");
+  const isParliamentRoute = pathname.startsWith("/parliament");
   /** Inline document-flow intel column on these routes; avoid stacking a fixed overlay rail. */
-  const inlineIntelRailRoute = isEconomyRoute || isWorldRoute;
+  const inlineIntelRailRoute = isEconomyRoute || isWorldRoute || isParliamentRoute;
   const [commandOpen, setCommandOpen] = useState(false);
 
   useEffect(() => {
@@ -60,7 +61,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <main
               id="main-content"
               tabIndex={-1}
-              className="flex min-h-0 flex-1 flex-col px-0 py-4 pb-10 md:px-6 md:py-6 md:pb-10"
+              className="flex min-h-0 flex-1 flex-col px-0 py-4 pb-[max(2.5rem,calc(2rem+env(safe-area-inset-bottom)))] md:px-6 md:py-6 md:pb-[max(2.5rem,env(safe-area-inset-bottom))]"
             >
               {children}
             </main>

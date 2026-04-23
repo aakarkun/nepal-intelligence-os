@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Command, PanelRight, Sparkles } from "@/components/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TopBarHeading } from "@/components/layout/top-bar-heading";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { formatNepalTime } from "@/lib/utils";
 import { useRealtimeStore } from "@/stores/realtime-store";
@@ -77,9 +78,14 @@ export function TopBar({ onCommandOpen }: TopBarProps) {
   const status = STATUS_CONFIG[connectionStatus];
 
   return (
-    <header className="sticky top-0 z-50 flex min-h-12 shrink-0 items-center justify-between gap-3 border-b border-white/[0.06] bg-transparent px-3 py-2 sm:px-4">
-      <TopBarHeading />
-      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+    <header className="sticky top-0 z-50 flex min-h-12 shrink-0 items-center justify-between gap-2 border-b border-white/[0.06] bg-transparent px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] sm:gap-3 sm:px-4">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <SidebarTrigger className="h-9 w-9 shrink-0 touch-manipulation md:hidden" />
+        <div className="min-w-0 flex-1">
+          <TopBarHeading />
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
         {/* Language toggle */}
         <Tooltip>
           <TooltipTrigger asChild>

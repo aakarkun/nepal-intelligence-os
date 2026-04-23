@@ -13,7 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default function PoliticalPulsePage() {
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 text-[#e5e5e5]">
+    <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6 text-[#e5e5e5]">
       {/*
         -------------------------------------------------------------------------
         Page shell

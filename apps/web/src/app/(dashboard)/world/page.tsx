@@ -63,13 +63,13 @@ function ArticleRow({
         isLast && "rounded-b-lg"
       )}
     >
-      <div className="mb-1.5 flex min-w-0 items-start justify-between gap-3">
-        <h3 className="font-sans text-[14px] font-normal leading-snug text-[#ccc]">{article.title}</h3>
+      <div className="mb-1.5 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+        <h3 className="min-w-0 font-sans text-[14px] font-normal leading-snug text-[#ccc]">{article.title}</h3>
         <a
           href={article.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 font-sans text-[11px] tracking-tight text-nepal-red/90 transition-colors hover:text-nepal-red"
+          className="shrink-0 self-start font-sans text-[11px] tracking-tight text-nepal-red/90 transition-colors hover:text-nepal-red sm:self-auto"
         >
           Open →
         </a>
@@ -128,8 +128,12 @@ export default function WorldPage() {
       {/* Same pattern as Economy / Discover: intel rail is a flex column in document flow, not the fixed shell overlay. */}
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-1 space-y-4">
-          <nav className="flex justify-start" role="tablist" aria-label="Global desk panels">
-            <div className={deskTabsTrackClass}>
+          <nav
+            className="-mx-1 flex justify-start overflow-x-auto px-1 pb-1 scrollbar-thin [-webkit-overflow-scrolling:touch]"
+            role="tablist"
+            aria-label="Global desk panels"
+          >
+            <div className={cn(deskTabsTrackClass, "min-w-min shrink-0")}>
               {PANELS.map((p) => {
                 const on = p.id === activePanel;
                 return (
@@ -142,7 +146,7 @@ export default function WorldPage() {
                     aria-controls="global-desk-panel"
                     onClick={() => setActivePanel(p.id)}
                     className={cn(
-                      "whitespace-normal rounded-full px-2.5 py-1.5 text-center font-sans text-[11px] leading-snug tracking-tight transition-colors duration-150 sm:px-3 sm:py-1.5 sm:text-[12px]",
+                      "shrink-0 touch-manipulation whitespace-normal rounded-full px-2.5 py-1.5 text-center font-sans text-[11px] leading-snug tracking-tight transition-colors duration-150 sm:px-3 sm:py-1.5 sm:text-[12px]",
                       on
                         ? "bg-white/[0.12] text-white"
                         : "text-[#6b6b6b] hover:text-[#9ca3af]"

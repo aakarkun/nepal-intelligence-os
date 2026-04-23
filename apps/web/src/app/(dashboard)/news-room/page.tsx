@@ -60,8 +60,8 @@ export default function NewsRoomPage() {
   }, [filtered, selectedId]);
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 xl:grid-cols-[0.9fr_1.6fr_1fr]">
+    <div className="min-w-0 space-y-6">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2 xl:grid-cols-[0.9fr_1.6fr_1fr]">
         <SourceRail sources={sources} selected={selectedSource} onSelect={setSelectedSource} />
         <HeadlinesList events={filtered} selectedId={selected} onSelect={setSelectedId} />
         <BriefingStack events={filtered} />

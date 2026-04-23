@@ -1144,7 +1144,7 @@ export function IntelRail() {
     <>
       <aside
         className={cn(
-          "fixed inset-x-0 bottom-8 top-12 z-40 overflow-y-auto border-t border-white/[0.06] bg-chrome-scrim px-3 pb-3 pt-3 scrollbar-thin transition-[transform,opacity] duration-200 ease-out md:hidden",
+          "fixed inset-x-0 top-12 z-40 overflow-y-auto border-t border-white/[0.06] bg-chrome-scrim px-3 pb-3 pt-3 scrollbar-thin transition-[transform,opacity] duration-200 ease-out bottom-[calc(2rem+env(safe-area-inset-bottom))] md:hidden",
           isOpen
             ? "translate-x-0 opacity-100"
             : "pointer-events-none translate-x-full opacity-0"
@@ -1157,7 +1157,7 @@ export function IntelRail() {
 
       <aside
         className={cn(
-          "fixed bottom-8 right-0 top-12 z-40 hidden w-[var(--intel-rail-width)] overflow-y-auto border-l border-white/[0.06] bg-chrome-scrim scrollbar-thin transition-[transform,opacity] duration-200 ease-out md:block",
+          "fixed right-0 top-12 z-40 hidden w-[var(--intel-rail-width)] overflow-y-auto border-l border-white/[0.06] bg-chrome-scrim scrollbar-thin transition-[transform,opacity] duration-200 ease-out bottom-[calc(2rem+env(safe-area-inset-bottom))] md:block",
           isOpen
             ? "translate-x-0 opacity-100"
             : "pointer-events-none translate-x-full opacity-0"

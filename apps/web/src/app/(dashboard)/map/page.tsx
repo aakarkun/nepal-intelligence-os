@@ -13,19 +13,23 @@ export default function MapPage() {
   const [layerMode, setLayerMode] = useState<MapLayerMode>("election");
 
   return (
-    // Stretch to edges of main content, but respect Intel Rail on the right
-    <div className="relative -ml-6 -mt-6 -mb-6">
-      <div className="absolute top-4 left-4 z-10 rounded-md border border-border bg-card/80 px-4 py-2 backdrop-blur">
-        <div className="flex flex-wrap items-center gap-3">
-          <ElectionDatasetSelector />
-          <div className="flex items-center gap-1.5">
-            <span className="text-[13px] text-muted-foreground uppercase tracking-wider">Layer:</span>
+    // Stretch to edges of main content; negative margins match dashboard horizontal padding
+    <div className="relative -mx-4 -mt-4 -mb-4 md:-mx-6 md:-mt-6 md:-mb-6">
+      <div className="absolute left-2 right-2 top-2 z-10 rounded-md border border-border bg-card/90 px-3 py-2 backdrop-blur sm:left-4 sm:right-auto sm:top-4 sm:px-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+          <div className="min-w-0">
+            <ElectionDatasetSelector />
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-1.5">
+            <span className="shrink-0 text-[12px] text-muted-foreground uppercase tracking-wider sm:text-[13px]">
+              Layer:
+            </span>
             {(["election", "seismic", "incidents"] as const).map((mode) => (
               <button
                 key={mode}
                 type="button"
                 onClick={() => setLayerMode(mode)}
-                className={`rounded px-2 py-1 text-[13px] font-medium transition-colors ${
+                className={`touch-manipulation rounded px-2 py-1.5 text-[12px] font-medium transition-colors sm:py-1 sm:text-[13px] ${
                   layerMode === mode
                     ? "bg-nepal-red/20 text-nepal-red"
                     : "text-muted-foreground hover:bg-muted"
@@ -39,7 +43,7 @@ export default function MapPage() {
       </div>
 
       <NepalMap
-        className="w-full h-[calc(100vh-5rem)]"
+        className="h-[calc(100dvh-7.5rem)] min-h-[240px] w-full md:h-[calc(100vh-5rem)]"
         layerMode={layerMode}
         onDistrictClick={(districtName) =>
           setSelection({ type: "district", districtName })

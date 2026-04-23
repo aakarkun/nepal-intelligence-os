@@ -201,12 +201,12 @@ export default function DiscoverPage() {
       )}
     >
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2 overflow-x-hidden">
+        <div className="-mx-1 flex gap-2 overflow-x-auto overflow-y-hidden px-1 pb-1 scrollbar-thin [-webkit-overflow-scrolling:touch] sm:flex-wrap sm:overflow-x-visible sm:pb-0">
           <button
             type="button"
             onClick={() => setTab("for-you")}
             className={cn(
-              "rounded-full px-3 py-1.5 font-sans text-[13px] uppercase tracking-wider transition-colors",
+              "shrink-0 touch-manipulation rounded-full px-3 py-1.5 font-sans text-[13px] uppercase tracking-wider transition-colors",
               tab === "for-you" && !topicFilter
                 ? accent.selected
                 : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
@@ -221,7 +221,7 @@ export default function DiscoverPage() {
               setTopicFilter(null);
             }}
             className={cn(
-              "rounded-full px-3 py-1.5 font-sans text-[13px] uppercase tracking-wider transition-colors",
+              "shrink-0 touch-manipulation rounded-full px-3 py-1.5 font-sans text-[13px] uppercase tracking-wider transition-colors",
               tab === "top"
                 ? accent.selected
                 : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"
@@ -234,7 +234,7 @@ export default function DiscoverPage() {
               <button
                 type="button"
                 className={cn(
-                  "flex items-center gap-1 rounded-full px-3 py-1.5 font-sans text-[13px] uppercase tracking-wider transition-colors",
+                  "flex shrink-0 touch-manipulation items-center gap-1 rounded-full px-3 py-1.5 font-sans text-[13px] uppercase tracking-wider transition-colors",
                   (tab === "topics" || topicFilter != null)
                     ? accent.selected
                     : "text-[#888] hover:bg-white/[0.06] hover:text-[#ccc]"

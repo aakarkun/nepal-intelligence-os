@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { StoreProvider } from "@/providers/store-provider";
 import { QueryProvider } from "@/providers/query-provider";
@@ -26,6 +26,12 @@ export const metadata: Metadata = {
   description:
     "A permanent national intelligence platform — election monitoring, parliament tracker, economic pulse, and crisis monitor.",
   keywords: ["Nepal", "election", "intelligence", "monitoring", "data"],
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

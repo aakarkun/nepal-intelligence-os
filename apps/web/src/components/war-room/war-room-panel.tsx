@@ -26,7 +26,7 @@ const MOCK_PARTICIPANTS = [
 
 function LockedState() {
   return (
-    <Card className="max-w-md mx-auto mt-20">
+    <Card className="mx-auto mt-8 max-w-md sm:mt-20">
       <CardContent className="py-12 text-center space-y-4">
         <Lock className="h-12 w-12 mx-auto text-muted-foreground" />
         <h2 className="font-display text-xl font-bold">
@@ -51,7 +51,7 @@ function VoiceRoom() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {MOCK_PARTICIPANTS.map((p) => (
           <Card key={p.id}>
             <CardContent className="py-6 flex flex-col items-center gap-3">
@@ -76,7 +76,7 @@ function VoiceRoom() {
 
       <Card>
         <CardContent className="py-4">
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             <button
               onClick={() => setMuted(!muted)}
               className={cn(
@@ -214,11 +214,11 @@ export function WarRoomPanel() {
   if (!enabled) return <LockedState />;
 
   return (
-    <div className="grid grid-cols-3 gap-4">
-      <div className="col-span-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="min-w-0 lg:col-span-2">
         <VoiceRoom />
       </div>
-      <div>
+      <div className="min-w-0">
         <AIBriefingPanel />
       </div>
     </div>

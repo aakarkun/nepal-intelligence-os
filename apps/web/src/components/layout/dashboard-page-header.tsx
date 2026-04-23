@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /** Shared page hero title — Discover / Economy / module pages. */
 export const dashboardPageTitleClass =
-  "font-sans text-xl uppercase tracking-[0.2em] text-[#e5e5e5]";
+  "font-sans text-lg uppercase tracking-[0.14em] text-[#e5e5e5] sm:text-xl sm:tracking-[0.2em]";
 
 /** Shared muted subtitle under the title. */
 export const dashboardPageDescriptionClass =

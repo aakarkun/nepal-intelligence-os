@@ -98,14 +98,15 @@ export function GeographyDrawer({
     <>
       {selection && (
         <div
-          className="fixed inset-0 top-12 bottom-8 z-20 bg-black/30"
+          className="fixed inset-x-0 top-12 z-20 bg-black/30 bottom-[calc(2rem+env(safe-area-inset-bottom))]"
           onClick={onClose}
         />
       )}
       <div
         className={cn(
-          "fixed top-12 bottom-8 z-30 w-[26rem] bg-card border-l border-border overflow-y-auto scrollbar-thin transition-transform duration-300",
-          intelRailOpen ? "right-72" : "right-0",
+          "fixed top-12 z-30 w-full max-w-[min(100vw,26rem)] border-l border-border bg-card overflow-y-auto scrollbar-thin transition-transform duration-300 sm:w-[26rem]",
+          "bottom-[calc(2rem+env(safe-area-inset-bottom))]",
+          intelRailOpen ? "right-0 md:right-72" : "right-0",
           selection ? "translate-x-0" : "translate-x-full"
         )}
       >
