@@ -4,25 +4,44 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { cache } from "react";
 
+import type { PratipakchyaPromiseApiRow } from "@/lib/api";
 import {
   clampPratipakchyaProgress,
   normalizePratipakchyaPromiseStatus,
   type PratipakchyaPromise,
 } from "@/lib/pratipakchya-shared";
 
+const API_PROXY_TARGET = process.env.API_PROXY_TARGET ?? "http://localhost:3001";
+
 function repoRootFromWebAppCwd(cwd: string): string {
-  // apps/web → repo root
   return path.resolve(cwd, "..", "..");
 }
 
-export const getPratipakchyaPromises = cache(async (): Promise<PratipakchyaPromise[]> => {
+function mapApiRowToUi(row: PratipakchyaPromiseApiRow): PratipakchyaPromise {
+  return {
+    id: row.id,
+    category: row.category,
+    categoryNe: row.categoryNe ?? "",
+    categoryEn: row.categoryEn ?? "",
+    titleNe: row.titleNe ?? "",
+    titleEn: row.titleEn ?? "",
+    deadline: row.deadline ?? "",
+    deadlineDate: row.deadlineDate ?? "",
+    status: normalizePratipakchyaPromiseStatus(row.status),
+    progress: clampPratipakchyaProgress(row.progress),
+    lastUpdated: row.lastUpdated ?? "",
+    evidence: row.evidence ?? "",
+    notes: row.notes ?? "",
+  };
+}
+
+const loadPratipakchyaPromisesFromFile = cache(async (): Promise<PratipakchyaPromise[]> => {
   const root = repoRootFromWebAppCwd(process.cwd());
   const filePath = path.join(root, "data", "pratipakchya", "promises.json");
   let raw: string;
   try {
     raw = await readFile(filePath, "utf8");
   } catch (err) {
-    // Build/runtime should not hard-fail if the repo-local artifact hasn't been generated.
     if (
       err &&
       typeof err === "object" &&
@@ -74,10 +93,58 @@ export const getPratipakchyaPromises = cache(async (): Promise<PratipakchyaPromi
     .sort((a, b) => a.id - b.id);
 });
 
+async function fetchPratipakchyaPromisesFromApiMapped(): Promise<PratipakchyaPromise[] | null> {
+  try {
+    const url = new URL("/v1/politics/pratipakchya/promises", API_PROXY_TARGET);
+    url.searchParams.set("limit", "500");
+    const res = await fetch(url.toString(), { next: { revalidate: 300 } });
+    if (!res.ok) return null;
+    const rows: unknown = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    return rows.map((r) => mapApiRowToUi(r as PratipakchyaPromiseApiRow));
+  } catch {
+    return null;
+  }
+}
+
+export type PratipakchyaDataSource = "api" | "file";
+
+const loadPratipakchyaPromisesBundle = cache(
+  async (): Promise<{ promises: PratipakchyaPromise[]; source: PratipakchyaDataSource }> => {
+    const fromApi = await fetchPratipakchyaPromisesFromApiMapped();
+    if (fromApi && fromApi.length > 0) {
+      return { promises: fromApi, source: "api" };
+    }
+    const fromFile = await loadPratipakchyaPromisesFromFile();
+    return { promises: fromFile, source: "file" };
+  }
+);
+
+export async function getPratipakchyaPromisesWithSource(): Promise<{
+  promises: PratipakchyaPromise[];
+  source: PratipakchyaDataSource;
+}> {
+  return loadPratipakchyaPromisesBundle();
+}
+
+export const getPratipakchyaPromises = cache(async (): Promise<PratipakchyaPromise[]> => {
+  return (await loadPratipakchyaPromisesBundle()).promises;
+});
+
 export async function getPratipakchyaPromiseById(
   id: number
 ): Promise<PratipakchyaPromise | null> {
-  const all = await getPratipakchyaPromises();
-  return all.find((p) => p.id === id) ?? null;
-}
+  try {
+    const url = `${API_PROXY_TARGET}/v1/politics/pratipakchya/promises/${id}`;
+    const res = await fetch(url, { next: { revalidate: 300 } });
+    if (res.ok) {
+      const row = (await res.json()) as PratipakchyaPromiseApiRow;
+      return mapApiRowToUi(row);
+    }
+  } catch {
+    // fall through to file
+  }
 
+  const fromFile = await loadPratipakchyaPromisesFromFile();
+  return fromFile.find((p) => p.id === id) ?? null;
+}

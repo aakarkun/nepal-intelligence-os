@@ -151,4 +151,25 @@ export function getConnectionStatusColor(
   return "error";
 }
 
-export const API_URL = env.NEXT_PUBLIC_API_URL;
+function isLocalHostname(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+}
+
+function resolveApiUrl(): string {
+  const configured = env.NEXT_PUBLIC_API_URL.trim();
+  if (!configured) return "";
+  if (typeof window === "undefined") return configured;
+
+  const currentHost = window.location.hostname;
+  // On remote devices (e.g. Tailscale), a localhost API URL points to the device itself
+  // and breaks data fetching. Force same-origin proxy mode in that case.
+  if (
+    configured.includes("localhost") &&
+    !isLocalHostname(currentHost)
+  ) {
+    return "";
+  }
+  return configured;
+}
+
+export const API_URL = resolveApiUrl();

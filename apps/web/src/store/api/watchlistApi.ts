@@ -1,10 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { WatchlistItem, WatchlistItemType } from "@repo/shared";
 
-const API_URL =
-  typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001")
-    : "http://localhost:3001";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export type WatchlistCreateInput = {
   label: string;

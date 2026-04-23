@@ -6,7 +6,7 @@
 
 export const env = {
   NEXT_PUBLIC_API_URL:
-    process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001",
+    process.env.NEXT_PUBLIC_API_URL ?? "",
   NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "",
   NEXT_PUBLIC_ENABLE_WAR_ROOM:
     process.env.NEXT_PUBLIC_ENABLE_WAR_ROOM === "true",

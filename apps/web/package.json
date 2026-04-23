@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "bunx next dev -H 0.0.0.0 -p 3000",
-    "dev:mobile": "bunx next dev -H 0.0.0.0 -p 3000",
+    "dev": "bunx next dev -H 0.0.0.0 -p ${WEB_PORT:-3000}",
+    "dev:alt": "bunx next dev -H 0.0.0.0 -p ${WEB_PORT:-3002}",
+    "dev:mobile": "bunx next dev -H 0.0.0.0 -p ${WEB_PORT:-3000}",
     "build": "bunx next build",
     "start": "next start",
     "lint": "bunx eslint ."

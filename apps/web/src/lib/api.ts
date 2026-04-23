@@ -36,10 +36,20 @@ export type ElectionDataset = {
   isCurrent: boolean;
 };
 
+function buildApiUrl(path: string): URL {
+  const base = API_URL || "http://local";
+  return new URL(path, base);
+}
+
+function toFetchUrl(url: URL): string {
+  if (API_URL) return url.toString();
+  return `${url.pathname}${url.search}`;
+}
+
 async function fetchJSON<T>(path: string, dataset?: string | null): Promise<T> {
-  const url = new URL(`${API_URL}${path}`);
+  const url = buildApiUrl(path);
   if (dataset) url.searchParams.set("dataset", dataset);
-  const res = await fetch(url.toString());
+  const res = await fetch(toFetchUrl(url));
   if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
   return res.json();
 }
@@ -424,9 +434,9 @@ export async function getReactionStatus(
   itemId: string,
   fingerprint?: string
 ): Promise<ReactionStatus> {
-  const url = new URL(`${API_URL}/v1/reactions/${encodeURIComponent(itemId)}`);
+  const url = buildApiUrl(`/v1/reactions/${encodeURIComponent(itemId)}`);
   if (fingerprint) url.searchParams.set("fp", fingerprint);
-  const res = await fetch(url.toString());
+  const res = await fetch(toFetchUrl(url));
   if (!res.ok) return { count: 0, liked: false };
   return res.json();
 }
@@ -436,10 +446,10 @@ export async function getReactionsBatch(
   fingerprint?: string
 ): Promise<Record<string, ReactionStatus>> {
   if (ids.length === 0) return {};
-  const url = new URL(`${API_URL}/v1/reactions/batch`);
+  const url = buildApiUrl("/v1/reactions/batch");
   url.searchParams.set("ids", ids.slice(0, 50).join(","));
   if (fingerprint) url.searchParams.set("fp", fingerprint);
-  const res = await fetch(url.toString());
+  const res = await fetch(toFetchUrl(url));
   if (!res.ok) return {};
   return res.json();
 }
@@ -458,4 +468,40 @@ export async function patchAssociateEmail(
     throw new Error(err.detail ?? err.error ?? `API error: ${res.status}`);
   }
   return res.json();
+}
+
+/** Mirrors `apps/api` DB row shape for GET `/v1/politics/pratipakchya/promises`. */
+export type PratipakchyaPromiseApiRow = {
+  id: number;
+  category: string;
+  categoryNe: string | null;
+  categoryEn: string | null;
+  titleNe: string | null;
+  titleEn: string | null;
+  deadline: string | null;
+  deadlineDate: string | null;
+  status: string;
+  progress: number;
+  lastUpdated: string | null;
+  evidence: string | null;
+  notes: string | null;
+  payload: unknown;
+  fetchedAt: string;
+  updatedAt: string;
+};
+
+export function fetchPratipakchyaPromisesFromApi(limit = 500): Promise<PratipakchyaPromiseApiRow[]> {
+  const q = new URLSearchParams({
+    limit: String(Math.min(1000, Math.max(1, limit))),
+  });
+  return fetchJSON<PratipakchyaPromiseApiRow[]>(`/v1/politics/pratipakchya/promises?${q}`);
+}
+
+export async function fetchPratipakchyaPromiseByIdFromApi(
+  id: number
+): Promise<PratipakchyaPromiseApiRow | null> {
+  const res = await fetch(`${API_URL}/v1/politics/pratipakchya/promises/${id}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`);
+  return (await res.json()) as PratipakchyaPromiseApiRow;
 }

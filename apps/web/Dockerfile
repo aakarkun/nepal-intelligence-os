@@ -19,6 +19,11 @@ COPY packages/shared packages/shared
 COPY apps/web apps/web
 
 WORKDIR /app/apps/web
+# NEXT_PUBLIC_* is inlined at build time. Default empty = same-origin frontend calls.
+ARG NEXT_PUBLIC_API_URL=
+ARG API_PROXY_TARGET=http://localhost:3001
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV API_PROXY_TARGET=$API_PROXY_TARGET
 RUN bun run build
 
 FROM node:20-alpine AS runner

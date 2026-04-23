@@ -35,40 +35,42 @@ export function PratipakchyaPromisesTable({ data }: { data: PratipakchyaPromise[
 
   return (
     <div className="min-w-0">
-      <div className="flex flex-col gap-2 border-b border-white/[0.06] px-2 py-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <Search className="h-3 w-3 shrink-0 text-[#555]" aria-hidden />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="FILTER PROMISES..."
-            className="min-w-0 flex-1 border-none bg-transparent py-1.5 pl-0 font-sans text-[13px] text-[#ccc] placeholder:text-[#555] focus:outline-none focus:ring-0"
-          />
+      {data.length > 0 ? (
+        <div className="flex flex-col gap-2 border-b border-white/[0.06] px-2 py-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <Search className="h-3 w-3 shrink-0 text-[#555]" aria-hidden />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search promises…"
+              className="min-w-0 flex-1 border-none bg-transparent py-1.5 pl-0 font-sans text-[13px] text-[#ccc] placeholder:text-[#555] focus:outline-none focus:ring-0"
+            />
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <label className="font-sans text-[11px] uppercase tracking-wider text-[#555]">
+              Category
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className={cn(
+                "h-8 rounded-md border border-white/10 bg-white/[0.03] px-2",
+                "font-sans text-[12px] text-[#ccc] outline-none",
+                "focus:border-white/20"
+              )}
+              aria-label="Filter by category"
+            >
+              <option value="all">All</option>
+              {categories.map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <label className="font-sans text-[11px] uppercase tracking-wider text-[#555]">
-            Category
-          </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className={cn(
-              "h-8 rounded-md border border-white/10 bg-white/[0.03] px-2",
-              "font-sans text-[12px] text-[#ccc] outline-none",
-              "focus:border-white/20"
-            )}
-            aria-label="Filter by category"
-          >
-            <option value="all">All</option>
-            {categories.map(([key, label]) => (
-              <option key={key} value={key}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      ) : null}
 
       <div className="overflow-hidden rounded-b-lg">
         <table className="w-full border-separate border-spacing-0 text-left">
@@ -88,7 +90,22 @@ export function PratipakchyaPromisesTable({ data }: { data: PratipakchyaPromise[
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p, idx) => {
+            {data.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="rounded-b-xl px-3 py-8 text-center font-sans text-[13px] text-[#888]"
+                >
+                  No promises loaded yet. Run the worker ingest or add{" "}
+                  <code className="rounded bg-white/[0.06] px-1 font-mono text-[12px] text-[#ccc]">
+                    data/pratipakchya/promises.json
+                  </code>{" "}
+                  for local fallback.
+                </td>
+              </tr>
+            ) : null}
+            {data.length > 0
+              ? filtered.map((p, idx) => {
               const first = idx === 0;
               const last = idx === filtered.length - 1;
               return (
@@ -137,14 +154,15 @@ export function PratipakchyaPromisesTable({ data }: { data: PratipakchyaPromise[
                   </td>
                 </tr>
               );
-            })}
-            {filtered.length === 0 ? (
+            })
+              : null}
+            {data.length > 0 && filtered.length === 0 ? (
               <tr>
                 <td
                   colSpan={6}
-                  className="rounded-b-xl px-3 py-8 text-center font-sans text-[13px] text-[#555]"
+                  className="rounded-b-xl px-3 py-8 text-center font-sans text-[13px] text-[#888]"
                 >
-                  NO PROMISES MATCHING FILTER
+                  No promises match your filters.
                 </td>
               </tr>
             ) : null}

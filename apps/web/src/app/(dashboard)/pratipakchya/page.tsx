@@ -5,7 +5,7 @@ import {
 } from "@/components/layout/intel-rail";
 import { PratipakchyaPromisesTable } from "@/components/pratipakchya/promises-table";
 import { discoverShellClass } from "@/components/discover/discover-rail-tokens";
-import { getPratipakchyaPromises } from "@/lib/pratipakchya-promises";
+import { getPratipakchyaPromisesWithSource } from "@/lib/pratipakchya-promises";
 import { normalizePratipakchyaPromiseStatus } from "@/lib/pratipakchya-shared";
 import { cn } from "@/lib/utils";
 
@@ -28,8 +28,12 @@ function summarize(data: { status: string; progress: number }[]) {
 const metricTile = "rounded-xl bg-white/[0.05] p-3";
 
 export default async function PratipakchyaPage() {
-  const promises = await getPratipakchyaPromises();
+  const { promises, source } = await getPratipakchyaPromisesWithSource();
   const stats = summarize(promises);
+  const sourceLabel =
+    source === "api"
+      ? "API (ingested Pratipakchya dataset)"
+      : "Repo file `data/pratipakchya/promises.json` (fallback when API is empty or unreachable)";
 
   return (
     <div
@@ -86,8 +90,8 @@ export default async function PratipakchyaPage() {
               </div>
             </div>
             <div className={cn(railRowFlat, "mt-2 rounded-lg")}>
-              <p className="font-sans text-[12px] uppercase text-[#555]">
-                Data source: `data/pratipakchya/promises.json`
+              <p className="font-sans text-[12px] text-[#888]">
+                Data source: {sourceLabel}
               </p>
             </div>
           </div>
