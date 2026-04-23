@@ -1,8 +1,11 @@
-# Nepal Intelligence OS — run API + Worker + Postgres with Docker.
+# Nepal Intelligence OS — run Web + API + Worker + Postgres with Docker.
 # From repo root: docker compose up --build
+# If you previously had a `web` service under another compose revision, use
+# `docker compose up -d --build --remove-orphans` once to drop stale containers.
 #
 # Env: Compose reads root .env for substitution (optional; copy from .env.example).
 # DATABASE_URL and API_URL are set below for the Docker network. See docs/DOCKER.md.
+# WEB_HOST_PORT: host port mapped to the Next.js container (inside still 3000). Default 3000; use 3100 if 3000 is taken or to match tailscale serve.
 
 services:
   db:
@@ -46,7 +49,23 @@ services:
       API_URL: http://api:3001
       WORKER_SECRET: ${WORKER_SECRET:-}
       ADMIN_SECRET: ${ADMIN_SECRET:-}
+      # Default to ShareSansar (override in root .env if needed)
+      UPCOMING_ISSUES_SOURCE_URL: ${UPCOMING_ISSUES_SOURCE_URL:-https://www.sharesansar.com/upcoming-issue}
+      UPCOMING_ISSUES_MINUTES: ${UPCOMING_ISSUES_MINUTES:-720}
       MODE: live
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        API_PROXY_TARGET: ${API_PROXY_TARGET:-http://api:3001}
+    ports:
+      - "${WEB_HOST_PORT:-3000}:3000"
     depends_on:
       - api
     restart: unless-stopped

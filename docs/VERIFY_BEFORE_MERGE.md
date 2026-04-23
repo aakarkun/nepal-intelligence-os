@@ -109,9 +109,47 @@ For local dev, **local PostgreSQL is enough** (Homebrew or Docker above). When y
 
 ---
 
-## When deploying to web (TODO)
+## When deploying to web (production checklist)
 
-Before going live, set these in production so the worker and admin endpoints aren’t open:
+This repo supports the common “split deploy” setup:
+
+- **Web** → Vercel (or Docker)
+- **API** → Docker/PaaS/VPS (runs migrations on startup)
+- **Worker** → Docker/PaaS/VPS/cron (talks to API; no DB access)
+
+See `docs/HOSTING_PLAN.md` for hosting options and service-by-service env.
+
+Before going live, set these in production so worker/admin endpoints aren’t open:
 
 - **WORKER_SECRET** — Set the same value in API and Worker env. Protects GET/PATCH `/v1/worker-state`.
 - **ADMIN_SECRET** — Optional; protects admin actions (e.g. circuit breaker reset). Set in both API and Worker if you use them.
+
+### Required env (production)
+
+- **API**
+  - `DATABASE_URL` (hosted Postgres like Neon)
+  - `WORKER_SECRET` (recommended)
+  - `ADMIN_SECRET` (recommended if you use admin reset)
+- **Worker**
+  - `API_URL` (public API base URL)
+  - `WORKER_SECRET` (same as API if set)
+  - `ADMIN_SECRET` (same as API if set)
+- **Web**
+  - `NEXT_PUBLIC_API_URL` (public API base URL)
+
+### Verify secrets are enforced (smoke test)
+
+With API running in the target environment:
+
+```bash
+# Without secret: should be rejected when WORKER_SECRET is set
+curl -i "$API_URL/v1/worker-state"
+
+# With secret: should succeed
+curl -i "$API_URL/v1/worker-state" -H "X-Worker-Secret: $WORKER_SECRET"
+
+# Admin reset (only if ADMIN_SECRET is set)
+curl -i -X POST "$API_URL/admin/sources/<source-id>/reset" -H "X-Admin-Secret: $ADMIN_SECRET"
+```
+
+If you run API and Worker as separate processes/containers, ensure both have the same `WORKER_SECRET` and `ADMIN_SECRET` values; otherwise the worker won’t be able to load/persist state and admin resets won’t propagate.

@@ -55,6 +55,12 @@ bun run dev:worker
 bun run dev:web
 ```
 
+If you need to run the UI on a different port (e.g., another local app already uses `:3000`):
+
+```bash
+WEB_PORT=3002 bun run dev:web
+```
+
 Live mode now disables Reddit and GDELT by default to avoid rate limits and IP blocks. Re-enable them only when needed:
 
 ```bash
@@ -116,8 +122,8 @@ Services:
 - **api** — Hono API on port 3001; runs migrations on startup
 - **worker** — Live ingest (news, economy, crisis, etc.); no election scrape by default (see `SCRAPE_ELECTION`)
 
-Run the web app locally and point it at the API:  
-`NEXT_PUBLIC_API_URL=http://localhost:3001 bun run dev:web`
+Run the web app locally (same-origin API proxy enabled by default):  
+`bun run dev:web`
 
 See **[docs/DOCKER.md](docs/DOCKER.md)** for env and options.
 
@@ -129,7 +135,9 @@ See **[docs/DOCKER.md](docs/DOCKER.md)** for env and options.
 | `API_PORT` | API server port (default: 3001) | No |
 | `API_URL` | API base URL (used by worker; default: http://localhost:3001) | No |
 | **Frontend** | | |
-| `NEXT_PUBLIC_API_URL` | API URL for frontend (default: http://localhost:3001) | No |
+| `NEXT_PUBLIC_API_URL` | Optional frontend API base URL override. Leave empty to use same-origin proxy routes. | No |
+| `API_PROXY_TARGET` | Backend target for Next.js proxy rewrites (`/v1`, `/api/stream`). Default `http://localhost:3001` in local dev. | No |
+| `WEB_PORT` | Web dev server port (default: 3000) | No |
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox GL JS access token | Yes |
 | `NEXT_PUBLIC_ENABLE_WAR_ROOM` | Enable War Room feature (default: false) | No |
 | **LiveKit (War Room)** | | |
@@ -160,6 +168,27 @@ See **[docs/DOCKER.md](docs/DOCKER.md)** for env and options.
 ## Deployment: API and worker
 
 When the API and worker run in separate processes or containers (e.g. Docker Compose, k8s), set **`ADMIN_SECRET` in both environments**. The API uses it to validate `POST /admin/sources/:id/reset`; the worker uses the same value in `X-Admin-Secret` when polling for pending resets. If only one side has it, circuit breaker resets from the dashboard will not take effect.
+
+## Deployment Env Checklist (Web/API proxy)
+
+For all deployments (human or AI), prefer same-origin proxy mode for the web app:
+
+- `NEXT_PUBLIC_API_URL=` (empty)
+- `API_PROXY_TARGET=<internal API URL reachable from web runtime>`
+  - Docker Compose default: `http://api:3001`
+  - Local non-Docker default: `http://localhost:3001`
+
+This keeps browser calls on the web origin (`/v1`, `/api/stream`) and avoids exposing API port publicly.
+
+Quick post-deploy checks:
+
+```bash
+curl -i http://<web-host>:3000/
+curl -i http://<web-host>:3000/v1/national-summary
+curl -i -N http://<web-host>:3000/api/stream
+```
+
+If the first works but the last two fail, fix `API_PROXY_TARGET` in the web deployment env/build config.
 
 ## Routes
 

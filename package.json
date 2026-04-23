@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
+    "setup:env": "test -f .env || cp .env.example .env",
     "db:up": "docker compose up -d db",
     "docker:up": "docker compose up --build",
     "docker:up:d": "docker compose up -d --build",
