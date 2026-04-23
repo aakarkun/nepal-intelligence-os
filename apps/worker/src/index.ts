@@ -193,6 +193,8 @@ async function writeLiveWorkerState(state: LiveWorkerState): Promise<void> {
     if (state.lastGazetteRunAt != null) body.lastGazetteRunAt = state.lastGazetteRunAt;
     if (state.lastPratipakchyaPromisesRunAt != null)
       body.lastPratipakchyaPromisesRunAt = state.lastPratipakchyaPromisesRunAt;
+    if (state.lastUpcomingIssuesRunAt != null)
+      body.lastUpcomingIssuesRunAt = state.lastUpcomingIssuesRunAt;
     await fetch(`${base}/v1/worker-state`, {
       method: "PATCH",
       headers,
